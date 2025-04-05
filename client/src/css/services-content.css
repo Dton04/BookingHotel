@@ -1,0 +1,44 @@
+.services-content {
+   text-align: center;
+   padding: 50px 20px;
+ }
+ 
+ .services-content h2 {
+   color: #f5a623;
+   font-size: 1.2rem;
+   letter-spacing: 2px;
+   margin-bottom: 10px;
+ }
+ 
+ .services-content h1 {
+   font-size: 2.5rem;
+   color: #1a252f;
+   margin-bottom: 30px;
+ }
+ 
+ .services-content h1 span {
+   color: #f5a623;
+ }
+ 
+ .services-grid {
+   display: flex;
+   justify-content: center;
+   gap: 20px;
+ }
+ 
+ .service-item {
+   background-color: white;
+   padding: 20px;
+   border: 1px solid #ddd;
+   border-radius: 10px;
+   width: 100px;
+   height: 100px;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+ }
+ 
+ .service-item i {
+   font-size: 2rem;
+   color: #1a252f;
+ }

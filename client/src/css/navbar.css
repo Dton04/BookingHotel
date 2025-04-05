@@ -1,0 +1,91 @@
+.header {
+  background-color: #1a252f;
+  color: white;
+  padding: 10px 0;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.logo {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #f5a623;
+  margin: 0;
+}
+
+.contact-info {
+  font-size: 0.9rem;
+}
+
+.contact-info span {
+  margin-left: 20px;
+}
+
+.navbar {
+  background-color: #1a252f;
+  padding: 0 20px;
+}
+
+.navbar-nav {
+  flex-grow: 1;
+  justify-content: center;
+}
+
+.nav-link {
+  color: white !important;
+  font-weight: 500;
+  padding: 10px 20px !important;
+}
+
+.nav-item.active .nav-link {
+  color: #f5a623 !important;
+}
+
+.nav-item.dropdown .dropdown-menu {
+  background-color: #1a252f;
+}
+
+.nav-item.dropdown .dropdown-item {
+  color: white;
+}
+
+.nav-item.dropdown .dropdown-item:hover {
+  background-color: #f5a623;
+  color: #1a252f;
+}
+
+.premium-button {
+  margin-left: auto;
+}
+
+.btn-premium {
+  background-color: #f5a623;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-weight: bold;
+}
+
+.btn-premium:hover {
+  background-color: #e69500;
+}
+
+.social-icons {
+  text-align: center;
+  padding: 10px 0;
+}
+
+.social-icons a {
+  color: white;
+  margin: 0 10px;
+  font-size: 1.2rem;
+}
+
+.social-icons a:hover {
+  color: #f5a623;
+}

@@ -1,0 +1,25 @@
+{
+  "name": "bookinghotel",
+  "version": "1.0.0",
+  "description": "dacs",
+  "homepage": "https://github.com/Dton04/BookingHotel#readme",
+  "bugs": {
+    "url": "https://github.com/Dton04/BookingHotel/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dton04/BookingHotel.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongoose": "^8.13.2",
+    "router": "^2.2.0"
+  }
+}

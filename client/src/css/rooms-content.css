@@ -1,0 +1,65 @@
+.rooms-content {
+   text-align: center;
+   padding: 50px 20px;
+ }
+ 
+ .rooms-content h2 {
+   color: #f5a623;
+   font-size: 1.2rem;
+   letter-spacing: 2px;
+   margin-bottom: 10px;
+ }
+ 
+ .rooms-content h1 {
+   font-size: 2.5rem;
+   color: #1a252f;
+   margin-bottom: 30px;
+ }
+ 
+ .rooms-content h1 span {
+   color: #f5a623;
+ }
+ 
+ .rooms-content .container {
+   max-width: 1200px;
+ }
+ 
+ .rooms-content .row {
+   display: flex;
+   flex-wrap: wrap;
+   justify-content: center;
+ }
+ 
+ .rooms-content .col-md-9 {
+   margin-bottom: 20px;
+ }
+ 
+ .rooms-content .shadow-lg {
+   border-radius: 10px;
+   padding: 20px;
+ }
+ 
+ .rooms-content .smallimg {
+   width: 100%;
+   height: auto;
+   border-radius: 5px;
+ }
+ 
+ .rooms-content .btn-primary {
+   background-color: #1a252f;
+   border: none;
+   margin-right: 10px;
+ }
+ 
+ .rooms-content .btn-primary:hover {
+   background-color: #f5a623;
+ }
+ 
+ .rooms-content .btn-success {
+   background-color: #28a745;
+   border: none;
+ }
+ 
+ .rooms-content .btn-success:hover {
+   background-color: #218838;
+ }
