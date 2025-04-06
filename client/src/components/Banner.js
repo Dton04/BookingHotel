@@ -29,7 +29,7 @@ function Banner() {
   const { title, breadcrumb, buttons } = getPageContent();
 
   return (
-    <section className="banner" style={{ backgroundImage: 'url("https://res.cloudinary.com/dah1butg2/image/upload/v1743863590/majestic-saigon-hotel-349530_n7qsf8.jpg")' }}>
+    <section className="banner" style={{ backgroundImage: 'url("https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg")' }}>
       <div className="banner-content">
         <h1>{title}</h1>
         {breadcrumb && <p>{breadcrumb}</p>}
