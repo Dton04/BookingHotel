@@ -14,6 +14,7 @@ function Banner() {
             <div className="banner-buttons">
               <Link to="/rooms" className="btn btn-primary">OUR ROOMS</Link>
               <Link to="/book" className="btn btn-secondary">BOOK A ROOM</Link>
+              
             </div>
           ),
         };
@@ -21,6 +22,11 @@ function Banner() {
         return { title: 'Rooms', breadcrumb: 'HOME / PAGES / ROOMS', buttons: null };
       case '/services':
         return { title: 'Services', breadcrumb: 'HOME / PAGES / SERVICES', buttons: null };
+      case '/about':
+        return { title: 'About', breadcrumb: 'HOME / PAGES / ABOUT', buttons: null };
+        case '/contact':
+        return { title: 'Contact', breadcrumb: 'HOME / PAGES / CONTACT', buttons: null };
+        
       default:
         return { title: '', breadcrumb: '', buttons: null };
     }

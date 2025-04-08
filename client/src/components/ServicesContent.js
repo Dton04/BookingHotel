@@ -1,5 +1,5 @@
 import React from 'react';
-
+import '../styles/ServicesContent.css'; // Import your CSS file for styling
 function ServicesContent() {
   return (
     <section className="services-content">

@@ -1,7 +1,7 @@
 .booking-form {
-   display: flex;
-   justify-content: center;
-   margin: 20px 0;
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
  }
  
  .booking-form form {

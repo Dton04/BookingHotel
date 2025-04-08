@@ -5,11 +5,12 @@ import RoomsContent from './RoomsContent';
 
 function Rooms() {
   return (
-    <div>
-      <Banner />
+    <div className="room-page">
+      <Banner />    
       <BookingForm />
       <RoomsContent />
     </div>
+
   );
 }
 

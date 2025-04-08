@@ -8,7 +8,7 @@ import ServicesScreen from './screens/ServicesScreen';
 import OurTeam from './components/Pages/OurTeam';
 import Testimonial from './components/Pages/Testimonial';
 import Contact from './components/Contact';
-
+import About from './screens/About';
 function App() {
   return (
     <Router>
@@ -17,6 +17,7 @@ function App() {
         <Routes>
           <Route path="/home" element={<Homescreen />} />
           <Route path="/rooms" element={<Rooms />} />
+          <Route path="/about" element={<About />} />
           <Route path="/services" element={<ServicesScreen />} />
           <Route path="/book/:roomid" element={<Bookingscreen />} />
           <Route path="/book" element={<Bookingscreen />} />

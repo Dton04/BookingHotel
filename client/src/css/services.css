@@ -73,6 +73,20 @@
    line-height: 1.6;
  }
  
+/* Banner Override (Giữ giống Contact) */
+.banner {
+  height: 300px;
+  background-size: cover;
+  background-position: center;
+}
+
+.banner-content h1 {
+  font-size: 2.5rem;
+  color: white;
+  text-transform: uppercase;
+}
+
+
  /* Responsive */
  @media (max-width: 768px) {
    .services-header .title {
@@ -109,4 +123,5 @@
    .service-title {
      font-size: 1.2rem;
    }
+
  }
