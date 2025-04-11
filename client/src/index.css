@@ -319,124 +319,186 @@ code {
   text-align: center;
 }
 
+
+
+.banner-content {
+  position: relative;
+  z-index: 1;
+}
+
 .banner-content h1 {
-  font-size: 2.5rem;
+  font-size: 3.5rem;
   font-weight: bold;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.banner-content p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  text-transform: uppercase;
 }
 
 .banner-buttons {
-  margin-top: 20px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
 }
 
-.banner-buttons .btn {
-  margin: 0 10px;
-}
-
-
-
-
-
-/* ----------------------------------------------------CSS cua ourteam------------------------------------------------ */
-/* Base Styles */
-.our-team-page {
-  font-family: 'Arial', sans-serif;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  color: #333;
-  background-color: #f9f9f9;
-}
-
-.team-container {
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-  padding: 40px;
-  margin-top: 20px;
-}
-
-/* Banner Override (Giữ giống Contact) */
-.banner {
-  height: 300px;
-  background-size: cover;
-  background-position: center;
-}
-
-.banner-content h1 {
-  font-size: 2.5rem;
-  color: white;
-  text-transform: uppercase;
-}
-
-/* Team Section */
-.team-section {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.section-heading {
-  font-size: 2.5rem;
-  color: #2c3e50;
-  margin-bottom: 15px;
-  text-transform: uppercase;
-}
-
-.section-subtitle {
+.btn-primary,
+.btn-secondary {
+  padding: 12px 30px;
   font-size: 1.1rem;
-  color: #777;
-  max-width: 600px;
-  margin: 0 auto 30px;
+  text-transform: uppercase;
+  border-radius: 5px;
+  text-decoration: none;
+  transition: background 0.3s;
 }
 
-.team-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 30px;
+.btn-primary {
+  background: #d4a373;
+  color: #fff;
 }
 
-.team-member {
-  background-color: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  transition: transform 0.3s, box-shadow 0.3s;
+.btn-primary:hover {
+  background: #b5895e;
 }
 
-.team-member:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+.btn-secondary {
+  background: #fff;
+  color: #333;
 }
 
-.member-image {
-  width: 100%;
-  height: 200px;
-  overflow: hidden;
-  border-radius: 8px;
-  margin-bottom: 15px;
+.btn-secondary:hover {
+  background: #e0e0e0;
 }
 
-.member-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+/* Responsive cho Tablet lớn (992px - 1200px) */
+@media (max-width: 1200px) {
+  .banner {
+    height: 450px;
+  }
+
+  .banner-content h1 {
+    font-size: 3rem;
+  }
+
+  .banner-content p {
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 10px 25px;
+    font-size: 1rem;
+  }
 }
 
-.member-name {
-  font-size: 1.3rem;
-  color: #2c3e50;
-  margin-bottom: 5px;
+/* Responsive cho Tablet (768px - 991px) */
+@media (max-width: 991px) {
+  .banner {
+    height: 400px;
+  }
+
+  .banner-content h1 {
+    font-size: 2.5rem;
+  }
+
+  .banner-content p {
+    font-size: 1rem;
+    margin-bottom: 20px;
+  }
+
+  .banner-buttons {
+    gap: 15px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 8px 20px;
+    font-size: 0.95rem;
+  }
 }
 
-.member-role {
-  font-size: 1rem;
-  color: #777;
-  margin-bottom: 10px;
+/* Responsive cho Mobile (<768px) */
+@media (max-width: 767px) {
+  .banner {
+    height: 350px;
+  }
+
+  .banner-content h1 {
+    font-size: 2rem;
+  }
+
+  .banner-content p {
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+  }
+
+  .banner-buttons {
+    gap: 10px;
+    flex-direction: column; /* Xếp dọc nút trên mobile */
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    width: 100%; /* Nút chiếm toàn bộ chiều ngang */
+    max-width: 200px; /* Giới hạn chiều rộng tối đa */
+  }
 }
 
-.member-contact {
-  font-size: 0.9rem;
-  color: #555;
-  margin-bottom: 5px;
+/* Responsive cho Mobile nhỏ (<576px) */
+@media (max-width: 576px) {
+  .banner {
+    height: 300px;
+  }
+
+  .banner-content h1 {
+    font-size: 1.8rem;
+  }
+
+  .banner-content p {
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 8px 15px;
+    font-size: 0.85rem;
+    max-width: 180px;
+  }
 }
+
+/* Responsive cho Mobile rất nhỏ (<400px) */
+@media (max-width: 400px) {
+  .banner {
+    height: 250px;
+  }
+
+  .banner-content h1 {
+    font-size: 1.5rem;
+  }
+
+  .banner-content p {
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    max-width: 160px;
+  }
+}
+
+
+
+
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -457,354 +519,7 @@ code {
   }
 }
 
-/* ----------------------------------------------------Testimonial page----------------------------------------------- */
-/* Testimonial Styles */
-.testimonial-container {
-  position: relative;
-  width: 100%;
-  min-height: 600px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 0;
-  overflow: hidden;
-}
-
-.testimonial-overlay {
-  display: none; /* Hidden since we use inline gradient in JSX */
-}
-
-.testimonial-content {
-  position: relative;
-  z-index: 2;
-  width: 90%;
-  max-width: 1200px;
-  text-align: center;
-}
-
-.testimonial-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: white;
-  margin-bottom: 50px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.testimonial-slider {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  margin-bottom: 40px;
-}
-
-.testimonial-wrapper {
-  width: 100%;
-  display: flex;
-  overflow: hidden;
-  position: relative;
-  min-height: 350px; /* Đảm bảo slider có chiều cao đủ */
-}
-
-.testimonial-slide {
-  min-width: 100%;
-  transition: transform 0.5s ease;
-  display: flex;
-  justify-content: center;
-  padding: 0 15px;
-  position: absolute; /* Sử dụng position absolute để slide có thể chồng lên nhau */
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  visibility: hidden;
-}
-
-.testimonial-slide.active {
-  opacity: 1;
-  visibility: visible;
-  position: relative; /* Đặt slide active về position relative */
-}
-
-.testimonial-card {
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  padding: 40px;
-  width: 100%;
-  max-width: 800px;
-  position: relative;
-}
-
-.testimonial-text {
-  font-size: 1.1rem;
-  line-height: 1.8;
-  color: #555;
-  margin-bottom: 30px;
-  text-align: left;
-}
-
-.testimonial-client {
-  display: flex;
-  align-items: center;
-  text-align: left;
-}
-
-.client-image {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-right: 20px;
-  border: 3px solid #f5a623;
-}
-
-.client-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.client-name {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-}
-
-.client-profession {
-  font-size: 0.9rem;
-  color: #777;
-  margin: 5px 0 0 0;
-}
-
-.quote-icon {
-  position: absolute;
-  bottom: 30px;
-  right: 40px;
-  font-size: 3rem;
-  color: #f5a623;
-  opacity: 0.5;
-}
-
-.slider-nav {
-  background-color: #f5a623;
-  color: white;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  cursor: pointer;
-  border: none;
-  outline: none;
-  transition: all 0.3s ease;
-  position: absolute;
-  z-index: 10;
-}
-
-.slider-nav:hover {
-  background-color: #e69500;
-  transform: scale(1.1);
-}
-
-.prev-button {
-  left: 0;
-}
-
-.next-button {
-  right: 0;
-}
-
-.rating-button {
-  background: #f5a623;
-  color: white;
-  border: none;
-  padding: 15px 40px;
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-/* Banner Override (Giữ giống Contact) */
-.banner {
-  height: 300px;
-  background-size: cover;
-  background-position: center;
-}
-
-.banner-content h1 {
-  font-size: 2.5rem;
-  color: white;
-  text-transform: uppercase;
-}
 
 
 
-/* ----------------------------------------------------CSS About Page----------------------------------------------- */
-
-/* About Page Styles */
-.about-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 80px 5%;
-  background-color: #f8f9fa;
-}
-
-.about-content {
-  flex: 1;
-  padding-right: 50px;
-}
-
-.about-text {
-  margin-bottom: 40px;
-}
-
-.about-subtitle {
-  color: #f5a623;
-  font-size: 1.2rem;
-  margin-bottom: 15px;
-  text-transform: uppercase;
-}
-
-.about-title {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
-  color: #1a252f;
-}
-
-.about-title .highlight {
-  color: #f5a623;
-}
-
-.about-description {
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 30px;
-}
-
-.stats-container {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 40px;
-  gap: 30px;
-}
-
-.stat-box {
-  text-align: center;
-  padding: 35px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-  flex: 1;
-  min-width: 250px;
-}
-
-.stat-box:hover {
-  transform: translateY(-5px);
-}
-
-.stat-icon {
-  font-size: 2.5rem;
-  color: #f5a623;
-  margin-bottom: 20px;
-}
-
-.stat-number {
-  font-size: 2.8rem;
-  color: #1a252f;
-  margin-bottom: 10px;
-  font-weight: bold;
-}
-
-.stat-label {
-  color: #666;
-  font-size: 1.2rem;
-  font-weight: 500;
-}
-
-.explore-button {
-  background: #f5a623;
-  color: white;
-  border: none;
-  padding: 12px 30px;
-  font-size: 1rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.explore-button:hover {
-  background: #e69500;
-}
-
-.about-images {
-  flex: 1;
-}
-
-.image-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-
-.grid-img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  border-radius: 10px;
-  transition: transform 0.3s ease;
-}
-
-.grid-img:hover {
-  transform: scale(1.05);
-}
-
-@media (max-width: 992px) {
-  .about-container {
-    flex-direction: column;
-    padding: 40px 5%;
-  }
-
-  .about-content {
-    padding-right: 0;
-    margin-bottom: 40px;
-  }
-
-  .stats-container {
-    flex-wrap: wrap;
-    gap: 25px;
-  }
-
-  .stat-box {
-    flex: 1;
-    min-width: 220px;
-    padding: 30px;
-  }
-}
-
-@media (max-width: 576px) {
-  .about-title {
-    font-size: 2rem;
-  }
-
-  .stats-container {
-    flex-direction: column;
-  }
-
-  .stat-box {
-    margin-bottom: 20px;
-  }
-
-  .image-grid {
-    grid-template-columns: 1fr;
-  }
-}
 /* ----------------------------------------------------CSS----------------------------------------------- */

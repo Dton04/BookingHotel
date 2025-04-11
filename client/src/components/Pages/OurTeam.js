@@ -1,6 +1,6 @@
 import React from 'react';
 import Banner from '../Banner'; // Sử dụng cùng Banner component như Contact
-
+import '../../css/ourteam.css'; // Import CSS for styling
 function OurTeam() {
   return (
     <div className="our-team-page">

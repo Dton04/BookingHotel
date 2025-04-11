@@ -1,5 +1,6 @@
 import React from "react";
 import "../css/booking-form.css";
+import "../css/about.css"; // File CSS tùy chỉnh
 import Banner from "../components/Banner";
 import BookingForm from "../components/BookingForm";
 function About() {

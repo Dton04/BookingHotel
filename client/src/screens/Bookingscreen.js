@@ -146,8 +146,8 @@ function Bookingscreen() {
                   {bookingStatus.message}
                 </div>
               )}
-              <div className="booking-form-wrapper">
-                <form className="booking-form" onSubmit={handleBooking}>
+              <div className="booking-screen-wrapper">
+                <form className="booking-screen" onSubmit={handleBooking}>
                   <div className="row">
                     <div className="col-md-6">
                       <div className="form-group">

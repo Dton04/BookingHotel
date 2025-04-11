@@ -1,0 +1,163 @@
+/* ----------------------------------------------------CSS About Page----------------------------------------------- */
+
+/* About Page Styles */
+.about-container {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   padding: 80px 5%;
+   background-color: #f8f9fa;
+ }
+ 
+ .about-content {
+   flex: 1;
+   padding-right: 50px;
+ }
+ 
+ .about-text {
+   margin-bottom: 40px;
+ }
+ 
+ .about-subtitle {
+   color: #f5a623;
+   font-size: 1.2rem;
+   margin-bottom: 15px;
+   text-transform: uppercase;
+ }
+ 
+ .about-title {
+   font-size: 2.5rem;
+   margin-bottom: 20px;
+   color: #1a252f;
+ }
+ 
+ .about-title .highlight {
+   color: #f5a623;
+ }
+ 
+ .about-description {
+   color: #666;
+   line-height: 1.6;
+   margin-bottom: 30px;
+ }
+ 
+ .stats-container {
+   display: flex;
+   justify-content: space-between;
+   margin-bottom: 40px;
+   gap: 30px;
+ }
+ 
+ .stat-box {
+   text-align: center;
+   padding: 35px;
+   background: white;
+   border-radius: 10px;
+   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+   transition: transform 0.3s ease;
+   flex: 1;
+   min-width: 250px;
+ }
+ 
+ .stat-box:hover {
+   transform: translateY(-5px);
+ }
+ 
+ .stat-icon {
+   font-size: 2.5rem;
+   color: #f5a623;
+   margin-bottom: 20px;
+ }
+ 
+ .stat-number {
+   font-size: 2.8rem;
+   color: #1a252f;
+   margin-bottom: 10px;
+   font-weight: bold;
+ }
+ 
+ .stat-label {
+   color: #666;
+   font-size: 1.2rem;
+   font-weight: 500;
+ }
+ 
+ .explore-button {
+   background: #f5a623;
+   color: white;
+   border: none;
+   padding: 12px 30px;
+   font-size: 1rem;
+   font-weight: 600;
+   text-transform: uppercase;
+   border-radius: 5px;
+   cursor: pointer;
+   transition: background-color 0.3s ease;
+ }
+ 
+ .explore-button:hover {
+   background: #e69500;
+ }
+ 
+ .about-images {
+   flex: 1;
+ }
+ 
+ .image-grid {
+   display: grid;
+   grid-template-columns: repeat(2, 1fr);
+   gap: 20px;
+ }
+ 
+ .grid-img {
+   width: 100%;
+   height: 200px;
+   object-fit: cover;
+   border-radius: 10px;
+   transition: transform 0.3s ease;
+ }
+ 
+ .grid-img:hover {
+   transform: scale(1.05);
+ }
+ 
+ @media (max-width: 992px) {
+   .about-container {
+     flex-direction: column;
+     padding: 40px 5%;
+   }
+ 
+   .about-content {
+     padding-right: 0;
+     margin-bottom: 40px;
+   }
+ 
+   .stats-container {
+     flex-wrap: wrap;
+     gap: 25px;
+   }
+ 
+   .stat-box {
+     flex: 1;
+     min-width: 220px;
+     padding: 30px;
+   }
+ }
+ 
+ @media (max-width: 576px) {
+   .about-title {
+     font-size: 2rem;
+   }
+ 
+   .stats-container {
+     flex-direction: column;
+   }
+ 
+   .stat-box {
+     margin-bottom: 20px;
+   }
+ 
+   .image-grid {
+     grid-template-columns: 1fr;
+   }
+ }

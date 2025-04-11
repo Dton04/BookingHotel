@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Banner from '../Banner';
+import BookingForm from '../BookingForm';
+import '../../css/testimonial.css'; // Import CSS for styling
 
 const testimonials = [
   {
@@ -79,6 +81,7 @@ function Testimonial() {
   return (
     <div className="testimonial-page">
       <Banner />
+      <BookingForm/>
 
       <div className="testimonial-container" style={backgroundStyle}>
         <div className="testimonial-content">

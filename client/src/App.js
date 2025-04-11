@@ -9,10 +9,12 @@ import OurTeam from './components/Pages/OurTeam';
 import Testimonial from './components/Pages/Testimonial';
 import Contact from './components/Contact';
 import About from './screens/About';
+import Footer from './components/Footer'; // Sửa đường dẫn import
+
 function App() {
   return (
     <Router>
-      <div>
+      <div className="App">
         <Navbar />
         <Routes>
           <Route path="/home" element={<Homescreen />} />
@@ -26,6 +28,7 @@ function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/" element={<Homescreen />} />
         </Routes>
+        <Footer />
       </div>
     </Router>
   );

@@ -27,20 +27,31 @@ function RoomsContent() {
 
   return (
     <section className="rooms-content">
-      <h2>OUR ROOMS</h2>
-      <h1>Explore Our <span>ROOMS</span></h1>
       <div className="container">
-        <div className="row justify-content-center mt-5">
+        <div className="rooms-header text-center">
+          <h2 className="subtitle">
+            <span className="line"></span>
+            OUR ROOMS
+            <span className="line"></span>
+          </h2>
+          <h1 className="title">
+            Explore Our <span>ROOMS</span>
+          </h1>
+        </div>
+
+        <div className="row mt-5">
           {loading ? (
-            <h1>Loading...</h1>
+            <div className="col-12 text-center">
+              <h1>Loading...</h1>
+            </div>
           ) : error ? (
-            <h1>Error</h1>
+            <div className="col-12 text-center">
+              <h1>Error</h1>
+            </div>
           ) : (
             rooms.map((room, index) => (
-              <div key={index} className="col-md-9 mt-2">
-                <div className="shadow-lg p-4 rounded-lg bg-white">
-                  <Room room={room} />
-                </div>
+              <div key={index} className="col-lg-4 col-md-6 mb-4">
+                <Room room={room} />
               </div>
             ))
           )}

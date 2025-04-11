@@ -1,36 +1,41 @@
 import React, { useState } from 'react';
 import { Modal, Button, Carousel } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 
 function Room({ room }) {
   const [show, setShow] = useState(false);
-  const navigate = useNavigate(); // Hook điều hướng
+  const navigate = useNavigate();
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
   const handleBooking = () => {
-    navigate(`/book/${room._id}`)
+    navigate(`/book/${room._id}`);
+  };
+
+  // Hàm định dạng giá tiền sang VND
+  const formatPriceVND = (price) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(price || 1000000); // Giá mặc định là 1,000,000 VND nếu không có rentperday
   };
 
   return (
-    <div className="row">
-      <div className="col-md-4">
+    <div className="room-card">
+      <div className="room-image">
         <img
           src={room.imageurls?.[0] || "default-image.jpg"}
-          className="smallimg"
           alt={room.name}
+          className="img-fluid"
           onError={(e) => { e.target.src = "default-image.jpg"; }}
         />
       </div>
-      <div className="col-md-7">
-        <h4>{room.name}</h4>
-        <p>Số lượng phòng: {room.maxcount}</p>
-        <p>Số điện thoại: {room.phonenumber}</p>
-        <p>Loại: {room.type}</p>
-
-        <div style={{ float: 'right' }}>
-          <button className="btn btn-primary" onClick={handleShow}>View Details</button>
-          <button className="btn btn-success ms-2" onClick={handleBooking}>Book Now</button>
+      <div className="room-content">
+        <h4 className="room-title">{room.name}</h4>
+        <p className="room-description">{room.description?.substring(0, 100)}...</p>
+        <div className="room-details">
+          <span className="room-price">{formatPriceVND(room.rentperday)} / Đêm</span>
+          <button className="btn btn-details" onClick={handleShow}>Chi tiết</button>
         </div>
       </div>
 
@@ -46,10 +51,17 @@ function Room({ room }) {
               </Carousel.Item>
             ))}
           </Carousel>
-          <p>{room.description}</p>
+          <p className="mt-3">{room.description}</p>
+          <ul className="room-info">
+            <li>Số lượng tối đa: {room.maxcount}</li>
+            <li>Số điện thoại: {room.phonenumber}</li>
+            <li>Loại: {room.type}</li>
+            <li>Giá: {formatPriceVND(room.rentperday)} / Đêm</li>
+          </ul>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>Close</Button>
+          <Button variant="secondary" onClick={handleClose}>Đóng</Button>
+          <Button variant="success" onClick={handleBooking}>Đặt ngay</Button>
         </Modal.Footer>
       </Modal>
     </div>

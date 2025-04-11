@@ -63,3 +63,112 @@
  .rooms-content .btn-success:hover {
    background-color: #218838;
  }
+
+ 
+ /* Responsive cho Tablet (768px - 991px) */
+ @media (max-width: 991px) {
+  .room-image img {
+    height: 180px;
+  }
+
+  .room-content {
+    padding: 15px;
+  }
+
+  .room-title {
+    font-size: 1.4rem;
+  }
+
+  .room-description {
+    font-size: 0.95rem;
+  }
+
+  .room-price {
+    font-size: 1.1rem;
+  }
+
+  .btn-details {
+    padding: 8px 16px;
+    font-size: 1rem;
+  }
+
+  .room-info li {
+    font-size: 0.95rem;
+  }
+
+  .bigimg {
+    height: 350px;
+  }
+}
+
+/* Responsive cho Mobile (<768px) */
+@media (max-width: 767px) {
+  .room-image img {
+    height: 150px;
+  }
+
+  .room-content {
+    padding: 15px;
+  }
+
+  .room-title {
+    font-size: 1.3rem;
+  }
+
+  .room-description {
+    font-size: 0.9rem;
+  }
+
+  .room-price {
+    font-size: 1rem;
+  }
+
+  .btn-details {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+
+  .room-info li {
+    font-size: 0.9rem;
+  }
+
+  .bigimg {
+    height: 300px;
+  }
+}
+
+/* Responsive cho Mobile nhỏ (<576px) */
+@media (max-width: 576px) {
+  .room-image img {
+    height: 150px;
+  }
+
+  .room-content {
+    padding: 10px;
+  }
+
+  .room-title {
+    font-size: 1.2rem;
+  }
+
+  .room-description {
+    font-size: 0.85rem;
+  }
+
+  .room-price {
+    font-size: 0.95rem;
+  }
+
+  .btn-details {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  .room-info li {
+    font-size: 0.85rem;
+  }
+
+  .bigimg {
+    height: 250px;
+  }
+}

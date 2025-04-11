@@ -1,0 +1,186 @@
+/* ----------------------------------------------------Testimonial page----------------------------------------------- */
+/* Testimonial Styles */
+.testimonial-container {
+   position: relative;
+   width: 100%;
+   min-height: 600px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   padding: 80px 0;
+   overflow: hidden;
+ }
+ 
+ .testimonial-overlay {
+   display: none; /* Hidden since we use inline gradient in JSX */
+ }
+ 
+ .testimonial-content {
+   position: relative;
+   z-index: 2;
+   width: 90%;
+   max-width: 1200px;
+   text-align: center;
+ }
+ 
+ .testimonial-title {
+   font-size: 2.5rem;
+   font-weight: 700;
+   color: white;
+   margin-bottom: 50px;
+   text-transform: uppercase;
+   letter-spacing: 1px;
+ }
+ 
+ .testimonial-slider {
+   position: relative;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   width: 100%;
+   margin-bottom: 40px;
+ }
+ 
+ .testimonial-wrapper {
+   width: 100%;
+   display: flex;
+   overflow: hidden;
+   position: relative;
+   min-height: 350px; /* Đảm bảo slider có chiều cao đủ */
+ }
+ 
+ .testimonial-slide {
+   min-width: 100%;
+   transition: transform 0.5s ease;
+   display: flex;
+   justify-content: center;
+   padding: 0 15px;
+   position: absolute; /* Sử dụng position absolute để slide có thể chồng lên nhau */
+   left: 0;
+   top: 0;
+   width: 100%;
+   height: 100%;
+   opacity: 0;
+   visibility: hidden;
+ }
+ 
+ .testimonial-slide.active {
+   opacity: 1;
+   visibility: visible;
+   position: relative; /* Đặt slide active về position relative */
+ }
+ 
+ .testimonial-card {
+   background-color: white;
+   border-radius: 10px;
+   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+   padding: 40px;
+   width: 100%;
+   max-width: 800px;
+   position: relative;
+ }
+ 
+ .testimonial-text {
+   font-size: 1.1rem;
+   line-height: 1.8;
+   color: #555;
+   margin-bottom: 30px;
+   text-align: left;
+ }
+ 
+ .testimonial-client {
+   display: flex;
+   align-items: center;
+   text-align: left;
+ }
+ 
+ .client-image {
+   width: 70px;
+   height: 70px;
+   border-radius: 50%;
+   object-fit: cover;
+   margin-right: 20px;
+   border: 3px solid #f5a623;
+ }
+ 
+ .client-info {
+   display: flex;
+   flex-direction: column;
+ }
+ 
+ .client-name {
+   font-size: 1.2rem;
+   font-weight: 600;
+   color: #333;
+   margin: 0;
+ }
+ 
+ .client-profession {
+   font-size: 0.9rem;
+   color: #777;
+   margin: 5px 0 0 0;
+ }
+ 
+ .quote-icon {
+   position: absolute;
+   bottom: 30px;
+   right: 40px;
+   font-size: 3rem;
+   color: #f5a623;
+   opacity: 0.5;
+ }
+ 
+ .slider-nav {
+   background-color: #f5a623;
+   color: white;
+   width: 50px;
+   height: 50px;
+   border-radius: 50%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-size: 1.2rem;
+   cursor: pointer;
+   border: none;
+   outline: none;
+   transition: all 0.3s ease;
+   position: absolute;
+   z-index: 10;
+ }
+ 
+ .slider-nav:hover {
+   background-color: #e69500;
+   transform: scale(1.1);
+ }
+ 
+ .prev-button {
+   left: 0;
+ }
+ 
+ .next-button {
+   right: 0;
+ }
+ 
+ .rating-button {
+   background: #f5a623;
+   color: white;
+   border: none;
+   padding: 15px 40px;
+   font-size: 1.2rem;
+   font-weight: 600;
+ }
+ 
+ /* Banner Override (Giữ giống Contact) */
+ .banner {
+   height: 300px;
+   background-size: cover;
+   background-position: center;
+ }
+ 
+ .banner-content h1 {
+   font-size: 2.5rem;
+   color: white;
+   text-transform: uppercase;
+ }
+ 
+ 
