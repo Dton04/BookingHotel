@@ -1,7 +1,11 @@
 /* services.css */
 .services-page {
-  font-family: Arial, sans-serif;
+  font-family: 'Arial', sans-serif;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: none;
   color: #333;
+  background-color: #f9f9f9;
 }
 
 .container {

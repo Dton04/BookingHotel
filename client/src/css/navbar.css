@@ -1,4 +1,6 @@
 .header {
+  max-width: 1500px;
+  margin: 0 auto;
   background-color: #1a252f;
   color: white;
   padding: 10px 0;
@@ -40,6 +42,7 @@
   color: white !important;
   font-weight: 500;
   padding: 10px 20px !important;
+  transition: color 0.3s ease;
 }
 
 .nav-item.active .nav-link {
@@ -47,11 +50,14 @@
 }
 
 .nav-item.dropdown .dropdown-menu {
-  background-color: #1a252f;
+  background-color: #2a3540;
+  border: none;
+  width: 100%;
 }
 
 .nav-item.dropdown .dropdown-item {
   color: white;
+  padding: 10px 20px;
 }
 
 .nav-item.dropdown .dropdown-item:hover {
@@ -69,6 +75,7 @@
   border: none;
   padding: 10px 20px;
   font-weight: bold;
+  transition: background-color 0.3s ease;
 }
 
 .btn-premium:hover {
@@ -84,8 +91,143 @@
   color: white;
   margin: 0 10px;
   font-size: 1.2rem;
+  transition: color 0.3s ease;
 }
 
 .social-icons a:hover {
   color: #f5a623;
+}
+
+/* Responsive Styles */
+
+/* Tablet và Mobile */
+@media (max-width: 991px) {
+  .top-bar {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+  }
+
+  .logo {
+    font-size: 1.5rem;
+  }
+
+  .contact-info {
+    display: none; /* Ẩn thông tin liên hệ trên mobile */
+  }
+
+  .navbar {
+    padding: 0;
+  }
+
+  .navbar-toggler {
+    border: none;
+    color: #f5a623;
+    font-size: 1.5rem;
+    background: none;
+    padding: 0;
+  }
+
+  .navbar-toggler-icon {
+    color: #f5a623;
+  }
+
+  .navbar-collapse {
+    background-color: #1a252f;
+    padding: 10px 0;
+  }
+
+  .navbar-nav {
+    text-align: center;
+    width: 100%;
+  }
+
+  .nav-item {
+    margin: 5px 0;
+  }
+
+  .nav-link {
+    padding: 12px !important;
+    font-size: 1.1rem;
+    border-bottom: 1px solid #2a3540;
+    display: block;
+  }
+
+  .nav-item:last-child .nav-link {
+    border-bottom: none;
+  }
+
+  .nav-item.dropdown .dropdown-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px !important;
+    border-bottom: 1px solid #2a3540;
+  }
+
+  .nav-item.dropdown .dropdown-menu {
+    background-color: #2a3540;
+    text-align: center;
+    border: none;
+  }
+
+  .nav-item.dropdown .dropdown-item {
+    color: white;
+    padding: 10px;
+    font-size: 1rem;
+    border-bottom: 1px solid #3a4550;
+  }
+
+  .nav-item.dropdown .dropdown-item:last-child {
+    border-bottom: none;
+  }
+
+  .premium-button {
+    margin: 15px auto;
+    text-align: center;
+  }
+
+  .btn-premium {
+    display: inline-block;
+    width: 100%;
+    max-width: 200px;
+    padding: 12px;
+    font-size: 1rem;
+  }
+
+  .social-icons {
+    display: none; /* Ẩn social icons trên mobile */
+  }
+}
+
+/* Mobile nhỏ hơn */
+@media (max-width: 576px) {
+  .logo {
+    font-size: 1.2rem;
+  }
+
+  .navbar-toggler {
+    font-size: 1.2rem;
+  }
+
+  .nav-link {
+    font-size: 1rem;
+    padding: 10px !important;
+  }
+
+  .nav-item.dropdown .dropdown-toggle {
+    padding: 10px !important;
+  }
+
+  .nav-item.dropdown .dropdown-item {
+    font-size: 0.9rem;
+    padding: 8px;
+  }
+
+  .btn-premium {
+    max-width: 180px;
+    padding: 10px;
+    font-size: 0.9rem;
+  }
 }

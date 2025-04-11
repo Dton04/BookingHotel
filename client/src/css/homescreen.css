@@ -1,500 +1,527 @@
-/* homescreen.css */
 .homescreen {
-   font-family: Arial, sans-serif;
-   color: #333;
- }
- 
- .booking-section {
-   padding: 20px;
-   background: #f8f8f8;
-   text-align: center;
- }
- 
- .intro-section {
-   padding: 60px 20px;
-   text-align: center;
- }
- 
- .intro-container .subtitle {
-   font-size: 1.2rem;
-   color: #d4a373;
-   margin-bottom: 10px;
- }
- 
- .intro-container .title {
-   font-size: 2.5rem;
-   margin-bottom: 20px;
- }
- 
- .intro-container .title span {
-   color: #d4a373;
- }
- 
- .intro-container p {
-   font-size: 1.1rem;
-   max-width: 600px;
-   margin: 0 auto 20px;
- }
- 
- .btn-explore {
-   padding: 10px 20px;
-   background: #d4a373;
-   color: #fff;
-   border-radius: 5px;
-   text-decoration: none;
-   display: inline-block;
-   transition: background 0.3s;
- }
- 
- .btn-explore:hover {
-   background: #b5895e;
- }
- 
- .rooms-section {
-   padding: 60px 20px;
-   background: #f8f8f8;
- }
- 
- .rooms-header .subtitle {
-   font-size: 1.2rem;
-   color: #d4a373;
-   margin-bottom: 10px;
- }
- 
- .rooms-header .title {
-   font-size: 2.5rem;
-   margin-bottom: 20px;
- }
- 
- .rooms-header .title span {
-   color: #d4a373;
- }
- 
- .services-section {
-   padding: 60px 20px;
-   text-align: center;
- }
- 
- .services-header .subtitle {
-   font-size: 1.2rem;
-   color: #d4a373;
-   margin-bottom: 10px;
- }
- 
- .services-header .title {
-   font-size: 2.5rem;
-   margin-bottom: 20px;
- }
- 
- .services-header .title span {
-   color: #d4a373;
- }
- 
- .service-box {
-   padding: 20px;
-   background: #fff;
-   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-   border-radius: 5px;
-   margin-bottom: 20px;
- }
- 
- .service-icon {
-   font-size: 2rem;
-   margin-bottom: 10px;
- }
- 
- .service-title {
-   font-size: 1.5rem;
-   margin-bottom: 10px;
- }
- 
- .service-description {
-   font-size: 1rem;
-   color: #666;
- }
- 
- .footer {
-   padding: 40px 20px;
-   background: #2c2c2c;
-   color: #fff;
-   text-align: center;
- }
- 
- .footer-content .logo {
-   font-size: 2rem;
-   margin-bottom: 20px;
- }
- 
- .footer-links a {
-   color: #fff;
-   margin: 0 15px;
-   text-decoration: none;
- }
- 
- .footer-links a:hover {
-   color: #d4a373;
- }
- 
- .social-icons a {
-   color: #fff;
-   margin: 0 10px;
-   font-size: 1.2rem;
- }
- 
- .social-icons a:hover {
-   color: #d4a373;
- }
- 
- /* Responsive cho Tablet lớn (992px - 1200px) */
- @media (max-width: 1200px) {
-   .booking-section {
-     padding: 15px;
-   }
- 
-   .intro-section {
-     padding: 50px 15px;
-   }
- 
-   .intro-container .subtitle {
-     font-size: 1.1rem;
-   }
- 
-   .intro-container .title {
-     font-size: 2.2rem;
-   }
- 
-   .intro-container p {
-     font-size: 1rem;
-     max-width: 500px;
-   }
- 
-   .btn-explore {
-     padding: 9px 18px;
-   }
- 
-   .rooms-section {
-     padding: 50px 15px;
-   }
- 
-   .rooms-header .subtitle {
-     font-size: 1.1rem;
-   }
- 
-   .rooms-header .title {
-     font-size: 2.2rem;
-   }
- 
-   .services-section {
-     padding: 50px 15px;
-   }
- 
-   .services-header .subtitle {
-     font-size: 1.1rem;
-   }
- 
-   .services-header .title {
-     font-size: 2.2rem;
-   }
- 
-   .service-box {
-     padding: 15px;
-   }
- 
-   .footer {
-     padding: 30px 15px;
-   }
- 
-   .footer-content .logo {
-     font-size: 1.8rem;
-   }
- }
- 
- /* Responsive cho Tablet (768px - 991px) - iPad Mini nằm trong khoảng này */
- @media (max-width: 991px) {
-   .booking-section {
-     padding: 15px;
-   }
- 
-   .intro-section {
-     padding: 40px 15px;
-   }
- 
-   .intro-container .subtitle {
-     font-size: 1.1rem;
-   }
- 
-   .intro-container .title {
-     font-size: 2rem;
-   }
- 
-   .intro-container p {
-     font-size: 1rem;
-     max-width: 100%; /* Tận dụng toàn bộ chiều ngang */
-   }
- 
-   .btn-explore {
-     padding: 8px 16px;
-     font-size: 1rem;
-   }
- 
-   .rooms-section {
-     padding: 40px 15px;
-   }
- 
-   .rooms-header .subtitle {
-     font-size: 1.1rem;
-   }
- 
-   .rooms-header .title {
-     font-size: 2rem;
-   }
- 
-   .services-section {
-     padding: 40px 15px;
-   }
- 
-   .services-header .subtitle {
-     font-size: 1.1rem;
-   }
- 
-   .services-header .title {
-     font-size: 2rem;
-   }
- 
-   .service-box {
-     padding: 15px;
-   }
- 
-   .service-icon {
-     font-size: 1.8rem;
-   }
- 
-   .service-title {
-     font-size: 1.4rem;
-   }
- 
-   .service-description {
-     font-size: 0.95rem;
-   }
- 
-   .footer {
-     padding: 25px 15px;
-   }
- 
-   .footer-content .logo {
-     font-size: 1.5rem;
-   }
- 
-   .footer-links a {
-     margin: 0 10px;
-     font-size: 0.95rem;
-   }
- }
- 
- /* Responsive cho Mobile (<768px) */
- @media (max-width: 767px) {
-   .booking-section {
-     padding: 10px;
-   }
- 
-   .intro-section {
-     padding: 30px 10px;
-   }
- 
-   .intro-container .subtitle {
-     font-size: 1rem;
-   }
- 
-   .intro-container .title {
-     font-size: 1.8rem;
-   }
- 
-   .intro-container p {
-     font-size: 0.9rem;
-     max-width: 100%;
-   }
- 
-   .btn-explore {
-     padding: 8px 16px;
-     font-size: 0.9rem;
-   }
- 
-   .rooms-section {
-     padding: 30px 10px;
-   }
- 
-   .rooms-header .subtitle {
-     font-size: 1rem;
-   }
- 
-   .rooms-header .title {
-     font-size: 1.8rem;
-   }
- 
-   .services-section {
-     padding: 30px 10px;
-   }
- 
-   .services-header .subtitle {
-     font-size: 1rem;
-   }
- 
-   .services-header .title {
-     font-size: 1.8rem;
-   }
- 
-   .service-box {
-     padding: 15px;
-   }
- 
-   .service-icon {
-     font-size: 1.5rem;
-   }
- 
-   .service-title {
-     font-size: 1.3rem;
-   }
- 
-   .service-description {
-     font-size: 0.9rem;
-   }
- 
-   .footer {
-     padding: 20px 10px;
-   }
- 
-   .footer-content .logo {
-     font-size: 1.5rem;
-   }
- 
-   .footer-links a {
-     font-size: 0.9rem;
-     margin: 5px;
-     display: block; /* Xếp dọc */
-   }
- 
-   .social-icons a {
-     font-size: 1rem;
-     margin: 5px;
-   }
- }
- 
- /* Responsive cho Mobile nhỏ (<576px) */
- @media (max-width: 576px) {
-   .booking-section {
-     padding: 10px;
-   }
- 
-   .intro-section {
-     padding: 20px 10px;
-   }
- 
-   .intro-container .subtitle {
-     font-size: 0.9rem;
-   }
- 
-   .intro-container .title {
-     font-size: 1.5rem;
-   }
- 
-   .intro-container p {
-     font-size: 0.85rem;
-   }
- 
-   .btn-explore {
-     padding: 8px 16px;
-     font-size: 0.9rem;
-   }
- 
-   .rooms-section {
-     padding: 20px 10px;
-   }
- 
-   .rooms-header .subtitle {
-     font-size: 0.9rem;
-   }
- 
-   .rooms-header .title {
-     font-size: 1.5rem;
-   }
- 
-   .services-section {
-     padding: 20px 10px;
-   }
- 
-   .services-header .subtitle {
-     font-size: 0.9rem;
-   }
- 
-   .services-header .title {
-     font-size: 1.5rem;
-   }
- 
-   .service-box {
-     padding: 10px;
-   }
- 
-   .service-icon {
-     font-size: 1.5rem;
-   }
- 
-   .service-title {
-     font-size: 1.2rem;
-   }
- 
-   .service-description {
-     font-size: 0.85rem;
-   }
- }
- 
- /* Responsive cho Mobile rất nhỏ (<400px) */
- @media (max-width: 400px) {
-   .intro-container .subtitle {
-     font-size: 0.8rem;
-   }
- 
-   .intro-container .title {
-     font-size: 1.3rem;
-   }
- 
-   .intro-container p {
-     font-size: 0.8rem;
-   }
- 
-   .btn-explore {
-     padding: 6px 12px;
-     font-size: 0.85rem;
-   }
- 
-   .rooms-header .subtitle {
-     font-size: 0.8rem;
-   }
- 
-   .rooms-header .title {
-     font-size: 1.3rem;
-   }
- 
-   .services-header .subtitle {
-     font-size: 0.8rem;
-   }
- 
-   .services-header .title {
-     font-size: 1.3rem;
-   }
- 
-   .service-box {
-     padding: 8px;
-   }
- 
-   .service-icon {
-     font-size: 1.3rem;
-   }
- 
-   .service-title {
-     font-size: 1.1rem;
-   }
- 
-   .service-description {
-     font-size: 0.8rem;
-   }
- }
+    font-family: 'Arial', sans-serif;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: none;
+    color: #333;
+    background-color: #f9f9f9;
+}
+
+.booking-section {
+  padding: 20px;
+  background: #f8f8f8;
+  text-align: center;
+}
+
+.intro-section {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.intro-container .subtitle {
+  font-size: 1.2rem;
+  color: #d4a373;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.intro-container .subtitle .line {
+  width: 50px;
+  height: 2px;
+  background: #d4a373;
+  margin: 0 10px;
+}
+
+.intro-container .title {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.intro-container .title span {
+  color: #d4a373;
+}
+
+.intro-container p {
+  font-size: 1.1rem;
+  max-width: 600px;
+  margin: 0 auto 20px;
+}
+
+.btn-explore {
+  padding: 10px 20px;
+  background: #d4a373;
+  color: #fff;
+  border-radius: 5px;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.3s;
+}
+
+.btn-explore:hover {
+  background: #b5895e;
+}
+
+.rooms-section {
+  padding: 60px 20px;
+  background: #f8f8f8;
+}
+
+.rooms-header .subtitle {
+  font-size: 1.2rem;
+  color: #d4a373;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rooms-header .subtitle .line {
+  width: 50px;
+  height: 2px;
+  background: #d4a373;
+  margin: 0 10px;
+}
+
+.rooms-header .title {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.rooms-header .title span {
+  color: #d4a373;
+}
+
+.services-section {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.services-header .subtitle {
+  font-size: 1.2rem;
+  color: #d4a373;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.services-header .subtitle .line {
+  width: 50px;
+  height: 2px;
+  background: #d4a373;
+  margin: 0 10px;
+}
+
+.services-header .title {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.services-header .title span {
+  color: #d4a373;
+}
+
+.service-box {
+  padding: 20px;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+
+.service-box:hover {
+  transform: translateY(-5px);
+}
+
+.service-icon {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.service-title {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.service-description {
+  font-size: 1rem;
+  color: #666;
+}
+
+/* Responsive cho Tablet lớn (992px - 1200px) */
+@media (max-width: 1200px) {
+  .booking-section {
+    padding: 15px;
+  }
+
+  .intro-section {
+    padding: 50px 15px;
+  }
+
+  .intro-container .subtitle {
+    font-size: 1.1rem;
+  }
+
+  .intro-container .title {
+    font-size: 2.2rem;
+  }
+
+  .intro-container p {
+    font-size: 1rem;
+    max-width: 500px;
+  }
+
+  .btn-explore {
+    padding: 9px 18px;
+  }
+
+  .rooms-section {
+    padding: 50px 15px;
+  }
+
+  .rooms-header .subtitle {
+    font-size: 1.1rem;
+  }
+
+  .rooms-header .title {
+    font-size: 2.2rem;
+  }
+
+  .services-section {
+    padding: 50px 15px;
+  }
+
+  .services-header .subtitle {
+    font-size: 1.1rem;
+  }
+
+  .services-header .title {
+    font-size: 2.2rem;
+  }
+
+  .service-box {
+    padding: 15px;
+  }
+}
+
+/* Responsive cho Tablet (768px - 991px) - iPad Mini nằm trong khoảng này */
+@media (max-width: 991px) {
+  .booking-section {
+    padding: 15px;
+  }
+
+  .intro-section {
+    padding: 40px 15px;
+  }
+
+  .intro-container .subtitle {
+    font-size: 1.1rem;
+  }
+
+  .intro-container .subtitle .line {
+    width: 40px;
+  }
+
+  .intro-container .title {
+    font-size: 2rem;
+  }
+
+  .intro-container p {
+    font-size: 1rem;
+    max-width: 100%;
+  }
+
+  .btn-explore {
+    padding: 8px 16px;
+    font-size: 1rem;
+  }
+
+  .rooms-section {
+    padding: 40px 15px;
+  }
+
+  .rooms-header .subtitle {
+    font-size: 1.1rem;
+  }
+
+  .rooms-header .subtitle .line {
+    width: 40px;
+  }
+
+  .rooms-header .title {
+    font-size: 2rem;
+  }
+
+  .services-section {
+    padding: 40px 15px;
+  }
+
+  .services-header .subtitle {
+    font-size: 1.1rem;
+  }
+
+  .services-header .subtitle .line {
+    width: 40px;
+  }
+
+  .services-header .title {
+    font-size: 2rem;
+  }
+
+  .service-box {
+    padding: 15px;
+  }
+
+  .service-icon {
+    font-size: 1.8rem;
+  }
+
+  .service-title {
+    font-size: 1.4rem;
+  }
+
+  .service-description {
+    font-size: 0.95rem;
+  }
+}
+
+/* Responsive cho Mobile (<768px) */
+@media (max-width: 767px) {
+  .booking-section {
+    padding: 10px;
+  }
+
+  .intro-section {
+    padding: 30px 10px;
+  }
+
+  .intro-container .subtitle {
+    font-size: 1rem;
+  }
+
+  .intro-container .subtitle .line {
+    width: 30px;
+  }
+
+  .intro-container .title {
+    font-size: 1.8rem;
+  }
+
+  .intro-container p {
+    font-size: 0.9rem;
+    max-width: 100%;
+  }
+
+  .btn-explore {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+
+  .rooms-section {
+    padding: 30px 10px;
+  }
+
+  .rooms-header .subtitle {
+    font-size: 1rem;
+  }
+
+  .rooms-header .subtitle .line {
+    width: 30px;
+  }
+
+  .rooms-header .title {
+    font-size: 1.8rem;
+  }
+
+  .services-section {
+    padding: 30px 10px;
+  }
+
+  .services-header .subtitle {
+    font-size: 1rem;
+  }
+
+  .services-header .subtitle .line {
+    width: 30px;
+  }
+
+  .services-header .title {
+    font-size: 1.8rem;
+  }
+
+  .service-box {
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+
+  .service-icon {
+    font-size: 1.5rem;
+  }
+
+  .service-title {
+    font-size: 1.3rem;
+  }
+
+  .service-description {
+    font-size: 0.9rem;
+  }
+
+  /* Đảm bảo service-box hiển thị dạng cột trên mobile */
+  .services-section .row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .services-section .col-md-4 {
+    width: 100%;
+    max-width: 350px;
+  }
+}
+
+/* Responsive cho Mobile nhỏ (<576px) */
+@media (max-width: 576px) {
+  .booking-section {
+    padding: 10px;
+  }
+
+  .intro-section {
+    padding: 20px 10px;
+  }
+
+  .intro-container .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .intro-container .subtitle .line {
+    width: 25px;
+  }
+
+  .intro-container .title {
+    font-size: 1.5rem;
+  }
+
+  .intro-container p {
+    font-size: 0.85rem;
+  }
+
+  .btn-explore {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+
+  .rooms-section {
+    padding: 20px 10px;
+  }
+
+  .rooms-header .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .rooms-header .subtitle .line {
+    width: 25px;
+  }
+
+  .rooms-header .title {
+    font-size: 1.5rem;
+  }
+
+  .services-section {
+    padding: 20px 10px;
+  }
+
+  .services-header .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .services-header .subtitle .line {
+    width: 25px;
+  }
+
+  .services-header .title {
+    font-size: 1.5rem;
+  }
+
+  .service-box {
+    padding: 10px;
+  }
+
+  .service-icon {
+    font-size: 1.5rem;
+  }
+
+  .service-title {
+    font-size: 1.2rem;
+  }
+
+  .service-description {
+    font-size: 0.85rem;
+  }
+}
+
+/* Responsive cho Mobile rất nhỏ (<400px) */
+@media (max-width: 400px) {
+  .intro-container .subtitle {
+    font-size: 0.8rem;
+  }
+
+  .intro-container .subtitle .line {
+    width: 20px;
+  }
+
+  .intro-container .title {
+    font-size: 1.3rem;
+  }
+
+  .intro-container p {
+    font-size: 0.8rem;
+  }
+
+  .btn-explore {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  .rooms-header .subtitle {
+    font-size: 0.8rem;
+  }
+
+  .rooms-header .subtitle .line {
+    width: 20px;
+  }
+
+  .rooms-header .title {
+    font-size: 1.3rem;
+  }
+
+  .services-header .subtitle {
+    font-size: 0.8rem;
+  }
+
+  .services-header .subtitle .line {
+    width: 20px;
+  }
+
+  .services-header .title {
+    font-size: 1.3rem;
+  }
+
+  .service-box {
+    padding: 8px;
+  }
+
+  .service-icon {
+    font-size: 1.3rem;
+  }
+
+  .service-title {
+    font-size: 1.1rem;
+  }
+
+  .service-description {
+    font-size: 0.8rem;
+  }
+}

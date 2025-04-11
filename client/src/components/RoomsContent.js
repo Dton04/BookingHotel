@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Room from "./Room";
+import './../css/rooms-content.css';
 
 function RoomsContent() {
   const [rooms, setRooms] = useState([]);

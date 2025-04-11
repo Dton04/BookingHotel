@@ -1,106 +1,267 @@
-/* bookingscreen.css */
-
 .booking-page {
-   background: #f9fafc;
-   padding: 60px 15px;
-   min-height: 100vh;
-   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
- }
- 
- .booking-header .title {
-   font-size: 38px;
-   font-weight: 700;
-   color: #2c3e50;
-   margin-bottom: 40px;
- }
- 
- .booking-header span {
-   color: #e67e22;
- }
- 
- .booking-images .image-wrapper img {
-   border-radius: 12px;
-   width: 100%;
-   height: 170px;
-   object-fit: cover;
-   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
-   transition: transform 0.3s ease;
- }
- 
- .booking-images .image-wrapper img:hover {
-   transform: scale(1.02);
- }
- 
- .booking-form-wrapper {
-   background: #ffffff;
-   padding: 40px;
-   border-radius: 20px;
-   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
-   margin-top: 20px;
- }
- 
- .booking-form .form-group {
-   margin-bottom: 20px;
- }
- 
- .booking-form .form-control {
-   border-radius: 10px;
-   padding: 12px 16px;
-   font-size: 15px;
-   border: 1px solid #ddd;
-   transition: border-color 0.3s ease;
- }
- 
- .booking-form .form-control:focus {
-   border-color: #ff9800;
-   box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
-   outline: none;
- }
- 
- .booking-form textarea.form-control {
-   resize: vertical;
-   min-height: 100px;
- }
- 
- .btn-book-now {
-   background-color: #ff9800;
-   color: #fff;
-   font-weight: 600;
-   border: none;
-   padding: 14px;
-   border-radius: 12px;
-   width: 100%;
-   font-size: 16px;
-   transition: all 0.3s ease;
- }
- 
- .btn-book-now:hover {
-   background-color: #e67e00;
-   transform: translateY(-2px);
-   box-shadow: 0 4px 12px rgba(230, 135, 0, 0.4);
- }
- 
- /* Alert message */
- .alert {
-   border-radius: 10px;
-   padding: 15px;
-   margin-bottom: 20px;
-   font-weight: 500;
-   font-size: 15px;
- }
- 
- /* Responsive adjustments */
- @media (max-width: 768px) {
-   .booking-form-wrapper {
-     padding: 25px;
-   }
- 
-   .booking-images .image-wrapper img {
-     height: 150px;
-   }
- 
-   .booking-header .title {
-     font-size: 30px;
-   }
- }
- 
+  padding: 60px 0;
+  background: #f8f8f8;
+}
+
+.booking-header .subtitle {
+  font-size: 1.2rem;
+  color: #d4a373;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.booking-header .subtitle .line {
+  width: 50px;
+  height: 2px;
+  background: #d4a373;
+  margin: 0 10px;
+}
+
+.booking-header .title {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.booking-header .title span {
+  color: #d4a373;
+}
+
+.booking-images .image-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 5px;
+}
+
+.booking-images img {
+  width: 100%;
+  height: auto;
+  transition: transform 0.3s ease;
+}
+
+.booking-images img:hover {
+  transform: scale(1.05);
+}
+
+.booking-screen-wrapper {
+  background: #fff;
+  padding: 30px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.booking-screen .form-group {
+  margin-bottom: 15px;
+}
+
+.booking-screen .form-control {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.booking-screen .form-control:focus {
+  outline: none;
+  border-color: #d4a373;
+  box-shadow: 0 0 5px rgba(212, 163, 115, 0.3);
+}
+
+.booking-screen .btn-book-now {
+  width: 100%;
+  padding: 12px;
+  background: #d4a373;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.booking-screen .btn-book-now:hover {
+  background: #b5895e;
+}
+
+.alert {
+  margin-bottom: 20px;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+/* Responsive cho Tablet lớn (992px - 1200px) */
+@media (max-width: 1200px) {
+  .booking-page {
+    padding: 50px 0;
+  }
+
+  .booking-header .subtitle {
+    font-size: 1.1rem;
+  }
+
+  .booking-header .title {
+    font-size: 2.2rem;
+  }
+
+  .booking-screen-wrapper {
+    padding: 25px;
+  }
+
+  .booking-screen .form-control {
+    padding: 9px;
+    font-size: 0.95rem;
+  }
+
+  .booking-screen .btn-book-now {
+    padding: 11px;
+    font-size: 0.95rem;
+  }
+}
+
+/* Responsive cho Tablet (768px - 991px) */
+@media (max-width: 991px) {
+  .booking-page {
+    padding: 40px 0;
+  }
+
+  .booking-header .subtitle {
+    font-size: 1.1rem;
+  }
+
+  .booking-header .subtitle .line {
+    width: 40px;
+  }
+
+  .booking-header .title {
+    font-size: 2rem;
+  }
+
+  .booking-images .col-6 {
+    width: 50%;
+  }
+
+  .booking-screen-wrapper {
+    padding: 20px;
+  }
+
+  .booking-screen .form-control {
+    padding: 8px;
+    font-size: 0.9rem;
+  }
+
+  .booking-screen .btn-book-now {
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Responsive cho Mobile (<768px) */
+@media (max-width: 767px) {
+  .booking-page {
+    padding: 30px 0;
+  }
+
+  .booking-header .subtitle {
+    font-size: 1rem;
+  }
+
+  .booking-header .subtitle .line {
+    width: 30px;
+  }
+
+  .booking-header .title {
+    font-size: 1.8rem;
+  }
+
+  .booking-images {
+    margin-bottom: 20px;
+  }
+
+  .booking-images .col-6 {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto 10px;
+  }
+
+  .booking-screen-wrapper {
+    padding: 15px;
+  }
+
+  .booking-screen .form-group {
+    margin-bottom: 10px;
+  }
+
+  .booking-screen .form-control {
+    padding: 8px;
+    font-size: 0.9rem;
+  }
+
+  .booking-screen .btn-book-now {
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Responsive cho Mobile nhỏ (<576px) */
+@media (max-width: 576px) {
+  .booking-page {
+    padding: 20px 0;
+  }
+
+  .booking-header .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .booking-header .subtitle .line {
+    width: 25px;
+  }
+
+  .booking-header .title {
+    font-size: 1.5rem;
+  }
+
+  .booking-images .col-6 {
+    max-width: 100%;
+  }
+
+  .booking-screen-wrapper {
+    padding: 10px;
+  }
+
+  .booking-screen .form-control {
+    padding: 7px;
+    font-size: 0.85rem;
+  }
+
+  .booking-screen .btn-book-now {
+    padding: 8px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Responsive cho Mobile rất nhỏ (<400px) */
+@media (max-width: 400px) {
+  .booking-header .subtitle {
+    font-size: 0.8rem;
+  }
+
+  .booking-header .subtitle .line {
+    width: 20px;
+  }
+
+  .booking-header .title {
+    font-size: 1.3rem;
+  }
+
+  .booking-screen .form-control {
+    padding: 6px;
+    font-size: 0.8rem;
+  }
+
+  .booking-screen .btn-book-now {
+    padding: 7px;
+    font-size: 0.8rem;
+  }
+}

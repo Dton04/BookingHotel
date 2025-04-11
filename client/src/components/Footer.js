@@ -26,20 +26,7 @@ const Footer = () => {
           <p><span className="icon">📍</span> 123 Street, Thu Duc, HCM</p>
           <p><span className="icon">📞</span> +012 345 67890</p>
           <p><span className="icon">✉️</span> info@example.com</p>
-          <div className="social-icons">
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-              <span className="icon">🐦</span>
-            </a>
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
-              <span className="icon">📘</span>
-            </a>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">
-              <span className="icon">📷</span>
-            </a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
-              <span className="icon">🔗</span>
-            </a>
-          </div>
+         
         </FooterSection>
 
         {/* Company Section */}

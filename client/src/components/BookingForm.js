@@ -1,5 +1,5 @@
 import React from 'react';
-
+import './../css/booking-form.css';
 function BookingForm() {
   return (
     <section className="booking-form">

@@ -2,12 +2,12 @@
 /* Base Styles */
 .our-team-page {
    font-family: 'Arial', sans-serif;
-   max-width: 1200px;
+   max-width: 1500px;
    margin: 0 auto;
-   padding: 20px;
+   padding: none;
    color: #333;
    background-color: #f9f9f9;
- }
+}
  
  .team-container {
    background-color: white;
