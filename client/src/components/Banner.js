@@ -74,6 +74,22 @@ function Banner() {
           buttons: null,
           image: 'https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg',
         };
+        case '/ourteam':
+          return {
+            isSlider: false,
+            title: 'Ourteam',
+            breadcrumb: 'HOME / PAGES / OURTEAM',
+            buttons: null,
+            image: 'https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg',
+          };
+          case '/testimonial':
+            return {
+              isSlider: false,
+              title: 'Testimonial',
+              breadcrumb: 'HOME / PAGES / TESTIMONIAL',
+              buttons: null,
+              image: 'https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg',
+            };
       case '/contact':
         return {
           isSlider: false,

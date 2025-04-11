@@ -98,9 +98,6 @@ function Navbar() {
 
               {isDropdownOpen && (
                 <div className="dropdown-menu show" aria-labelledby="pagesDropdown">
-                  <Link className="dropdown-item" to="/book" onClick={() => { closeDropdown(); closeNav(); }}>
-                    Booking
-                  </Link>
                   <Link className="dropdown-item" to="/ourteam" onClick={() => { closeDropdown(); closeNav(); }}>
                     Our Team
                   </Link>
