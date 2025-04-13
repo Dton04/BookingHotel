@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import '../css/bookingscreen.css'; // Import CSS file for styling
-
-
+import Loader from '../components/Loader';
 
 function Bookingscreen() {
-
   const { roomid } = useParams();
   const [loading, setLoading] = useState(true);
   const [room, setRoom] = useState(null);
@@ -86,11 +84,7 @@ function Bookingscreen() {
         </div>
 
         {loading ? (
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="sr-only">Loading...</span>
-            </div>
-          </div>
+          <Loader loading={loading} />
         ) : error ? (
           <h1 className="text-center text-danger">Error loading room details...</h1>
         ) : room ? (

@@ -8,7 +8,7 @@
 }
 
 .booking-section {
-  padding: 20px;
+  padding: 10px;
   background: #f8f8f8;
   text-align: center;
 }
@@ -496,32 +496,10 @@
   .rooms-header .title {
     font-size: 1.3rem;
   }
+}
 
-  .services-header .subtitle {
-    font-size: 0.8rem;
-  }
-
-  .services-header .subtitle .line {
-    width: 20px;
-  }
-
-  .services-header .title {
-    font-size: 1.3rem;
-  }
-
-  .service-box {
-    padding: 8px;
-  }
-
-  .service-icon {
-    font-size: 1.3rem;
-  }
-
-  .service-title {
-    font-size: 1.1rem;
-  }
-
-  .service-description {
-    font-size: 0.8rem;
-  }
+.booking-section {
+  display: flex;
+  justify-content: center;
+  margin: 190px 0;
 }

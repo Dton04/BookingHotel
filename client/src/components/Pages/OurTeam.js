@@ -1,11 +1,12 @@
 import React from 'react';
 import Banner from '../Banner'; // Sử dụng cùng Banner component như Contact
 import '../../css/ourteam.css'; // Import CSS for styling
+import BookingForm from '../BookingForm';
 function OurTeam() {
   return (
     <div className="our-team-page">
       <Banner />
-
+      <BookingForm />
       <div className="team-container">
         {/* Team Section */}
         <section className="team-section">

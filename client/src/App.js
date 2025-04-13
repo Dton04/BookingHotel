@@ -9,7 +9,9 @@ import OurTeam from './components/Pages/OurTeam';
 import Testimonial from './components/Pages/Testimonial';
 import Contact from './components/Contact';
 import About from './screens/About';
-import Footer from './components/Footer'; // Sửa đường dẫn import
+import Footer from './components/Footer';
+import Registerscreen from './screens/Auth/Registerscreen';
+import LoginScreen from './screens/Auth/Loginscreen';
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
           <Route path="/testimonial" element={<Testimonial />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/" element={<Homescreen />} />
+          <Route path="/login" element={<LoginScreen />} />
+          <Route path="/register" element={<Registerscreen />} />
         </Routes>
         <Footer />
       </div>

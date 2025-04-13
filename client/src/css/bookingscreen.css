@@ -265,3 +265,9 @@
     font-size: 0.8rem;
   }
 }
+.sweet-loading {
+  width: 100%;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+}

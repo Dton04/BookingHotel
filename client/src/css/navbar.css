@@ -2,8 +2,14 @@
   max-width: 1500px;
   margin: 0 auto;
   background-color: #1a252f;
-  color: white;
-  padding: 10px 0;
+  color: #e69500;
+  padding: 20px 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .top-bar {
@@ -14,18 +20,114 @@
 }
 
 .logo {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: bold;
   color: #f5a623;
   margin: 0;
 }
 
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .contact-info {
   font-size: 0.9rem;
+  color: #f5a623;
+  display: flex;
+  gap: 20px;
 }
 
 .contact-info span {
-  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.contact-info i {
+  font-size: 1rem;
+}
+
+.social-icons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.social-icons a,
+.social-icons-mobile a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: #f5a623;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+  overflow: hidden;
+}
+
+.social-icon-img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.social-icons a:hover,
+.social-icons-mobile a:hover {
+  background: #e69500;
+}
+
+.auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-info {
+  font-size: 0.9rem;
+  color: #f5a623;
+}
+
+.user-name {
+  font-weight: 500;
+}
+
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 0.85rem;
+}
+
+.btn-outline-primary {
+  color: #f5a623;
+  border-color: #f5a623;
+}
+
+.btn-outline-primary:hover {
+  background: #f5a623;
+  color: #1a252f;
+}
+
+.btn-primary {
+  background: #f5a623;
+  border-color: #f5a623;
+  color: #1a252f;
+}
+
+.btn-primary:hover {
+  background: #e69500;
+  border-color: #e69500;
+}
+
+.btn-outline-danger {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+  background: #dc3545;
+  color: #fff;
 }
 
 .navbar {
@@ -36,6 +138,7 @@
 .navbar-nav {
   flex-grow: 1;
   justify-content: center;
+  gap: 10px;
 }
 
 .nav-link {
@@ -73,7 +176,7 @@
   background-color: #f5a623;
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 10px 30px;
   font-weight: bold;
   transition: background-color 0.3s ease;
 }
@@ -82,25 +185,9 @@
   background-color: #e69500;
 }
 
-.social-icons {
-  text-align: center;
-  padding: 10px 0;
-}
-
-.social-icons a {
-  color: white;
-  margin: 0 10px;
-  font-size: 1.2rem;
-  transition: color 0.3s ease;
-}
-
-.social-icons a:hover {
-  color: #f5a623;
-}
-
 /* Responsive Styles */
 
-/* Tablet và Mobile */
+/* Tablet (768px - 991px) */
 @media (max-width: 991px) {
   .top-bar {
     flex-direction: row;
@@ -110,15 +197,70 @@
   }
 
   .logo {
-    font-size: 1.5rem;
+    font-size: 2rem; /* Giảm kích thước logo */
+  }
+
+  .top-bar-right {
+    gap: 10px; /* Giảm khoảng cách giữa các phần tử */
   }
 
   .contact-info {
-    display: none; /* Ẩn thông tin liên hệ trên mobile */
+    display: none; /* Ẩn contact-info trên tablet */
+  }
+
+  .social-icons a,
+  .social-icons-mobile a {
+    width: 20px;
+    height: 20px;
+  }
+
+  .social-icon-img {
+    width: 12px;
+    height: 12px;
+  }
+
+  .auth-buttons .btn-sm {
+    padding: 4px 8px;
+    font-size: 0.75rem; /* Giảm kích thước nút */
   }
 
   .navbar {
     padding: 0;
+  }
+
+  .navbar-nav {
+    text-align: center;
+    width: 100%;
+  }
+
+  .nav-link {
+    padding: 10px !important;
+    font-size: 1rem;
+  }
+
+  .btn-premium {
+    padding: 8px 20px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Mobile (dưới 768px) */
+@media (max-width: 767px) {
+  .top-bar {
+    padding: 8px 10px;
+  }
+
+  .logo {
+    font-size: 1.5rem; /* Giảm kích thước logo */
+  }
+
+  .top-bar-right {
+    gap: 8px;
+  }
+
+  .social-icons,
+  .auth-buttons {
+    display: none; /* Ẩn social-icons và auth-buttons trên mobile */
   }
 
   .navbar-toggler {
@@ -183,11 +325,6 @@
     border-bottom: none;
   }
 
-  .premium-button {
-    margin: 15px auto;
-    text-align: center;
-  }
-
   .btn-premium {
     display: inline-block;
     width: 100%;
@@ -196,13 +333,28 @@
     font-size: 1rem;
   }
 
-  .social-icons {
-    display: none; /* Ẩn social icons trên mobile */
+  .social-icons-mobile a {
+    width: 20px;
+    height: 20px;
+  }
+
+  .social-icon-img {
+    width: 12px;
+    height: 12px;
+  }
+
+  .auth-buttons-mobile .btn-sm {
+    padding: 4px 8px;
+    font-size: 0.75rem;
   }
 }
 
-/* Mobile nhỏ hơn */
+/* Mobile nhỏ hơn (dưới 576px) */
 @media (max-width: 576px) {
+  .top-bar {
+    padding: 5px 10px;
+  }
+
   .logo {
     font-size: 1.2rem;
   }
@@ -230,4 +382,19 @@
     padding: 10px;
     font-size: 0.9rem;
   }
+
+  .social-icons-mobile a {
+    width: 18px;
+    height: 18px;
+  }
+
+  .social-icon-img {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* Đảm bảo nội dung không bị che */
+body {
+  padding-top: 100px; /* top-bar + navbar height */
 }
