@@ -29,30 +29,43 @@ const testimonials = [
 
 function Testimonial() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [animationState, setAnimationState] = useState('fade-in');
+  const [isAnimating, setIsAnimating] = useState(false);
 
-  // Auto slider function
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) =>
-        prevIndex >= testimonials.length - 2 ? 0 : prevIndex + 1
-      );
+      handleNext();
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [currentIndex]);
 
-  // Navigate to previous slide
-  const prevSlide = () => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? testimonials.length - 2 : prevIndex - 1
-    );
+  const handlePrev = () => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setAnimationState('fade-prev');
+    
+    setTimeout(() => {
+      setCurrentIndex((prevIndex) =>
+        prevIndex === 0 ? testimonials.length - 2 : prevIndex - 1
+      );
+      setAnimationState('fade-in');
+      setIsAnimating(false);
+    }, 600);
   };
 
-  // Navigate to next slide
-  const nextSlide = () => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex >= testimonials.length - 2 ? 0 : prevIndex + 1
-    );
+  const handleNext = () => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setAnimationState('fade-next');
+    
+    setTimeout(() => {
+      setCurrentIndex((prevIndex) =>
+        prevIndex >= testimonials.length - 2 ? 0 : prevIndex + 1
+      );
+      setAnimationState('fade-in');
+      setIsAnimating(false);
+    }, 600);
   };
 
   // Kiểm tra hình ảnh
@@ -72,14 +85,14 @@ function Testimonial() {
       
       <div className="testimonial-section" style={{ backgroundImage: `url('/images/testimonial-bg.jpg')` }}>
         <div className="testimonial-container">
-          <button className="nav-btn prev" onClick={prevSlide}>
+          <button className="nav-btn prev" onClick={handlePrev} disabled={isAnimating}>
             <div className="arrow-circle">
               <i className="fas fa-chevron-left"></i>
             </div>
           </button>
 
           <div className="testimonial-wrapper">
-            <div className="testimonial-cards">
+            <div className={`testimonial-cards ${animationState}`}>
               {[0, 1].map((offset) => {
                 const index = (currentIndex + offset) % testimonials.length;
                 const testimonial = testimonials[index];
@@ -88,7 +101,9 @@ function Testimonial() {
                     key={testimonial.id}
                     className="testimonial-card"
                   >
-                    <p className="testimonial-text">{testimonial.text}</p>
+                    <p className="testimonial-text">
+                      {testimonial.text}
+                    </p>
                     <div className="testimonial-author">
                       <img
                         src={testimonial.image}
@@ -112,7 +127,7 @@ function Testimonial() {
             </div>
           </div>
 
-          <button className="nav-btn next" onClick={nextSlide}>
+          <button className="nav-btn next" onClick={handleNext} disabled={isAnimating}>
             <div className="arrow-circle">
               <i className="fas fa-chevron-right"></i>
             </div>
