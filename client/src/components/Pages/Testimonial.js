@@ -1,7 +1,8 @@
+// Testimonial.js
 import React, { useState, useEffect } from 'react';
 import Banner from '../Banner';
 import BookingForm from '../BookingForm';
-import RatingForm from '../RatingForm'; // Import RatingForm
+import RatingForm from '../RatingForm';
 import '../../css/testimonial.css';
 
 const testimonials = [
@@ -32,16 +33,29 @@ function Testimonial() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [animationState, setAnimationState] = useState('fade-in');
   const [isAnimating, setIsAnimating] = useState(false);
-  const [hasBooked, setHasBooked] = useState(false); // Kiểm tra trạng thái đặt phòng
+  const [hasBooked, setHasBooked] = useState(null); // null: đang kiểm tra, false: chưa đặt, true: đã đặt
 
-  // Giả lập kiểm tra trạng thái đặt phòng
+  // Kiểm tra trạng thái đặt phòng qua API
   useEffect(() => {
-    // TODO: Thay bằng API thực tế
     const checkBookingStatus = async () => {
-      // const response = await fetch('/api/check-booking');
-      // const data = await response.json();
-      // setHasBooked(data.hasBooked);
-      setHasBooked(true); // Giả lập
+      try {
+        const response = await fetch('/api/check-booking', {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer <your-auth-token>', // Thay bằng token thực tế
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include' // Nếu cần gửi cookie
+        });
+        if (!response.ok) {
+          throw new Error('Lỗi kiểm tra trạng thái đặt phòng');
+        }
+        const data = await response.json();
+        setHasBooked(data.hasBooked || false);
+      } catch (error) {
+        console.error('Lỗi kiểm tra trạng thái đặt phòng:', error);
+        setHasBooked(false);
+      }
     };
     checkBookingStatus();
   }, []);
@@ -83,13 +97,29 @@ function Testimonial() {
   };
 
   // Xử lý submit đánh giá
-  const handleRatingSubmit = (formData) => {
-    // TODO: Gọi API để gửi đánh giá
-    console.log('Submitted rating:', {
-      rating: formData.get('rating'),
-      content: formData.get('content'),
-      image: formData.get('image')
-    });
+  const handleRatingSubmit = async (formData) => {
+    try {
+      const response = await fetch('/api/submit-rating', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': 'Bearer <your-auth-token>' // Thay bằng token thực tế
+        },
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        console.log('Đánh giá đã được gửi:', {
+          rating: formData.get('rating'),
+          content: formData.get('content'),
+          image: formData.get('image')
+        });
+      } else {
+        console.error('Lỗi gửi đánh giá:', data.message);
+      }
+    } catch (error) {
+      console.error('Lỗi gửi đánh giá:', error);
+    }
   };
 
   // Kiểm tra hình ảnh
@@ -161,7 +191,13 @@ function Testimonial() {
         </div>
       </div>
 
-      <RatingForm onSubmit={handleRatingSubmit} hasBooked={hasBooked} />
+      {hasBooked === null ? (
+        <div className="rating-message-container">
+          <p className="rating-message">Đang kiểm tra trạng thái đặt phòng...</p>
+        </div>
+      ) : (
+        <RatingForm onSubmit={handleRatingSubmit} hasBooked={hasBooked} />
+      )}
     </div>
   );
 }

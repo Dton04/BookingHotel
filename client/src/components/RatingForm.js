@@ -12,7 +12,7 @@ const RatingForm = ({ onSubmit, hasBooked }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // Giới hạn 5MB
+      if (file.size > 5 * 1024 * 1024) {
         setError('Ảnh quá lớn! Vui lòng chọn ảnh dưới 5MB.');
         return;
       }
@@ -24,7 +24,10 @@ const RatingForm = ({ onSubmit, hasBooked }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!hasBooked) return;
+    if (!hasBooked) {
+      setError('Bạn cần đặt phòng trước khi đánh giá!');
+      return;
+    }
     if (rating === 0) {
       setError('Vui lòng chọn số sao!');
       return;
@@ -40,7 +43,6 @@ const RatingForm = ({ onSubmit, hasBooked }) => {
     if (image) formData.append('image', image);
 
     onSubmit(formData);
-    // Reset form
     setRating(0);
     setContent('');
     setImage(null);
@@ -49,7 +51,18 @@ const RatingForm = ({ onSubmit, hasBooked }) => {
   };
 
   if (!hasBooked) {
-    return <p className="rating-message">Bạn cần đặt phòng trước khi đánh giá!</p>;
+    return (
+      <div className="rating-message-container">
+        <div className="message-icon">🏡</div>
+        <h3>Khám phá trải nghiệm tuyệt vời!</h3>
+        <p className="rating-message">
+          Để chia sẻ đánh giá của bạn, hãy đặt phòng ngay hôm nay và bắt đầu hành trình đáng nhớ!
+        </p>
+        <a href="/rooms" className="booking-link">
+          <span className="booking-link-icon">🚪</span> Đặt phòng ngay
+        </a>
+      </div>
+    );
   }
 
   return (
