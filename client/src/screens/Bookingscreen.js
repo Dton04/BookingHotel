@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import '../css/bookingscreen.css'; // Import CSS file for styling
 import Loader from '../components/Loader';
-
+import Error from '../components/Error';
 function Bookingscreen() {
   const { roomid } = useParams();
   const [loading, setLoading] = useState(true);
@@ -86,6 +86,8 @@ function Bookingscreen() {
         {loading ? (
           <Loader loading={loading} />
         ) : error ? (
+          <Error />
+        )(
           <h1 className="text-center text-danger">Error loading room details...</h1>
         ) : room ? (
           <div className="row align-items-center">

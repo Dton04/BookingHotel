@@ -23,14 +23,16 @@ function LoginScreen() {
 
     try {
       setLoading(true);
-      const user = { email, password };
-      await axios.post('/api/users/login', user);
+      const response = await axios.post('/api/users/login', { email, password });
+      const { token, name } = response.data; // Giả sử API trả về token và name
+      // Lưu thông tin vào localStorage
+      localStorage.setItem('userInfo', JSON.stringify({ token, name }));
       setSuccess('Login successful! Redirecting...');
       setEmail('');
       setPassword('');
 
       setTimeout(() => {
-        navigate('/home'); // Chuyển hướng đến trang home hoặc dashboard
+        navigate('/home');
       }, 2000);
     } catch (error) {
       setError(error.response?.data?.message || 'Invalid email or password.');

@@ -384,6 +384,9 @@
 
 /* Responsive cho Mobile nhỏ (<576px) */
 @media (max-width: 576px) {
+  .booking-form{
+    padding-bottom: 40px;
+  }
   .booking-section {
     padding: 10px;
   }

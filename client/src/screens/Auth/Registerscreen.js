@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import '../../css/auth.css'
+import '../../css/auth.css';
 
 function Registerscreen() {
   const [name, setName] = useState('');
@@ -30,8 +30,7 @@ function Registerscreen() {
 
     try {
       setLoading(true);
-      const user = { name, email, password };
-      await axios.post('/api/users/register', user);
+      const response = await axios.post('/api/users/register', { name, email, password });
       setSuccess('Registration successful! Redirecting to login...');
       setName('');
       setEmail('');

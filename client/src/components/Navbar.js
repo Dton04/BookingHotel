@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import '../css/navbar.css';
 
@@ -14,6 +14,28 @@ function Navbar() {
   const [isNavOpen, setNavOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+
+  // Hàm để kiểm tra trạng thái đăng nhập
+  const checkLoginStatus = () => {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    if (userInfo && userInfo.name) {
+      setIsLoggedIn(true);
+      setUser({ name: userInfo.name });
+    } else {
+      setIsLoggedIn(false);
+      setUser(null);
+    }
+  };
+
+  // Kiểm tra trạng thái đăng nhập khi component mount
+  useEffect(() => {
+    checkLoginStatus();
+  }, []);
+
+  // Kiểm tra lại trạng thái khi location thay đổi (để xử lý chuyển hướng)
+  useEffect(() => {
+    checkLoginStatus();
+  }, [location]);
 
   const toggleDropdown = () => {
     setDropdownOpen(!isDropdownOpen);
@@ -33,8 +55,11 @@ function Navbar() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('userInfo'); // Xóa thông tin người dùng
     setIsLoggedIn(false);
     setUser(null);
+    // Chuyển hướng về trang chủ
+    window.location.href = '/home';
   };
 
   return (
@@ -42,7 +67,7 @@ function Navbar() {
       <div className="top-bar">
         <h1 className="logo">HOTELIER</h1>
         <div className="top-bar-right d-flex align-items-center">
-          <div className="contact-info d-none d-lg-flex"> {/* Ẩn contact-info trên < 991px */}
+          <div className="contact-info d-none d-lg-flex">
             <span>
               <i className="fas fa-envelope"></i> info@example.com
             </span>
@@ -50,7 +75,7 @@ function Navbar() {
               <i className="fas fa-phone"></i> +012 345 6789
             </span>
           </div>
-          <div className="social-icons d-none d-md-flex"> {/* Hiển thị từ 768px */}
+          <div className="social-icons d-none d-md-flex">
             <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
               <img src={facebookIcon} alt="Facebook" className="social-icon-img" />
             </a>
@@ -64,14 +89,17 @@ function Navbar() {
               <img src={youtubeIcon} alt="YouTube" className="social-icon-img" />
             </a>
           </div>
-          <div className="auth-buttons d-none d-md-flex"> {/* Hiển thị từ 768px */}
+          <div className="auth-buttons d-none d-md-flex">
             {isLoggedIn ? (
-              <div className="user-info d-flex align-items-center">
-                <span className="user-name">Welcome, {user?.name || 'User'}</span>
-                <button className="btn btn-outline-danger btn-sm ms-2" onClick={handleLogout}>
-                  Logout
-                </button>
-              </div>
+              <div class="dropdown">
+              <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                {user.name}
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                <li><a class="dropdown-item" href="#">Bookings</a></li>
+                <li><a class="dropdown-item" href="#" onClick={handleLogout}>Logout</a></li>
+              </ul>
+            </div>
             ) : (
               <>
                 <Link to="/login" className="btn btn-outline-primary btn-sm me-2">
@@ -85,7 +113,7 @@ function Navbar() {
           </div>
         </div>
         <button
-          className="navbar-toggler d-md-none" // Ẩn nút hamburger từ 768px trở lên
+          className="navbar-toggler d-md-none"
           type="button"
           onClick={toggleNav}
           aria-controls="navbarNav"
@@ -96,7 +124,7 @@ function Navbar() {
         </button>
       </div>
 
-      <nav className="navbar navbar-expand-md"> {/* Đổi thành navbar-expand-md */}
+      <nav className="navbar navbar-expand-md">
         <div className={`collapse navbar-collapse ${isNavOpen ? 'show' : ''}`} id="navbarNav">
           <ul className="navbar-nav">
             <li className={`nav-item ${['/home', '/'].includes(location.pathname) ? 'active' : ''}`}>
@@ -147,7 +175,6 @@ function Navbar() {
               PREMIUM VERSION <i className="fas fa-arrow-right"></i>
             </Link>
           </div>
-          {/* Social Icons trong menu hamburger */}
           <div className="social-icons-mobile d-md-none mt-3 d-flex justify-content-center gap-3">
             <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
               <img src={facebookIcon} alt="Facebook" className="social-icon-img" />
@@ -162,25 +189,7 @@ function Navbar() {
               <img src={youtubeIcon} alt="YouTube" className="social-icon-img" />
             </a>
           </div>
-          <div className="auth-buttons-mobile d-md-none mt-3 d-flex justify-content-center gap-2">
-            {isLoggedIn ? (
-              <div className="user-info">
-                <span className="user-name">Welcome, {user?.name || 'User'}</span>
-                <button className="btn btn-outline-danger btn-sm mt-2" onClick={handleLogout}>
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <>
-                <Link to="/login" className="btn btn-outline-primary btn-sm me-2" onClick={closeNav}>
-                  Login
-                </Link>
-                <Link to="/register" className="btn btn-primary btn-sm" onClick={closeNav}>
-                  Register
-                </Link>
-              </>
-            )}
-          </div>
+        
         </div>
       </nav>
     </header>
