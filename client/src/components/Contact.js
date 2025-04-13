@@ -1,22 +1,55 @@
-import React from 'react';
+import React, { useState } from 'react';
 import '../css/Contact.css';
 import Banner from './Banner';
-import BookingForm from './BookingForm'; // Import BookingForm
+import BookingForm from './BookingForm';
 
 function Contact() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: '',
+  });
+  const [status, setStatus] = useState('');
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setStatus('Tin nhắn đã được gửi thành công!');
+        setFormData({ name: '', email: '', subject: '', message: '' }); // Reset form
+      } else {
+        setStatus(result.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+      }
+    } catch (error) {
+      setStatus('Có lỗi xảy ra, vui lòng thử lại.');
+    }
+  };
+
   return (
     <div className="contact-page">
       <Banner />
 
       <div className="contact-container">
-        {/* Thêm BookingForm Component lên đầu */}
         <section className="new-booking-section">
           <BookingForm />
         </section>
 
         <div className="divider"></div>
 
-        {/* Contact Info Section */}
         <section className="contact-section">
           <h2 className="section-heading">LIÊN HỆ VỚI CHÚNG TÔI</h2>
           <p className="section-subtitle">
@@ -41,30 +74,55 @@ function Contact() {
 
         <div className="divider"></div>
 
-        {/* Contact Form and Map Section */}
         <section className="contact-main">
           <div className="contact-grid">
-            {/* Contact Form */}
             <div className="contact-form-container">
               <h2 className="form-title">GỬI TIN NHẮN CHO CHÚNG TÔI</h2>
-              <form className="contact-form">
+              <form className="contact-form" onSubmit={handleSubmit}>
                 <div className="form-group">
-                  <input type="text" placeholder="Họ và tên" required />
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Họ và tên"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="form-group">
-                  <input type="email" placeholder="Email" required />
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="form-group">
-                  <input type="text" placeholder="Tiêu đề" required />
+                  <input
+                    type="text"
+                    name="subject"
+                    placeholder="Tiêu đề"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="form-group">
-                  <textarea placeholder="Nội dung tin nhắn" required></textarea>
+                  <textarea
+                    name="message"
+                    placeholder="Nội dung tin nhắn"
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                  ></textarea>
                 </div>
                 <button type="submit" className="send-btn">GỬI TIN NHẮN</button>
               </form>
+              {status && <p className="form-status">{status}</p>}
             </div>
 
-            {/* Map Section */}
             <div className="map-container">
               <iframe
                 title="Bản đồ Luxury Hotel TP.HCM"
