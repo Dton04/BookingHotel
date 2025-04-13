@@ -73,7 +73,9 @@ function Testimonial() {
       <div className="testimonial-section" style={{ backgroundImage: `url('/images/testimonial-bg.jpg')` }}>
         <div className="testimonial-container">
           <button className="nav-btn prev" onClick={prevSlide}>
-            <i className="fas fa-chevron-left"></i>
+            <div className="arrow-circle">
+              <i className="fas fa-chevron-left"></i>
+            </div>
           </button>
 
           <div className="testimonial-wrapper">
@@ -111,7 +113,9 @@ function Testimonial() {
           </div>
 
           <button className="nav-btn next" onClick={nextSlide}>
-            <i className="fas fa-chevron-right"></i>
+            <div className="arrow-circle">
+              <i className="fas fa-chevron-right"></i>
+            </div>
           </button>
         </div>
       </div>
