@@ -72,6 +72,43 @@ function Homescreen() {
       <section className="rooms-section">
         <RoomsContent />
       </section>
+
+      {/* Phần OurTeam */}
+      <section className="team-section">
+        <div className="container">
+          <div className="team-header text-center">
+            <h2 className="subtitle">
+              <span className="line"></span>
+              OUR TEAM
+              <span className="line"></span>
+            </h2>
+            <h1 className="title">
+              Meet Our <span>EXPERTS</span>
+            </h1>
+          </div>
+          <p className="team-description">Đội ngũ chuyên gia của chúng tôi luôn sẵn sàng phục vụ bạn.</p>
+          <Link to="/ourteam" className="btn btn-explore">Meet The Team</Link>
+        </div>
+        </section>
+
+      {/* Phần Contact */}
+      <section className="contact-section">
+        <div className="container">
+          <div className="contact-header text-center">
+            <h2 className="subtitle">
+              <span className="line"></span>
+              CONTACT US
+              <span className="line"></span>
+            </h2>
+            <h1 className="title">
+              Get In Touch With Us
+            </h1>
+          </div>
+          <p className="contact-description">Chúng tôi luôn sẵn sàng hỗ trợ bạn.</p>
+          <Link to="/contact" className="btn btn-explore">Contact Us</Link>
+        </div>
+        </section>
+
     </div>
   );
 }
