@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Banner from '../Banner';
 import BookingForm from '../BookingForm';
+import RatingForm from '../RatingForm'; // Import RatingForm
 import '../../css/testimonial.css';
 
 const testimonials = [
@@ -31,6 +32,19 @@ function Testimonial() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [animationState, setAnimationState] = useState('fade-in');
   const [isAnimating, setIsAnimating] = useState(false);
+  const [hasBooked, setHasBooked] = useState(false); // Kiểm tra trạng thái đặt phòng
+
+  // Giả lập kiểm tra trạng thái đặt phòng
+  useEffect(() => {
+    // TODO: Thay bằng API thực tế
+    const checkBookingStatus = async () => {
+      // const response = await fetch('/api/check-booking');
+      // const data = await response.json();
+      // setHasBooked(data.hasBooked);
+      setHasBooked(true); // Giả lập
+    };
+    checkBookingStatus();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -47,7 +61,7 @@ function Testimonial() {
     
     setTimeout(() => {
       setCurrentIndex((prevIndex) =>
-        prevIndex === 0 ? testimonials.length - 2 : prevIndex - 1
+        prevIndex === 0 ? Math.max(0, testimonials.length - 2) : prevIndex - 1
       );
       setAnimationState('fade-in');
       setIsAnimating(false);
@@ -66,6 +80,16 @@ function Testimonial() {
       setAnimationState('fade-in');
       setIsAnimating(false);
     }, 600);
+  };
+
+  // Xử lý submit đánh giá
+  const handleRatingSubmit = (formData) => {
+    // TODO: Gọi API để gửi đánh giá
+    console.log('Submitted rating:', {
+      rating: formData.get('rating'),
+      content: formData.get('content'),
+      image: formData.get('image')
+    });
   };
 
   // Kiểm tra hình ảnh
@@ -93,37 +117,39 @@ function Testimonial() {
 
           <div className="testimonial-wrapper">
             <div className={`testimonial-cards ${animationState}`}>
-              {[0, 1].map((offset) => {
-                const index = (currentIndex + offset) % testimonials.length;
-                const testimonial = testimonials[index];
-                return (
-                  <div
-                    key={testimonial.id}
-                    className="testimonial-card"
-                  >
-                    <p className="testimonial-text">
-                      {testimonial.text}
-                    </p>
-                    <div className="testimonial-author">
-                      <img
-                        src={testimonial.image}
-                        alt={testimonial.name}
-                        className="author-image"
-                        onError={(e) => {
-                          e.target.src = "https://via.placeholder.com/60";
-                        }}
-                      />
-                      <div className="author-info">
-                        <h4 className="author-name">{testimonial.name}</h4>
-                        <p className="author-profession">{testimonial.profession}</p>
+              {testimonials.length > 1 &&
+                [0, 1].map((offset) => {
+                  const index = (currentIndex + offset) % testimonials.length;
+                  const testimonial = testimonials[index];
+                  if (!testimonial) return null;
+                  return (
+                    <div
+                      key={testimonial.id}
+                      className="testimonial-card"
+                    >
+                      <p className="testimonial-text">
+                        {testimonial.text}
+                      </p>
+                      <div className="testimonial-author">
+                        <img
+                          src={testimonial.image}
+                          alt={testimonial.name}
+                          className="author-image"
+                          onError={(e) => {
+                            e.target.src = "https://via.placeholder.com/60";
+                          }}
+                        />
+                        <div className="author-info">
+                          <h4 className="author-name">{testimonial.name}</h4>
+                          <p className="author-profession">{testimonial.profession}</p>
+                        </div>
+                      </div>
+                      <div className="quote-icon">
+                        <i className="fas fa-quote-right"></i>
                       </div>
                     </div>
-                    <div className="quote-icon">
-                      <i className="fas fa-quote-right"></i>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
 
@@ -134,6 +160,8 @@ function Testimonial() {
           </button>
         </div>
       </div>
+
+      <RatingForm onSubmit={handleRatingSubmit} hasBooked={hasBooked} />
     </div>
   );
 }
