@@ -1,9 +1,10 @@
+// screens/Bookingscreen.js
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import '../css/bookingscreen.css'; // Import CSS file for styling
+import '../css/bookingscreen.css';
 import Loader from '../components/Loader';
-import Error from '../components/Error';
+
 function Bookingscreen() {
   const { roomid } = useParams();
   const [loading, setLoading] = useState(true);
@@ -12,7 +13,7 @@ function Bookingscreen() {
   const [bookingData, setBookingData] = useState({
     name: '',
     email: '',
-    phone: '',
+    phone: '', // Thêm phone vào state
     checkin: '',
     checkout: '',
     adults: 1,
@@ -47,15 +48,26 @@ function Bookingscreen() {
   const handleBooking = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/api/bookings/bookroom', {
+      // Chuyển đổi dữ liệu trước khi gửi
+      const formattedData = {
         roomid,
-        ...bookingData,
-      });
+        name: bookingData.name,
+        email: bookingData.email,
+        phone: bookingData.phone,
+        checkin: new Date(bookingData.checkin).toISOString(), // Chuyển thành Date
+        checkout: new Date(bookingData.checkout).toISOString(), // Chuyển thành Date
+        adults: Number(bookingData.adults), // Chuyển thành Number
+        children: Number(bookingData.children), // Chuyển thành Number
+        roomType: bookingData.roomType,
+        specialRequest: bookingData.specialRequest,
+      };
+
+      const response = await axios.post('/api/bookings/bookroom', formattedData);
       setBookingStatus({ type: 'success', message: 'Booking successful!' });
       setBookingData({
         name: '',
         email: '',
-        phone: '',
+        phone: '', // Reset phone
         checkin: '',
         checkout: '',
         adults: 1,
@@ -64,14 +76,17 @@ function Bookingscreen() {
         specialRequest: '',
       });
     } catch (error) {
-      setBookingStatus({ type: 'error', message: 'Error booking room. Please try again.' });
+      setBookingStatus({
+        type: 'error',
+        message: error.response?.data?.message || 'Error booking room. Please try again.',
+      });
+      console.error('Booking error:', error.response?.data || error.message);
     }
   };
 
   return (
     <div className="booking-page">
       <div className="container">
-        {/* Tiêu đề */}
         <div className="booking-header text-center">
           <h2 className="subtitle">
             <span className="line"></span>
@@ -86,12 +101,9 @@ function Bookingscreen() {
         {loading ? (
           <Loader loading={loading} />
         ) : error ? (
-          <Error />
-        )(
           <h1 className="text-center text-danger">Error loading room details...</h1>
         ) : room ? (
           <div className="row align-items-center">
-            {/* Hình ảnh minh họa bên trái */}
             <div className="col-md-6">
               <div className="booking-images">
                 <div className="row">
@@ -135,7 +147,6 @@ function Bookingscreen() {
               </div>
             </div>
 
-            {/* Form đặt phòng bên phải */}
             <div className="col-md-6">
               {bookingStatus && (
                 <div className={`alert ${bookingStatus.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
@@ -176,6 +187,19 @@ function Bookingscreen() {
                     <div className="col-md-6">
                       <div className="form-group">
                         <input
+                          type="text"
+                          className="form-control"
+                          name="phone" // Thêm input cho phone
+                          value={bookingData.phone}
+                          onChange={handleInputChange}
+                          placeholder="Your Phone"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <input
                           type="date"
                           className="form-control"
                           name="checkin"
@@ -186,6 +210,8 @@ function Bookingscreen() {
                         />
                       </div>
                     </div>
+                  </div>
+                  <div className="row">
                     <div className="col-md-6">
                       <div className="form-group">
                         <input
@@ -199,8 +225,6 @@ function Bookingscreen() {
                         />
                       </div>
                     </div>
-                  </div>
-                  <div className="row">
                     <div className="col-md-6">
                       <div className="form-group">
                         <select
@@ -220,6 +244,8 @@ function Bookingscreen() {
                         </select>
                       </div>
                     </div>
+                  </div>
+                  <div className="row">
                     <div className="col-md-6">
                       <div className="form-group">
                         <select
@@ -239,20 +265,22 @@ function Bookingscreen() {
                         </select>
                       </div>
                     </div>
-                  </div>
-                  <div className="form-group">
-                    <select
-                      className="form-control"
-                      name="roomType"
-                      value={bookingData.roomType}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <option value="" disabled>
-                        Select A Room
-                      </option>
-                      <option value={room.type}>{room.type}</option>
-                    </select>
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <select
+                          className="form-control"
+                          name="roomType"
+                          value={bookingData.roomType}
+                          onChange={handleInputChange}
+                          required
+                        >
+                          <option value="" disabled>
+                            Select A Room
+                          </option>
+                          <option value={room.type}>{room.type}</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                   <div className="form-group">
                     <textarea
