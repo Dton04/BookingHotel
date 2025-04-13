@@ -1,26 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import Banner from '../Banner';
 import BookingForm from '../BookingForm';
-import '../../css/testimonial.css'; // Import CSS for styling
+import '../../css/testimonial.css';
 
 const testimonials = [
   {
     id: 1,
-    text: "Khách sạn tồi tệ, không đáp ứng được nhu cầu của khách hàng",
+    text: "Tempor stet labore dolor clita stet diam amet ipsum dolor duo ipsum rebum stet dolor amet diam stet. Est stet ea lorem amet est kasd kasd et erat magna eos",
     name: "Client Name",
     profession: "Profession",
     image: "/images/client-1.jpg"
   },
   {
     id: 2,
-    text: "Trải nghiệm tuyệt vời, dịch vụ tốt, phòng rất sạch sẽ",
+    text: "Tempor stet labore dolor clita stet diam amet ipsum dolor duo ipsum rebum stet dolor amet diam stet. Est stet ea lorem amet est kasd kasd et erat magna eos",
     name: "Client Name",
     profession: "Profession",
     image: "/images/client-2.jpg"
   },
   {
     id: 3,
-    text: "Khách sạn ổn nhưng không có khu vui chơi",
+    text: "Tempor stet labore dolor clita stet diam amet ipsum dolor duo ipsum rebum stet dolor amet diam stet. Est stet ea lorem amet est kasd kasd et erat magna eos",
     name: "Client Name",
     profession: "Profession",
     image: "/images/client-3.jpg"
@@ -30,42 +30,29 @@ const testimonials = [
 function Testimonial() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  console.log("Rendering with currentIndex:", currentIndex);
-
   // Auto slider function
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) =>
-        prevIndex === testimonials.length - 1 ? 0 : prevIndex + 1
+        prevIndex >= testimonials.length - 2 ? 0 : prevIndex + 1
       );
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []); // No dependency needed now
+  }, []);
 
   // Navigate to previous slide
   const prevSlide = () => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? testimonials.length - 1 : prevIndex - 1
+      prevIndex === 0 ? testimonials.length - 2 : prevIndex - 1
     );
   };
 
   // Navigate to next slide
   const nextSlide = () => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === testimonials.length - 1 ? 0 : prevIndex + 1
+      prevIndex >= testimonials.length - 2 ? 0 : prevIndex + 1
     );
-  };
-
-  // Handle rating button click
-  const handleRatingClick = () => {
-    alert("Cảm ơn bạn! Chức năng đánh giá sẽ sớm được cập nhật.");
-  };
-
-  // Background style inline
-  const backgroundStyle = {
-    background: 'linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/images/testimonial-bg.jpg") no-repeat center center',
-    backgroundSize: 'cover'
   };
 
   // Kiểm tra hình ảnh
@@ -81,66 +68,50 @@ function Testimonial() {
   return (
     <div className="testimonial-page">
       <Banner />
-      <BookingForm/>
+      <BookingForm />
+      
+      <div className="testimonial-section" style={{ backgroundImage: `url('/images/testimonial-bg.jpg')` }}>
+        <div className="testimonial-container">
+          <button className="nav-btn prev" onClick={prevSlide}>
+            <i className="fas fa-chevron-left"></i>
+          </button>
 
-      <div className="testimonial-container" style={backgroundStyle}>
-        <div className="testimonial-content">
-          <h2 className="testimonial-title">Đánh giá của khách hàng</h2>
-
-          <div className="testimonial-slider">
-            <button className="slider-nav prev-button" onClick={prevSlide}>
-              <i className="fas fa-chevron-left"></i>
-            </button>
-
-            <div className="testimonial-wrapper">
-              {testimonials.map((testimonial, index) => (
-                <div
-                  key={testimonial.id}
-                  className={`testimonial-slide ${index === currentIndex ? 'active' : ''}`}
-                >
-                  <div className="testimonial-card">
+          <div className="testimonial-wrapper">
+            <div className="testimonial-cards">
+              {[0, 1].map((offset) => {
+                const index = (currentIndex + offset) % testimonials.length;
+                const testimonial = testimonials[index];
+                return (
+                  <div
+                    key={testimonial.id}
+                    className="testimonial-card"
+                  >
                     <p className="testimonial-text">{testimonial.text}</p>
-                    <div className="testimonial-client">
+                    <div className="testimonial-author">
                       <img
                         src={testimonial.image}
                         alt={testimonial.name}
-                        className="client-image"
+                        className="author-image"
                         onError={(e) => {
-                          console.error("Failed to load image:", e.target.src);
-                          e.target.src = "https://via.placeholder.com/70";
+                          e.target.src = "https://via.placeholder.com/60";
                         }}
                       />
-                      <div className="client-info">
-                        <h4 className="client-name">{testimonial.name}</h4>
-                        <p className="client-profession">{testimonial.profession}</p>
+                      <div className="author-info">
+                        <h4 className="author-name">{testimonial.name}</h4>
+                        <p className="author-profession">{testimonial.profession}</p>
                       </div>
                     </div>
                     <div className="quote-icon">
                       <i className="fas fa-quote-right"></i>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-
-            <button className="slider-nav next-button" onClick={nextSlide}>
-              <i className="fas fa-chevron-right"></i>
-            </button>
           </div>
 
-          <div className="testimonial-indicator">
-            {testimonials.map((_, index) => (
-              <span
-                key={index}
-                className={`indicator ${index === currentIndex ? 'active' : ''}`}
-                onClick={() => setCurrentIndex(index)}
-              ></span>
-            ))}
-          </div>
-        </div>
-        <div>
-          <button className="rating-button" onClick={handleRatingClick}>
-            Đánh giá
+          <button className="nav-btn next" onClick={nextSlide}>
+            <i className="fas fa-chevron-right"></i>
           </button>
         </div>
       </div>
