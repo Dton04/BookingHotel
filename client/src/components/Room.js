@@ -53,10 +53,11 @@ function Room({ room }) {
       console.error('Error fetching average rating:', error);
     }
   };
+  
 
   const checkBooking = async () => {
     try {
-      const userId = localStorage.getItem('userEmail'); // Giả sử bạn lưu email người dùng sau khi đăng nhập
+      const userId = localStorage.getItem('userEmail'); 
       if (!userId) {
         setHasBooked(false);
         return;

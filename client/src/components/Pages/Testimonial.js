@@ -1,96 +1,128 @@
-// Testimonial.js
 import React, { useState, useEffect } from 'react';
 import Banner from '../Banner';
 import BookingForm from '../BookingForm';
 import RatingForm from '../RatingForm';
+import axios from 'axios';
 import '../../css/testimonial.css';
 
-const testimonials = [
-  {
-    id: 1,
-    text: "Tempor stet labore dolor clita stet diam amet ipsum dolor duo ipsum rebum stet dolor amet diam stet. Est stet ea lorem amet est kasd kasd et erat magna eos",
-    name: "Client Name",
-    profession: "Profession",
-    image: "/images/client-1.jpg"
-  },
-  {
-    id: 2,
-    text: "Tempor stet labore dolor clita stet diam amet ipsum dolor duo ipsum rebum stet dolor amet diam stet. Est stet ea lorem amet est kasd kasd et erat magna eos",
-    name: "Client Name",
-    profession: "Profession",
-    image: "/images/client-2.jpg"
-  },
-  {
-    id: 3,
-    text: "Tempor stet labore dolor clita stet diam amet ipsum dolor duo ipsum rebum stet dolor amet diam stet. Est stet ea lorem amet est kasd kasd et erat magna eos",
-    name: "Client Name",
-    profession: "Profession",
-    image: "/images/client-3.jpg"
-  }
-];
-
 function Testimonial() {
+  const [reviews, setReviews] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [animationState, setAnimationState] = useState('fade-in');
   const [isAnimating, setIsAnimating] = useState(false);
   const [hasBooked, setHasBooked] = useState(null); // null: đang kiểm tra, false: chưa đặt, true: đã đặt
+  const [showRatingForm, setShowRatingForm] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState('');
+  const [rooms, setRooms] = useState([]);
+  const [averageRating, setAverageRating] = useState({ average: 0, totalReviews: 0 });
 
-  // Kiểm tra trạng thái đặt phòng qua API
+  // Fetch danh sách phòng
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const response = await axios.get('/api/rooms/getallrooms');
+        setRooms(response.data);
+        if (response.data.length > 0) {
+          setSelectedRoom(response.data[0]._id); // Chọn phòng đầu tiên mặc định
+        }
+      } catch (error) {
+        console.error('Error fetching rooms:', error);
+      }
+    };
+
+    fetchRooms();
+  }, []);
+
+  // Fetch danh sách đánh giá
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const response = await axios.get('/api/reviews', {
+          params: { roomId: selectedRoom || 'all' },
+        });
+        setReviews(response.data);
+      } catch (error) {
+        console.error('Error fetching reviews:', error);
+      }
+    };
+
+    if (selectedRoom) {
+      fetchReviews();
+    }
+  }, [selectedRoom]);
+
+  // Fetch điểm trung bình đánh giá
+  useEffect(() => {
+    const fetchAverageRating = async () => {
+      try {
+        const response = await axios.get('/api/reviews/average', {
+          params: { roomId: selectedRoom },
+        });
+        setAverageRating(response.data);
+      } catch (error) {
+        console.error('Error fetching average rating:', error);
+      }
+    };
+
+    if (selectedRoom) {
+      fetchAverageRating();
+    }
+  }, [selectedRoom]);
+
+  // Kiểm tra trạng thái đặt phòng
   useEffect(() => {
     const checkBookingStatus = async () => {
       try {
-        const response = await fetch('/api/check-booking', {
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer <your-auth-token>', // Thay bằng token thực tế
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include' // Nếu cần gửi cookie
-        });
-        if (!response.ok) {
-          throw new Error('Lỗi kiểm tra trạng thái đặt phòng');
+        const userEmail = localStorage.getItem('userEmail');
+        if (!userEmail || !selectedRoom) {
+          setHasBooked(false);
+          return;
         }
-        const data = await response.json();
-        setHasBooked(data.hasBooked || false);
+
+        const response = await axios.get(`/api/bookings/check?email=${userEmail}&roomId=${selectedRoom}`);
+        setHasBooked(response.data.hasBooked || false);
       } catch (error) {
-        console.error('Lỗi kiểm tra trạng thái đặt phòng:', error);
+        console.error('Error checking booking status:', error);
         setHasBooked(false);
       }
     };
-    checkBookingStatus();
-  }, []);
 
+    if (selectedRoom) {
+      checkBookingStatus();
+    }
+  }, [selectedRoom]);
+
+  // Auto slider
   useEffect(() => {
+    if (reviews.length === 0) return;
+
     const interval = setInterval(() => {
       handleNext();
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [currentIndex]);
+  }, [currentIndex, reviews]);
 
   const handlePrev = () => {
-    if (isAnimating) return;
+    if (isAnimating || reviews.length <= 1) return;
     setIsAnimating(true);
     setAnimationState('fade-prev');
-    
+
     setTimeout(() => {
-      setCurrentIndex((prevIndex) =>
-        prevIndex === 0 ? Math.max(0, testimonials.length - 2) : prevIndex - 1
-      );
+      setCurrentIndex((prevIndex) => (prevIndex === 0 ? reviews.length - 1 : prevIndex - 1));
       setAnimationState('fade-in');
       setIsAnimating(false);
     }, 600);
   };
 
   const handleNext = () => {
-    if (isAnimating) return;
+    if (isAnimating || reviews.length <= 1) return;
     setIsAnimating(true);
     setAnimationState('fade-next');
-    
+
     setTimeout(() => {
-      setCurrentIndex((prevIndex) =>
-        prevIndex >= testimonials.length - 2 ? 0 : prevIndex + 1
-      );
+      setCurrentIndex((prevIndex) => (prevIndex === reviews.length - 1 ? 0 : prevIndex + 1));
       setAnimationState('fade-in');
       setIsAnimating(false);
     }, 600);
@@ -99,105 +131,144 @@ function Testimonial() {
   // Xử lý submit đánh giá
   const handleRatingSubmit = async (formData) => {
     try {
-      const response = await fetch('/api/submit-rating', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Authorization': 'Bearer <your-auth-token>' // Thay bằng token thực tế
-        },
-        credentials: 'include'
-      });
-      const data = await response.json();
-      if (data.success) {
-        console.log('Đánh giá đã được gửi:', {
-          rating: formData.get('rating'),
-          content: formData.get('content'),
-          image: formData.get('image')
-        });
-      } else {
-        console.error('Lỗi gửi đánh giá:', data.message);
+      const userEmail = localStorage.getItem('userEmail');
+      if (!userEmail) {
+        setSubmitStatus({ type: 'error', message: 'Please log in to submit a review.' });
+        return;
       }
+
+      const response = await axios.post(
+        '/api/reviews',
+        { ...formData, email: userEmail },
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      setSubmitStatus({ type: 'success', message: 'Review submitted successfully!' });
+      setShowRatingForm(false);
+
+      // Cập nhật lại danh sách đánh giá
+      const updatedReviews = await axios.get('/api/reviews', {
+        params: { roomId: selectedRoom },
+      });
+      setReviews(updatedReviews.data);
     } catch (error) {
-      console.error('Lỗi gửi đánh giá:', error);
+      setSubmitStatus({
+        type: 'error',
+        message: error.response?.data?.message || 'Error submitting review. Please try again.',
+      });
     }
   };
-
-  // Kiểm tra hình ảnh
-  useEffect(() => {
-    testimonials.forEach((testimonial) => {
-      const img = new Image();
-      img.onload = () => console.log(`Hình ảnh ${testimonial.image} tải thành công!`);
-      img.onerror = () => console.error(`Lỗi: Không thể tải hình ảnh ${testimonial.image}`);
-      img.src = testimonial.image;
-    });
-  }, []);
 
   return (
     <div className="testimonial-page">
       <Banner />
       <BookingForm />
-      
+
       <div className="testimonial-section" style={{ backgroundImage: `url('/images/testimonial-bg.jpg')` }}>
         <div className="testimonial-container">
-          <button className="nav-btn prev" onClick={handlePrev} disabled={isAnimating}>
-            <div className="arrow-circle">
-              <i className="fas fa-chevron-left"></i>
-            </div>
-          </button>
+          <h2 className="testimonial-title">
+            Customer Reviews{' '}
+            {averageRating.totalReviews > 0 && (
+              <span>
+                (Average: {averageRating.average.toFixed(1)}/5, {averageRating.totalReviews} reviews)
+              </span>
+            )}
+          </h2>
 
-          <div className="testimonial-wrapper">
-            <div className={`testimonial-cards ${animationState}`}>
-              {testimonials.length > 1 &&
-                [0, 1].map((offset) => {
-                  const index = (currentIndex + offset) % testimonials.length;
-                  const testimonial = testimonials[index];
-                  if (!testimonial) return null;
-                  return (
+          {reviews.length === 0 ? (
+            <p className="no-reviews">No reviews available for this room.</p>
+          ) : (
+            <>
+              <button className="nav-btn prev" onClick={handlePrev} disabled={isAnimating || reviews.length <= 1}>
+                <div className="arrow-circle">
+                  <i className="fas fa-chevron-left"></i>
+                </div>
+              </button>
+
+              <div className="testimonial-wrapper">
+                <div className={`testimonial-cards ${animationState}`}>
+                  {reviews.map((review, index) => (
                     <div
-                      key={testimonial.id}
-                      className="testimonial-card"
+                      key={review._id}
+                      className={`testimonial-card ${index === currentIndex ? 'active' : ''}`}
                     >
-                      <p className="testimonial-text">
-                        {testimonial.text}
-                      </p>
+                      <p className="testimonial-text">{review.comment}</p>
                       <div className="testimonial-author">
                         <img
-                          src={testimonial.image}
-                          alt={testimonial.name}
+                          src={review.image || 'https://via.placeholder.com/60'}
+                          alt={review.userName}
                           className="author-image"
                           onError={(e) => {
-                            e.target.src = "https://via.placeholder.com/60";
+                            e.target.src = 'https://via.placeholder.com/60';
                           }}
                         />
                         <div className="author-info">
-                          <h4 className="author-name">{testimonial.name}</h4>
-                          <p className="author-profession">{testimonial.profession}</p>
+                          <h4 className="author-name">{review.userName}</h4>
+                          <p className="author-profession">Rating: {review.rating}/5</p>
                         </div>
                       </div>
                       <div className="quote-icon">
                         <i className="fas fa-quote-right"></i>
                       </div>
                     </div>
-                  );
-                })}
-            </div>
-          </div>
+                  ))}
+                </div>
+              </div>
 
-          <button className="nav-btn next" onClick={handleNext} disabled={isAnimating}>
-            <div className="arrow-circle">
-              <i className="fas fa-chevron-right"></i>
-            </div>
+              <button className="nav-btn next" onClick={handleNext} disabled={isAnimating || reviews.length <= 1}>
+                <div className="arrow-circle">
+                  <i className="fas fa-chevron-right"></i>
+                </div>
+              </button>
+            </>
+          )}
+
+          <div className="testimonial-indicator">
+            {reviews.map((_, index) => (
+              <span
+                key={index}
+                className={`indicator ${index === currentIndex ? 'active' : ''}`}
+                onClick={() => !isAnimating && setCurrentIndex(index)}
+              ></span>
+            ))}
+          </div>
+        </div>
+
+        <div className="rating-section">
+          <button
+            className="rating-toggle-btn"
+            onClick={() => {
+              setShowRatingForm(!showRatingForm);
+              setSubmitStatus(null);
+            }}
+            disabled={hasBooked === null || rooms.length === 0 || !hasBooked}
+          >
+            {showRatingForm ? 'Hide Rating Form' : 'Leave a Review'}
           </button>
+
+          {hasBooked === null ? (
+            <div className="rating-message-container">
+              <p className="rating-message">Checking booking status...</p>
+            </div>
+          ) : !hasBooked ? (
+            <div className="rating-message-container">
+              <p className="rating-message">You must book this room to leave a review.</p>
+            </div>
+          ) : showRatingForm ? (
+            <RatingForm
+              onSubmit={handleRatingSubmit}
+              hasBooked={hasBooked}
+              rooms={rooms}
+              selectedRoom={selectedRoom}
+              setSelectedRoom={setSelectedRoom}
+              submitStatus={submitStatus}
+            />
+          ) : null}
         </div>
       </div>
-
-      {hasBooked === null ? (
-        <div className="rating-message-container">
-          <p className="rating-message">Đang kiểm tra trạng thái đặt phòng...</p>
-        </div>
-      ) : (
-        <RatingForm onSubmit={handleRatingSubmit} hasBooked={hasBooked} />
-      )}
     </div>
   );
 }

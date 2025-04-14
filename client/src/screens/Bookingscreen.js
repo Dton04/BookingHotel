@@ -1,4 +1,3 @@
-// screens/Bookingscreen.js
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -13,7 +12,7 @@ function Bookingscreen() {
   const [bookingData, setBookingData] = useState({
     name: '',
     email: '',
-    phone: '', // Thêm phone vào state
+    phone: '',
     checkin: '',
     checkout: '',
     adults: 1,
@@ -22,6 +21,11 @@ function Bookingscreen() {
     specialRequest: '',
   });
   const [bookingStatus, setBookingStatus] = useState(null);
+  const [reviewData, setReviewData] = useState({
+    rating: 0,
+    comment: '',
+  });
+  const [showReviewForm, setShowReviewForm] = useState(false);
 
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -45,29 +49,24 @@ function Bookingscreen() {
     setBookingData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleReviewInputChange = (e) => {
+    const { name, value } = e.target;
+    setReviewData((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleBooking = async (e) => {
     e.preventDefault();
     try {
-      // Chuyển đổi dữ liệu trước khi gửi
-      const formattedData = {
+      const response = await axios.post('/api/bookings/bookroom', {
         roomid,
-        name: bookingData.name,
-        email: bookingData.email,
-        phone: bookingData.phone,
-        checkin: new Date(bookingData.checkin).toISOString(), // Chuyển thành Date
-        checkout: new Date(bookingData.checkout).toISOString(), // Chuyển thành Date
-        adults: Number(bookingData.adults), // Chuyển thành Number
-        children: Number(bookingData.children), // Chuyển thành Number
-        roomType: bookingData.roomType,
-        specialRequest: bookingData.specialRequest,
-      };
-
-      const response = await axios.post('/api/bookings/bookroom', formattedData);
+        ...bookingData,
+      });
       setBookingStatus({ type: 'success', message: 'Booking successful!' });
+      setShowReviewForm(true); // Hiển thị form đánh giá sau khi đặt phòng
       setBookingData({
         name: '',
         email: '',
-        phone: '', // Reset phone
+        phone: '',
         checkin: '',
         checkout: '',
         adults: 1,
@@ -76,11 +75,24 @@ function Bookingscreen() {
         specialRequest: '',
       });
     } catch (error) {
-      setBookingStatus({
-        type: 'error',
-        message: error.response?.data?.message || 'Error booking room. Please try again.',
+      setBookingStatus({ type: 'error', message: 'Error booking room. Please try again.' });
+    }
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('/api/reviews/submit', {
+        roomId: roomid,
+        userName: bookingData.name || 'Anonymous',
+        rating: Number(reviewData.rating),
+        comment: reviewData.comment,
       });
-      console.error('Booking error:', error.response?.data || error.message);
+      setReviewData({ rating: 0, comment: '' });
+      setShowReviewForm(false);
+      setBookingStatus({ type: 'success', message: 'Review submitted successfully!' });
+    } catch (error) {
+      setBookingStatus({ type: 'error', message: 'Error submitting review. Please try again.' });
     }
   };
 
@@ -107,42 +119,17 @@ function Bookingscreen() {
             <div className="col-md-6">
               <div className="booking-images">
                 <div className="row">
-                  <div className="col-6 mb-3">
-                    <div className="image-wrapper">
-                      <img
-                        src={room.imageurls[0] || 'https://via.placeholder.com/300x200?text=Image+1'}
-                        alt="Hotel 1"
-                        className="img-fluid"
-                      />
+                  {room.imageurls.slice(0, 4).map((url, index) => (
+                    <div key={index} className="col-6 mb-3">
+                      <div className="image-wrapper">
+                        <img
+                          src={url || `https://via.placeholder.com/300x200?text=Image+${index + 1}`}
+                          alt={`Hotel ${index + 1}`}
+                          className="img-fluid"
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-6 mb-3">
-                    <div className="image-wrapper">
-                      <img
-                        src={room.imageurls[1] || 'https://via.placeholder.com/300x200?text=Image+2'}
-                        alt="Hotel 2"
-                        className="img-fluid"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-6 mb-3">
-                    <div className="image-wrapper">
-                      <img
-                        src={room.imageurls[2] || 'https://via.placeholder.com/300x200?text=Image+3'}
-                        alt="Hotel 3"
-                        className="img-fluid"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-6 mb-3">
-                    <div className="image-wrapper">
-                      <img
-                        src={room.imageurls[3] || 'https://via.placeholder.com/300x200?text=Image+4'}
-                        alt="Hotel 4"
-                        className="img-fluid"
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -154,148 +141,191 @@ function Bookingscreen() {
                 </div>
               )}
               <div className="booking-screen-wrapper">
-                <form className="booking-screen" onSubmit={handleBooking}>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="name"
-                          value={bookingData.name}
-                          onChange={handleInputChange}
-                          placeholder="Your Name"
-                          required
-                        />
+                {!showReviewForm ? (
+                  <form className="booking-screen" onSubmit={handleBooking}>
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="name"
+                            value={bookingData.name}
+                            onChange={handleInputChange}
+                            placeholder="Your Name"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <input
+                            type="email"
+                            className="form-control"
+                            name="email"
+                            value={bookingData.email}
+                            onChange={handleInputChange}
+                            placeholder="Your Email"
+                            required
+                          />
+                        </div>
                       </div>
                     </div>
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <input
-                          type="email"
-                          className="form-control"
-                          name="email"
-                          value={bookingData.email}
-                          onChange={handleInputChange}
-                          placeholder="Your Email"
-                          required
-                        />
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <input
+                            type="tel"
+                            className="form-control"
+                            name="phone"
+                            value={bookingData.phone}
+                            onChange={handleInputChange}
+                            placeholder="Your Phone"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <input
+                            type="date"
+                            className="form-control"
+                            name="checkin"
+                            value={bookingData.checkin}
+                            onChange={handleInputChange}
+                            placeholder="Check In"
+                            required
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="phone" // Thêm input cho phone
-                          value={bookingData.phone}
-                          onChange={handleInputChange}
-                          placeholder="Your Phone"
-                          required
-                        />
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <input
+                            type="date"
+                            className="form-control"
+                            name="checkout"
+                            value={bookingData.checkout}
+                            onChange={handleInputChange}
+                            placeholder="Check Out"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <select
+                            className="form-control"
+                            name="adults"
+                            value={bookingData.adults}
+                            onChange={handleInputChange}
+                            required
+                          >
+                            <option value="" disabled>
+                              Select Adult
+                            </option>
+                            {[1, 2, 3, 4].map((num) => (
+                              <option key={num} value={num}>
+                                Adult {num}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <input
-                          type="date"
-                          className="form-control"
-                          name="checkin"
-                          value={bookingData.checkin}
-                          onChange={handleInputChange}
-                          placeholder="Check In"
-                          required
-                        />
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <select
+                            className="form-control"
+                            name="children"
+                            value={bookingData.children}
+                            onChange={handleInputChange}
+                            required
+                          >
+                            <option value="" disabled>
+                              Select Child
+                            </option>
+                            {[0, 1, 2, 3].map((num) => (
+                              <option key={num} value={num}>
+                                Child {num}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <select
+                            className="form-control"
+                            name="roomType"
+                            value={bookingData.roomType}
+                            onChange={handleInputChange}
+                            required
+                          >
+                            <option value="" disabled>
+                              Select A Room
+                            </option>
+                            <option value={room.type}>{room.type}</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <input
-                          type="date"
-                          className="form-control"
-                          name="checkout"
-                          value={bookingData.checkout}
-                          onChange={handleInputChange}
-                          placeholder="Check Out"
-                          required
-                        />
-                      </div>
+                    <div className="form-group">
+                      <textarea
+                        className="form-control"
+                        name="specialRequest"
+                        value={bookingData.specialRequest}
+                        onChange={handleInputChange}
+                        placeholder="Special Request"
+                        rows="3"
+                      />
                     </div>
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <select
-                          className="form-control"
-                          name="adults"
-                          value={bookingData.adults}
-                          onChange={handleInputChange}
-                          required
-                        >
-                          <option value="" disabled>
-                            Select Adult
-                          </option>
-                          <option value="1">Adult 1</option>
-                          <option value="2">Adult 2</option>
-                          <option value="3">Adult 3</option>
-                          <option value="4">Adult 4</option>
-                        </select>
-                      </div>
+                    <button type="submit" className="btn btn-book-now">
+                      BOOK NOW
+                    </button>
+                  </form>
+                ) : (
+                  <form className="review-form" onSubmit={handleReviewSubmit}>
+                    <h3>Leave a Review</h3>
+                    <div className="form-group">
+                      <label>Rating (1-5):</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        name="rating"
+                        value={reviewData.rating}
+                        onChange={handleReviewInputChange}
+                        min="1"
+                        max="5"
+                        required
+                      />
                     </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <select
-                          className="form-control"
-                          name="children"
-                          value={bookingData.children}
-                          onChange={handleInputChange}
-                          required
-                        >
-                          <option value="" disabled>
-                            Select Child
-                          </option>
-                          <option value="0">Child 0</option>
-                          <option value="1">Child 1</option>
-                          <option value="2">Child 2</option>
-                          <option value="3">Child 3</option>
-                        </select>
-                      </div>
+                    <div className="form-group">
+                      <label>Comment:</label>
+                      <textarea
+                        className="form-control"
+                        name="comment"
+                        value={reviewData.comment}
+                        onChange={handleReviewInputChange}
+                        placeholder="Your feedback"
+                        rows="4"
+                        required
+                      />
                     </div>
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <select
-                          className="form-control"
-                          name="roomType"
-                          value={bookingData.roomType}
-                          onChange={handleInputChange}
-                          required
-                        >
-                          <option value="" disabled>
-                            Select A Room
-                          </option>
-                          <option value={room.type}>{room.type}</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <textarea
-                      className="form-control"
-                      name="specialRequest"
-                      value={bookingData.specialRequest}
-                      onChange={handleInputChange}
-                      placeholder="Special Request"
-                      rows="3"
-                    ></textarea>
-                  </div>
-                  <button type="submit" className="btn btn-book-now">
-                    BOOK NOW
-                  </button>
-                </form>
+                    <button type="submit" className="btn btn-book-now">
+                      Submit Review
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary mt-2"
+                      onClick={() => setShowReviewForm(false)}
+                    >
+                      Cancel
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
           </div>

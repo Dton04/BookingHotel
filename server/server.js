@@ -38,7 +38,7 @@ app.use(express.json());
 app.use('/api/rooms', roomsRoute);
 app.use('/api/bookings', bookingRoute); 
 app.use('/api/users', usersRoute);
-app.use('/api/reviews', upload.single('image'), reviewRoute);
+app.use('/api/reviews', reviewRoute);
 app.use('/api', contactRoute); 
 
 
