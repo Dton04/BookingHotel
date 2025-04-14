@@ -1,478 +1,378 @@
-/* rooms-content.css */
-.review-image {
-  max-width: 200px;
-  height: auto;
-  border-radius: 5px;
-  margin-top: 10px;
+/* Font và màu sắc chung */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+:root {
+  --primary-color: #d4a373;
+  --secondary-color: #f8f9fa;
+  --dark-color: #343a40;
+  --light-color: #ffffff;
+  --text-color: #495057;
+  --border-color: #e9ecef;
 }
 
 .rooms-content {
-  text-align: center;
-  padding: 50px 20px;
-  
+  font-family: 'Poppins', sans-serif;
+  padding: 80px 0;
+  background-color: var(--secondary-color);
 }
 
-.rooms-content h2 {
-  color: #f5a623;
-  font-size: 1.2rem;
-  letter-spacing: 2px;
-  margin-bottom: 10px;
-}
-
-.rooms-content h1 {
-  font-size: 2.5rem;
-  color: #1a252f;
-  margin-bottom: 30px;
-}
-
-.rooms-content h1 span {
-  color: #f5a623;
-}
-
-.rooms-content .container {
+.container {
   max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+.rooms-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.rooms-header .subtitle {
+  font-size: 1.1rem;
+  color: var(--primary-color);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 15px;
+}
+
+.rooms-header .title {
+  font-size: 2.8rem;
+  color: var(--dark-color);
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.rooms-header .title span {
+  color: var(--primary-color);
+  position: relative;
+}
+
+.rooms-header .title span::after {
+  content: '';
+  position: absolute;
+  bottom: 5px;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background-color: rgba(212, 163, 115, 0.3);
+  z-index: -1;
+}
+
+.rooms-header .description {
+  font-size: 1.1rem;
+  color: var(--text-color);
+  max-width: 700px;
   margin: 0 auto;
 }
 
-.rooms-content .row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0px; /* Thêm khoảng cách giữa các cột */
+/* Room Grid Layout */
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 30px;
 }
 
-.rooms-content .col-md-9 {
-  margin-bottom: 20px;
-  flex: 0 0 100%;
-  max-width: 100%; /* Đảm bảo cột chiếm toàn bộ chiều rộng trên mobile */
-}
-
-.rooms-content .shadow-lg {
+/* Room Card Styles */
+.room-card {
+  background: var(--light-color);
   border-radius: 10px;
-  padding: 20px;
-  background: #fff;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
-.rooms-content .shadow-lg:hover {
-  transform: translateY(-5px);
+.room-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
 }
 
-.rooms-content .smallimg {
+.room-image {
+  position: relative;
+  height: 250px;
+  overflow: hidden;
+}
+
+.room-image img {
   width: 100%;
-  height: auto;
-  border-radius: 5px;
+  height: 100%;
   object-fit: cover;
+  transition: transform 0.5s ease;
 }
 
-.rooms-content .bigimg {
-  width: 100%;
-  height: 400px;
+.room-card:hover .room-image img {
+  transform: scale(1.05);
+}
+
+.room-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--primary-color);
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.room-price-tag {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 15px;
   border-radius: 5px;
-  object-fit: cover;
-}
-
-.rooms-content .btn-primary {
-  background-color: #1a252f;
-  border: none;
-  margin-right: 10px;
-  padding: 10px 20px;
-  transition: background-color 0.3s ease;
-}
-
-.rooms-content .btn-primary:hover {
-  background-color: #f5a623;
-}
-
-.rooms-content .btn-success {
-  background-color: #28a745;
-  border: none;
-  padding: 10px 20px;
-  transition: background-color 0.3s ease;
-}
-
-.rooms-content .btn-success:hover {
-  background-color: #218838;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .room-content {
-  padding: 20px;
+  padding: 25px;
 }
 
 .room-title {
   font-size: 1.5rem;
-  color: #1a252f;
-  margin-bottom: 10px;
+  color: var(--dark-color);
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.room-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 15px;
+  color: var(--text-color);
+}
+
+.room-features span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.9rem;
+}
+
+.room-features i {
+  color: var(--primary-color);
 }
 
 .room-description {
-  font-size: 1rem;
-  color: #666;
-  margin-bottom: 15px;
+  color: var(--text-color);
+  margin-bottom: 20px;
+  line-height: 1.6;
 }
 
-.room-price {
-  font-size: 1.2rem;
-  color: #f5a623;
-  margin-bottom: 15px;
+.room-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border-color);
+  padding-top: 15px;
 }
 
-.room-info {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 15px;
+.room-rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.room-info li {
-  font-size: 1rem;
-  color: #333;
-  margin-bottom: 5px;
+.room-rating span {
+  font-size: 0.9rem;
+  color: var(--text-color);
 }
 
-.btn-details {
-  padding: 10px 20px;
-  font-size: 1rem;
-  background-color: #1a252f;
-  color: #fff;
-  border: none;
+.room-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-view, .btn-book {
+  padding: 8px 20px;
   border-radius: 5px;
-  transition: background-color 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
-.btn-details:hover {
-  background-color: #f5a623;
+.btn-view {
+  background: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
 }
 
-/* Responsive cho Desktop lớn (>1200px) */
-@media (min-width: 1200px) {
-  .rooms-content {
-    padding: 60px 30px;
-  }
-
-  .rooms-content h1 {
-    font-size: 3rem;
-  }
-
-  .rooms-content .col-md-9 {
-    flex: 0 0 33.333333%; /* 3 cột trên desktop lớn */
-    max-width: 33.333333%;
-  }
-
-  .rooms-content .bigimg {
-    height: 450px;
-  }
+.btn-view:hover {
+  background: var(--primary-color);
+  color: white;
 }
 
-/* Responsive cho Desktop (992px - 1200px) */
+.btn-book {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.btn-book:hover {
+  background: #c08e5f;
+}
+
+/* Modal Styles */
+.room-modal-content {
+  padding: 20px 0;
+}
+
+.room-highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.room-highlights div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--secondary-color);
+  border-radius: 5px;
+}
+
+.room-highlights i {
+  color: var(--primary-color);
+}
+
+.room-modal-description {
+  margin-bottom: 20px;
+}
+
+.room-modal-description h5 {
+  font-size: 1.2rem;
+  color: var(--dark-color);
+  margin-bottom: 10px;
+}
+
+.room-modal-price {
+  margin-bottom: 20px;
+}
+
+.room-modal-price h5 {
+  font-size: 1.2rem;
+  color: var(--dark-color);
+  margin-bottom: 10px;
+}
+
+.room-modal-price .price {
+  font-size: 1.8rem;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.room-modal-price .price span {
+  font-size: 1rem;
+  color: var(--text-color);
+  font-weight: 400;
+}
+
+.room-reviews h5 {
+  font-size: 1.2rem;
+  color: var(--dark-color);
+  margin-bottom: 15px;
+}
+
+.review-item {
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.review-item:last-child {
+  border-bottom: none;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.review-text {
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+/* Loading và Error States */
+.loading-spinner, .error-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 50px;
+  font-size: 1.2rem;
+}
+
+.loading-spinner i {
+  margin-right: 10px;
+  color: var(--primary-color);
+}
+
+.error-message i {
+  margin-right: 10px;
+  color: #dc3545;
+}
+
+/* Responsive Design */
 @media (max-width: 1200px) {
-  .rooms-content {
-    padding: 40px 15px;
+  .room-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
+}
 
-  .rooms-content h2 {
-    font-size: 1.1rem;
-  }
-
-  .rooms-content h1 {
+@media (max-width: 768px) {
+  .rooms-header .title {
     font-size: 2.2rem;
   }
-
-  .rooms-content .col-md-9 {
-    flex: 0 0 50%; /* 2 cột trên desktop nhỏ */
-    max-width: 50%;
+  
+  .rooms-header .description {
+    font-size: 1rem;
   }
-
-  .rooms-content .bigimg {
-    height: 400px;
+  
+  .room-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .room-image {
+    height: 220px;
   }
 }
 
-/* Responsive cho Tablet (768px - 991px) */
-@media (max-width: 991px) {
-  .rooms-content {
-    padding: 30px 15px;
-  }
-
-  .rooms-content h2 {
-    font-size: 1rem;
-  }
-
-  .rooms-content h1 {
-    font-size: 2rem;
-  }
-
-  .rooms-content .col-md-9 {
-    flex: 0 0 50%; /* 2 cột trên tablet */
-    max-width: 50%;
-  }
-
-  .room-image img {
-    height: 180px;
-  }
-
-  .room-content {
-    padding: 15px;
-  }
-
-  .room-title {
-    font-size: 1.4rem;
-  }
-
-  .room-description {
-    font-size: 0.95rem;
-  }
-
-  .room-price {
-    font-size: 1.1rem;
-  }
-
-  .room-info li {
-    font-size: 0.95rem;
-  }
-
-  .btn-details {
-    padding: 8px 16px;
-    font-size: 1rem;
-  }
-
-  .rooms-content .btn-primary,
-  .rooms-content .btn-success {
-    padding: 8px 16px;
-    font-size: 1rem;
-  }
-
-  .rooms-content .bigimg {
-    height: 350px;
-  }
-}
-
-/* Responsive cho Mobile (<768px) */
-@media (max-width: 767px) {
-  .rooms-content {
-    padding: 20px 10px;
-  }
-
-  .rooms-content h2 {
-    font-size: 0.9rem;
-    letter-spacing: 1px;
-  }
-
-  .rooms-content h1 {
-    font-size: 1.8rem;
-    margin-bottom: 20px;
-  }
-
-  .rooms-content .col-md-9 {
-    flex: 0 0 100%; /* 1 cột trên mobile */
-    max-width: 100%;
-  }
-
-  .room-image img {
-    height: 150px;
-  }
-
-  .room-content {
-    padding: 15px;
-  }
-
-  .room-title {
-    font-size: 1.3rem;
-  }
-
-  .room-description {
-    font-size: 0.9rem;
-  }
-
-  .room-price {
-    font-size: 1rem;
-  }
-
-  .room-info li {
-    font-size: 0.9rem;
-  }
-
-  .btn-details {
-    padding: 6px 12px;
-    font-size: 0.9rem;
-  }
-
-  .rooms-content .btn-primary,
-  .rooms-content .btn-success {
-    padding: 6px 12px;
-    font-size: 0.9rem;
-  }
-
-  .rooms-content .bigimg {
-    height: 300px;
-  }
-}
-
-/* Responsive cho Mobile nhỏ (<576px) */
 @media (max-width: 576px) {
   .rooms-content {
-    padding: 15px 10px;
+    padding: 50px 0;
   }
-
-  .rooms-content h2 {
-    font-size: 0.85rem;
+  
+  .rooms-header .title {
+    font-size: 1.8rem;
   }
-
-  .rooms-content h1 {
-    font-size: 1.5rem;
-  }
-
-  .room-image img {
-    height: 150px;
-  }
-
-  .room-content {
-    padding: 10px;
-  }
-
-  .room-title {
-    font-size: 1.2rem;
-  }
-
-  .room-description {
-    font-size: 0.85rem;
-  }
-
-  .room-price {
-    font-size: 0.95rem;
-  }
-
-  .room-info li {
-    font-size: 0.85rem;
-  }
-
-  .btn-details {
-    padding: 6px 12px;
-    font-size: 0.85rem;
-  }
-
-  .rooms-content .btn-primary,
-  .rooms-content .btn-success {
-    padding: 6px 12px;
-    font-size: 0.85rem;
-  }
-
-  .rooms-content .bigimg {
-    height: 250px;
-  }
-}
-
-/* Responsive cho Mobile rất nhỏ (<400px) */
-@media (max-width: 400px) {
-  .rooms-content {
-    padding: 10px 5px;
-  }
-
-  .rooms-content h2 {
-    font-size: 0.8rem;
-    letter-spacing: 0.5px;
-  }
-
-  .rooms-content h1 {
-    font-size: 1.3rem;
-    margin-bottom: 15px;
-  }
-
-  .room-image img {
-    height: 120px;
-  }
-
-  .room-content {
-    padding: 8px;
-  }
-
-  .room-title {
-    font-size: 1.1rem;
-  }
-
-  .room-description {
-    font-size: 0.8rem;
-  }
-
-  .room-price {
+  
+  .rooms-header .subtitle {
     font-size: 0.9rem;
   }
-
-  .room-info li {
-    font-size: 0.8rem;
-  }
-
-  .btn-details {
-    padding: 5px 10px;
-    font-size: 0.8rem;
-  }
-
-  .rooms-content .btn-primary,
-  .rooms-content .btn-success {
-    padding: 5px 10px;
-    font-size: 0.8rem;
-    margin-right: 5px;
-  }
-
-  .rooms-content .bigimg {
-    height: 200px;
-  }
-}
-
-/* Responsive cho Mobile cực nhỏ (<320px) */
-@media (max-width: 320px) {
-  .rooms-content {
-    padding: 10px 5px;
-  }
-
-  .rooms-content h2 {
-    font-size: 0.7rem;
-    letter-spacing: 0.5px;
-  }
-
-  .rooms-content h1 {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-  }
-
-  .room-image img {
-    height: 100px;
-  }
-
+  
   .room-content {
-    padding: 6px;
+    padding: 20px;
   }
-
-  .room-title {
-    font-size: 1rem;
+  
+  .room-footer {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
   }
-
-  .room-description {
-    font-size: 0.75rem;
+  
+  .room-actions {
+    width: 100%;
   }
-
-  .room-price {
-    font-size: 0.85rem;
-  }
-
-  .room-info li {
-    font-size: 0.75rem;
-  }
-
-  .btn-details {
-    padding: 4px 8px;
-    font-size: 0.75rem;
-  }
-
-  .rooms-content .btn-primary,
-  .rooms-content .btn-success {
-    padding: 4px 8px;
-    font-size: 0.75rem;
-    margin-right: 3px;
-  }
-
-  .rooms-content .bigimg {
-    height: 180px;
+  
+  .btn-view, .btn-book {
+    flex: 1;
+    text-align: center;
   }
 }
-

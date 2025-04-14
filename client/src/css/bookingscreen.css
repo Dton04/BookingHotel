@@ -299,3 +299,41 @@
 .btn-secondary:hover {
   background-color: #5a6268;
 }
+
+
+
+
+
+
+
+
+
+
+.alert {
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+}
+
+.alert-success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.btn-book-now {
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  width: 100%;
+}
+
+.btn-book-now:hover {
+  background-color: #0056b3;
+}

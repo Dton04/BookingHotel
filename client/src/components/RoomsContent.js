@@ -29,31 +29,28 @@ function RoomsContent() {
   return (
     <section className="rooms-content">
       <div className="container">
-        <div className="rooms-header text-center">
-          <h2 className="subtitle">
-            <span className="line"></span>
-            OUR ROOMS
-            <span className="line"></span>
-          </h2>
+        <div className="rooms-header">
+          <h2 className="subtitle">KHÁM PHÁ PHÒNG NGHỈ</h2>
           <h1 className="title">
-            Explore Our <span>ROOMS</span>
+            Phòng nghỉ <span>đẳng cấp</span> của chúng tôi
           </h1>
+          <p className="description">
+            Trải nghiệm không gian nghỉ dưỡng sang trọng với đầy đủ tiện nghi hiện đại
+          </p>
         </div>
 
-        <div className="row mt-5">
+        <div className="room-grid">
           {loading ? (
-            <div className="col-12 text-center">
-              <h1>Loading...</h1>
+            <div className="loading-spinner">
+              <i className="fas fa-spinner fa-spin"></i> Đang tải danh sách phòng...
             </div>
           ) : error ? (
-            <div className="col-12 text-center">
-              <h1>Error</h1>
+            <div className="error-message">
+              <i className="fas fa-exclamation-triangle"></i> Đã có lỗi xảy ra khi tải dữ liệu
             </div>
           ) : (
             rooms.map((room, index) => (
-              <div key={index} className="col-lg-4 col-md-6 mb-4">
-                <Room room={room} />
-              </div>
+              <Room key={index} room={room} />
             ))
           )}
         </div>
