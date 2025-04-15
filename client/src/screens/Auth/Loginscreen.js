@@ -24,18 +24,24 @@ function LoginScreen() {
     try {
       setLoading(true);
       const response = await axios.post('/api/users/login', { email, password });
-      const { token, name } = response.data; // Giả sử API trả về token và name
-      // Lưu thông tin vào localStorage
-      localStorage.setItem('userInfo', JSON.stringify({ token, name }));
+      const userData = response.data;
+      localStorage.setItem('userInfo', JSON.stringify(userData));
       setSuccess('Login successful! Redirecting...');
       setEmail('');
       setPassword('');
 
       setTimeout(() => {
-        navigate('/home');
+        if (userData.isAdmin) {
+          navigate('/admin/staffmanagement');
+        } else if (userData.role === 'staff') {
+          navigate('/staff/dashboard');
+        } else {
+          navigate('/home');
+        }
       }, 2000);
     } catch (error) {
-      setError(error.response?.data?.message || 'Invalid email or password.');
+      const errorMessage = error.response?.data?.message || 'An error occurred during login.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

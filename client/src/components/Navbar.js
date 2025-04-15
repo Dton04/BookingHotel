@@ -18,9 +18,11 @@ function Navbar() {
   // Hàm để kiểm tra trạng thái đăng nhập
   const checkLoginStatus = () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    console.log('User Info from localStorage:', userInfo); // Debug line
     if (userInfo && userInfo.name) {
       setIsLoggedIn(true);
-      setUser({ name: userInfo.name });
+      setUser(userInfo); // Sử dụng trực tiếp object từ localStorage
+      console.log('Set User State:', userInfo); // Debug line
     } else {
       setIsLoggedIn(false);
       setUser(null);
@@ -96,7 +98,26 @@ function Navbar() {
                 {user.name}
               </button>
               <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                <li><a class="dropdown-item" href="#">Bookings</a></li>
+                <li><Link class="dropdown-item" to="/bookings">Bookings</Link></li>
+                {user && user.isAdmin && (
+                  <>
+                    <li>
+                      <Link class="dropdown-item" to="/admin/staffmanagement">
+                        <i class="fas fa-users-cog me-2"></i>Staff Management
+                      </Link>
+                    </li>
+                    <li>
+                      <Link class="dropdown-item" to="/admin/bookings">
+                        <i class="fas fa-book me-2"></i>All Bookings
+                      </Link>
+                    </li>
+                    <li>
+                      <Link class="dropdown-item" to="/admin/users">
+                        <i class="fas fa-user-cog me-2"></i>User Management
+                      </Link>
+                    </li>
+                  </>
+                )}
                 <li><a class="dropdown-item" href="#" onClick={handleLogout}>Logout</a></li>
               </ul>
             </div>

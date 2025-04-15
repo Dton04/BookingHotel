@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Homescreen from './screens/Homescreen';
 import Rooms from './components/Rooms';
@@ -12,6 +12,13 @@ import About from './screens/About';
 import Footer from './components/Footer';
 import Registerscreen from './screens/Auth/Registerscreen';
 import LoginScreen from './screens/Auth/Loginscreen';
+import StaffManagement from './components/StaffManagement'; // Import StaffManagement
+
+// Component bảo vệ route cho admin
+const AdminRoute = ({ children }) => {
+  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+  return userInfo && userInfo.isAdmin ? children : <Navigate to="/" replace />;
+};
 
 function App() {
   return (
@@ -31,6 +38,15 @@ function App() {
           <Route path="/" element={<Homescreen />} />
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/register" element={<Registerscreen />} />
+          {/* Route cho StaffManagement, chỉ admin truy cập được */}
+          <Route
+            path="/admin/staffmanagement"
+            element={
+              <AdminRoute>
+                <StaffManagement />
+              </AdminRoute>
+            }
+          />
         </Routes>
         <Footer />
       </div>
