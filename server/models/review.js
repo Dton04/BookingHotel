@@ -9,7 +9,8 @@ const reviewSchema = new mongoose.Schema({
   },
   userName: {
     type: String,
-    required: true,
+    required: false, // Cho phép tùy chọn
+    default: 'Ẩn danh', // Mặc định là "Ẩn danh"
   },
   rating: {
     type: Number,
@@ -21,9 +22,9 @@ const reviewSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  image: {
-    type: String, // URL hoặc path của ảnh
-    required: false,
+  email: { // Thêm trường email để kiểm tra trùng lặp
+    type: String,
+    required: true,
   },
   createdAt: {
     type: Date,

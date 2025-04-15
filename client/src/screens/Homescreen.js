@@ -49,7 +49,7 @@ function Homescreen() {
           </div>
           <div className="row">
             {[
-              { title: "Spa & Fitness", icon: "🧘", description: "Thư giãn và tái tạo năng lượng với spa cao cấp." },
+              { title: "Spa & Fitness", icon: "🧘", description: "Thư giãn và năng lượng với spa cao cấp." },
               { title: "Food & Restaurant", icon: "🍽️", description: "Ẩm thực đa dạng từ địa phương đến quốc tế." },
               { title: "Event & Party", icon: "🎉", description: "Tổ chức sự kiện với không gian lý tưởng." },
             ].map((service, index) => (

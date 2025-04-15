@@ -1,9 +1,14 @@
+<<<<<<< toi
 require('dotenv').config();
 
+=======
+// server.js
+>>>>>>> main
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
+const mongoose = require('mongoose'); // Thêm mongoose
 
 // Kiểm tra JWT_SECRET
 console.log('JWT_SECRET:', process.env.JWT_SECRET);
@@ -46,8 +51,22 @@ app.use(express.json());
 app.use('/api/rooms', roomsRoute);
 app.use('/api/bookings', bookingRoute);
 app.use('/api/users', usersRoute);
+<<<<<<< toi
 app.use('/api/reviews', upload.single('image'), reviewRoute);
 app.use('/api', contactRoute);
+=======
+app.use('/api/reviews', reviewRoute);
+app.use('/api', contactRoute);
+
+// Kiểm tra kết nối MongoDB
+mongoose.connection.on('connected', () => {
+  console.log('MongoDB connected successfully');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
+});
+>>>>>>> main
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server is running on port ${port}`));

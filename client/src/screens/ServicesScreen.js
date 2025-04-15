@@ -7,7 +7,7 @@ function ServicesScreen() {
   const services = [
     {
       title: 'Rooms & Apartment',
-      description: 'Không gian sống tiện nghi với đầy đủ tiện ích, mang đến sự thoải mái như ngôi nhà thứ hai của bạn. Tận hưởng sự riêng tư và tiện nghi trong từng góc nhỏ.',
+      description: 'Không gian sống tiện nghi mang đến sự thoải mái như ngôi nhà thứ hai của bạn.Tận hưởng tiện nghi trong từng góc nhỏ.',
       icon: '🏠',
     },
     {
