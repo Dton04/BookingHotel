@@ -1,10 +1,9 @@
-// models/booking.js
 const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
   roomid: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Room',
+    ref: 'rooms',
     required: true,
   },
   name: {
@@ -41,6 +40,11 @@ const bookingSchema = new mongoose.Schema({
   },
   specialRequest: {
     type: String,
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'confirmed', 'canceled'],
+    default: 'pending',
   },
   createdAt: {
     type: Date,
