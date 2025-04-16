@@ -61,7 +61,7 @@ function Bookingscreen() {
       localStorage.setItem("userEmail", bookingData.email);
       setTimeout(() => {
         navigate(`/testimonial?roomId=${roomid}&showReviewForm=true`);
-      }, 2000); // Tăng thời gian chờ để người dùng đọc thông báo
+      }, 2000);
     } catch (error) {
       setBookingStatus({
         type: "error",
@@ -97,11 +97,14 @@ function Bookingscreen() {
                 <div className="row">
                   {room.imageurls.slice(0, 4).map((url, index) => (
                     <div key={index} className="col-6 mb-3">
-                      <div className="image-wrapper">
+                      <div className="image-container">
                         <img
                           src={url || `https://via.placeholder.com/300x200?text=Image+${index + 1}`}
                           alt={`Phòng ${index + 1}`}
-                          className="img-fluid"
+                          className="img-fluid room-image"
+                          onError={(e) => {
+                            e.target.src = `https://via.placeholder.com/300x200?text=Image+${index + 1}`;
+                          }}
                         />
                       </div>
                     </div>
