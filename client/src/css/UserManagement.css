@@ -1,0 +1,219 @@
+.user-management {
+  display: flex;
+  flex-direction: column;
+  margin: 2rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f9f9f9, #ffffff);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  min-height: 80vh;
+}
+
+.user-management .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.user-management .header h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+/* Table styling */
+.user-management .ant-table {
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.user-management .ant-table-thead > tr > th {
+  background: linear-gradient(90deg, #f5a623, #f6b93b);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 1rem;
+  border-bottom: 2px solid #e69500;
+  transition: background 0.3s ease;
+}
+
+.user-management .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem;
+  font-size: 0.95rem;
+  color: #4a5568;
+  transition: background 0.3s ease;
+}
+
+.user-management .ant-table-tbody > tr:hover > td {
+  background-color: #f7fafc;
+}
+
+/* Button styling */
+.user-management .ant-btn-danger {
+  background: #e53e3e;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.user-management .ant-btn-danger:hover {
+  background: #c53030;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.3);
+}
+
+/* Responsive cho Desktop lớn (>1200px) */
+@media (min-width: 1200px) {
+  .user-management {
+    margin: 3rem;
+    padding: 2rem;
+  }
+
+  .user-management .header h2 {
+    font-size: 2rem;
+  }
+
+  .user-management .ant-table-thead > tr > th,
+  .user-management .ant-table-tbody > tr > td {
+    padding: 1.25rem;
+    font-size: 1rem;
+  }
+}
+
+/* Responsive cho Desktop (992px - 1200px) */
+@media (max-width: 1200px) {
+  .user-management {
+    margin: 2rem;
+    padding: 1.5rem;
+  }
+
+  .user-management .header h2 {
+    font-size: 1.75rem;
+  }
+}
+
+/* Responsive cho Tablet (768px - 991px) */
+@media (max-width: 991px) {
+  .user-management {
+    margin: 1.5rem;
+    padding: 1rem;
+  }
+
+  .user-management .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .user-management .header h2 {
+    font-size: 1.5rem;
+  }
+
+  .user-management .ant-table-thead > tr > th,
+  .user-management .ant-table-tbody > tr > td {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+}
+
+/* Responsive cho Mobile (<768px) */
+@media (max-width: 767px) {
+  .user-management {
+    margin: 1rem;
+    padding: 0.75rem;
+  }
+
+  .user-management .header h2 {
+    font-size: 1.25rem;
+  }
+
+  .user-management .ant-table {
+    font-size: 0.85rem;
+    overflow-x: auto;
+  }
+
+  .user-management .ant-table-thead > tr > th,
+  .user-management .ant-table-tbody > tr > td {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .user-management .ant-btn-danger {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Responsive cho Mobile nhỏ (<576px) */
+@media (max-width: 576px) {
+  .user-management {
+    margin: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .user-management .header h2 {
+    font-size: 1.1rem;
+  }
+
+  .user-management .ant-table-thead > tr > th,
+  .user-management .ant-table-tbody > tr > td {
+    font-size: 0.8rem;
+    padding: 0.4rem;
+  }
+
+  .user-management .ant-btn-danger {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Responsive cho Mobile rất nhỏ (<400px) */
+@media (max-width: 400px) {
+  .user-management {
+    margin: 0.3rem;
+    padding: 0.3rem;
+  }
+
+  .user-management .header h2 {
+    font-size: 1rem;
+  }
+
+  .user-management .ant-table-thead > tr > th,
+  .user-management .ant-table-tbody > tr > td {
+    font-size: 0.75rem;
+    padding: 0.3rem;
+  }
+}
+
+/* Responsive cho Mobile cực nhỏ (<320px) */
+@media (max-width: 320px) {
+  .user-management {
+    margin: 0.2rem;
+    padding: 0.2rem;
+  }
+
+  .user-management .header h2 {
+    font-size: 0.9rem;
+  }
+
+  .user-management .ant-table-thead > tr > th,
+  .user-management .ant-table-tbody > tr > td {
+    font-size: 0.7rem;
+    padding: 0.2rem;
+  }
+
+  .user-management .ant-btn-danger {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+  }
+}

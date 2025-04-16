@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
-const { protect, admin } = require('../middleware/auth');
+const { protect, admin, staff } = require('../middleware/auth');
 
 // Đăng ký người dùng (POST /api/users/register)
 router.post('/register', async (req, res) => {
@@ -83,10 +83,19 @@ router.get('/profile', protect, async (req, res) => {
   }
 });
 
-// Lấy danh sách tất cả người dùng (GET /api/users/allusers)
-router.get('/allusers', protect, admin, async (req, res) => {
+// Middleware để kiểm tra admin hoặc staff (dùng cho route mà cả admin và staff đều truy cập được)
+const adminOrStaff = (req, res, next) => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'staff')) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Not authorized as admin or staff' });
+  }
+};
+
+// Lấy danh sách tất cả người dùng có role "user" (GET /api/users/allusers)
+router.get('/allusers', protect, adminOrStaff, async (req, res) => {
   try {
-    const users = await User.find({}).select('-password');
+    const users = await User.find({ role: 'user' }).select('-password');
     res.json(users);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -99,7 +108,7 @@ router.put('/:userId', protect, admin, async (req, res) => {
     const user = await User.findById(req.params.userId);
     if (user) {
       user.name = req.body.name || user.name;
-      user.email = req.body.email ? req.body.email.toLowerCase() : user.email; // Chuẩn hóa email
+      user.email = req.body.email ? req.body.email.toLowerCase() : user.email;
       user.password = req.body.password || user.password;
       user.isAdmin = req.body.isAdmin !== undefined ? req.body.isAdmin : user.isAdmin;
       user.role = req.body.role || user.role;
@@ -126,7 +135,7 @@ router.post('/staff', protect, admin, async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    const normalizedEmail = email.toLowerCase(); // Chuẩn hóa email
+    const normalizedEmail = email.toLowerCase();
     const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
       return res.status(400).json({ message: 'Email already exists' });
@@ -134,7 +143,7 @@ router.post('/staff', protect, admin, async (req, res) => {
 
     const user = await User.create({
       name,
-      email: normalizedEmail, // Lưu email chuẩn hóa
+      email: normalizedEmail,
       password,
       isAdmin: false,
       role: 'staff',
@@ -169,7 +178,7 @@ router.put('/staff/:id', protect, admin, async (req, res) => {
     const user = await User.findById(req.params.id);
     if (user && user.role === 'staff') {
       user.name = req.body.name || user.name;
-      user.email = req.body.email ? req.body.email.toLowerCase() : user.email; // Chuẩn hóa email
+      user.email = req.body.email ? req.body.email.toLowerCase() : user.email;
       user.password = req.body.password || user.password;
 
       const updatedUser = await user.save();
@@ -188,18 +197,20 @@ router.put('/staff/:id', protect, admin, async (req, res) => {
   }
 });
 
-// Xóa nhân viên (DELETE /api/users/staff/:id)
-router.delete('/staff/:id', protect, admin, async (req, res) => {
+// Xóa user (DELETE /api/users/staff/:id)
+router.delete('/staff/:id', protect, adminOrStaff, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
-    if (user && user.role === 'staff') {
-      await user.deleteOne();
-      res.json({ message: 'Staff member removed' });
-    } else {
-      res.status(404).json({ message: 'Staff member not found' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
+    if (user.role === 'admin') {
+      return res.status(403).json({ message: 'Cannot delete admin user' });
+    }
+    await user.deleteOne();
+    res.json({ message: 'User removed' });
   } catch (error) {
-    console.error('Delete staff error:', error.message);
+    console.error('Delete user error:', error.message);
     res.status(400).json({ message: error.message });
   }
 });

@@ -2,18 +2,18 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Table, Button, Modal, Form, message } from 'antd';
 import Loader from '../components/Loader';
-import Navbar from './Navbar'; // Sử dụng Navbar.js đã có
+import Navbar from './Navbar';
 import '../css/StaffManagement.css';
 import { useNavigate } from 'react-router-dom';
 
 function StaffManagement() {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isAddModalVisible, setIsAddModalVisible] = useState(false); // Modal thêm staff
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false); // Modal chỉnh sửa staff
-  const [selectedStaff, setSelectedStaff] = useState(null); // Staff được chọn để chỉnh sửa
-  const [addForm] = Form.useForm(); // Form cho modal thêm
-  const [editForm] = Form.useForm(); // Form cho modal chỉnh sửa
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState(null);
+  const [addForm] = Form.useForm();
+  const [editForm] = Form.useForm();
   const navigate = useNavigate();
 
   const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -98,7 +98,7 @@ function StaffManagement() {
     editForm.setFieldsValue({
       name: record.name,
       email: record.email,
-      password: '', // Không điền sẵn mật khẩu
+      password: '',
     });
     setIsEditModalVisible(true);
   };
@@ -138,12 +138,16 @@ function StaffManagement() {
 
   return (
     <div>
-      
+      <Navbar />
       <div className="staff-management" style={{ marginTop: '120px' }}>
-        
-        <Button type="primary" onClick={() => setIsAddModalVisible(true)}>
-            Add New Staff
-          </Button>
+        <div>
+          <h2>Staff List</h2>        
+          <div style={{ marginBottom: '1.5rem', textAlign: 'right' }}>
+            <Button type="primary" onClick={() => setIsAddModalVisible(true)}>
+              Add New Staff
+            </Button>
+          </div>
+        </div>
         <Table dataSource={staff} columns={columns} rowKey="_id" />
 
         {/* Modal Thêm Staff */}

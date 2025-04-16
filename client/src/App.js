@@ -12,12 +12,19 @@ import About from './screens/About';
 import Footer from './components/Footer';
 import Registerscreen from './screens/Auth/Registerscreen';
 import LoginScreen from './screens/Auth/Loginscreen';
-import StaffManagement from './components/StaffManagement'; // Import StaffManagement
+import StaffManagement from './components/StaffManagement';
+import UserManagement from './components/UserManagement';
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
   const userInfo = JSON.parse(localStorage.getItem('userInfo'));
   return userInfo && userInfo.isAdmin ? children : <Navigate to="/" replace />;
+};
+
+// Component bảo vệ route cho admin và staff
+const ProtectedRoute = ({ children }) => {
+  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+  return userInfo && (userInfo.role === 'admin' || userInfo.role === 'staff') ? children : <Navigate to="/" replace />;
 };
 
 function App() {
@@ -45,6 +52,15 @@ function App() {
               <AdminRoute>
                 <StaffManagement />
               </AdminRoute>
+            }
+          />
+          {/* Route cho UserManagement, cả admin và staff truy cập được */}
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute>
+                <UserManagement />
+              </ProtectedRoute>
             }
           />
         </Routes>
