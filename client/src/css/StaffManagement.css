@@ -1,309 +1,410 @@
 .staff-management {
-    display: flex;
-    flex-direction: column;
-    margin: 20px;
+  display: flex;
+  flex-direction: column;
+  margin: 2rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f9f9f9, #ffffff);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  min-height: 80vh;
+}
+
+.staff-management .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.staff-management .header h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.staff-management .header button {
+  background: linear-gradient(90deg, #f5a623, #f6b93b);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.staff-management .header button:hover {
+  background: linear-gradient(90deg, #e69500, #f5a623);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(245, 166, 35, 0.3);
+}
+
+/* Table styling */
+.staff-management .ant-table {
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.staff-management .ant-table-thead > tr > th {
+  background: linear-gradient(90deg, #f5a623, #f6b93b);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 1rem;
+  border-bottom: 2px solid #e69500;
+  transition: background 0.3s ease;
+}
+
+.staff-management .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem;
+  font-size: 0.95rem;
+  color: #4a5568;
+  transition: background 0.3s ease;
+}
+
+.staff-management .ant-table-tbody > tr:hover > td {
+  background-color: #f7fafc;
+}
+
+/* Button trong bảng */
+.staff-management .ant-btn-primary {
+  background: #3182ce;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.staff-management .ant-btn-primary:hover {
+  background: #2b6cb0;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(49, 130, 206, 0.3);
+}
+
+.staff-management .ant-btn-danger {
+  background: #e53e3e;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.staff-management .ant-btn-danger:hover {
+  background: #c53030;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.3);
+}
+
+/* Modal styling */
+.staff-management .ant-modal-content {
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.staff-management .ant-modal-header {
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(90deg, #f5a623, #f6b93b);
+  border-radius: 12px 12px 0 0;
+  padding: 1rem 1.5rem;
+}
+
+.staff-management .ant-modal-title {
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.staff-management .ant-modal-body {
+  padding: 1.5rem;
+}
+
+.staff-management .ant-form-item {
+  margin-bottom: 1.25rem;
+}
+
+.staff-management input {
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  width: 100%;
+  font-size: 1rem;
+  color: #4a5568;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.staff-management input:focus {
+  outline: none;
+  border-color: #f5a623;
+  box-shadow: 0 0 6px rgba(245, 166, 35, 0.3);
+}
+
+.staff-management .ant-form-item button {
+  background: linear-gradient(90deg, #f5a623, #f6b93b);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.staff-management .ant-form-item button:hover {
+  background: linear-gradient(90deg, #e69500, #f5a623);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(245, 166, 35, 0.3);
+}
+
+/* Responsive cho Desktop lớn (>1200px) */
+@media (min-width: 1200px) {
+  .staff-management {
+    margin: 3rem;
+    padding: 2rem;
   }
-  
+
+  .staff-management .header h2 {
+    font-size: 2rem;
+  }
+
+  .staff-management .header button {
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+  }
+
+  .staff-management .ant-table-thead > tr > th,
+  .staff-management .ant-table-tbody > tr > td {
+    padding: 1.25rem;
+    font-size: 1rem;
+  }
+
+  .staff-management input {
+    padding: 0.85rem;
+    font-size: 1.1rem;
+  }
+
+  .staff-management .ant-form-item button {
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+  }
+}
+
+/* Responsive cho Desktop (992px - 1200px) */
+@media (max-width: 1200px) {
+  .staff-management {
+    margin: 2rem;
+    padding: 1.5rem;
+  }
+
+  .staff-management .header h2 {
+    font-size: 1.75rem;
+  }
+
+  .staff-management .header button {
+    padding: 0.6rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .staff-management input {
+    padding: 0.75rem;
+    font-size: 1rem;
+  }
+
+  .staff-management .ant-form-item button {
+    padding: 0.6rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* Responsive cho Tablet (768px - 991px) */
+@media (max-width: 991px) {
+  .staff-management {
+    margin: 1.5rem;
+    padding: 1rem;
+  }
+
   .staff-management .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
   }
-  
+
   .staff-management .header h2 {
     font-size: 1.5rem;
-    color: #333;
-    margin: 0;
   }
-  
+
   .staff-management .header button {
-    background-color: #f5a623;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.95rem;
   }
-  
-  .staff-management .header button:hover {
-    background-color: #e69500;
-  }
-  
-  /* Table styling */
-  .staff-management .ant-table {
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  .staff-management .ant-table-thead > tr > th {
-    background-color: #f5a623;
-    color: white;
-    font-weight: bold;
-    border-radius: 5px 5px 0 0;
-  }
-  
+
+  .staff-management .ant-table-thead > tr > th,
   .staff-management .ant-table-tbody > tr > td {
-    border-bottom: 1px solid #ddd;
-    padding: 12px;
+    font-size: 0.9rem;
+    padding: 0.75rem;
   }
-  
-  .staff-management .ant-table-tbody > tr:hover > td {
-    background-color: #f9f9f9;
-  }
-  
-  /* Modal styling */
-  .staff-management .ant-modal-content {
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  .staff-management .ant-modal-header {
-    border-bottom: 1px solid #ddd;
-    background-color: #f5a623;
-    border-radius: 10px 10px 0 0;
-  }
-  
-  .staff-management .ant-modal-title {
-    color: white;
-    font-weight: bold;
-  }
-  
-  .staff-management .ant-modal-body {
-    padding: 20px;
-  }
-  
-  .staff-management .ant-form-item {
-    margin-bottom: 15px;
-  }
-  
+
   .staff-management input {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    width: 100%;
-    font-size: 1rem;
-    transition: border-color 0.3s ease;
+    padding: 0.65rem;
+    font-size: 0.95rem;
   }
-  
-  .staff-management input:focus {
-    outline: none;
-    border-color: #f5a623;
-    box-shadow: 0 0 5px rgba(245, 166, 35, 0.3);
-  }
-  
+
   .staff-management .ant-form-item button {
-    background-color: #f5a623;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.95rem;
   }
-  
-  .staff-management .ant-form-item button:hover {
-    background-color: #e69500;
+}
+
+/* Responsive cho Mobile (<768px) */
+@media (max-width: 767px) {
+  .staff-management {
+    margin: 1rem;
+    padding: 0.75rem;
   }
-  
-  /* Responsive cho Desktop lớn (>1200px) */
-  @media (min-width: 1200px) {
-    .staff-management {
-      margin: 30px;
-    }
-  
-    .staff-management .header h2 {
-      font-size: 1.8rem;
-    }
-  
-    .staff-management .header button {
-      padding: 12px 25px;
-      font-size: 1.1rem;
-    }
-  
-    .staff-management input {
-      padding: 12px;
-      font-size: 1.1rem;
-    }
-  
-    .staff-management .ant-form-item button {
-      padding: 12px 25px;
-      font-size: 1.1rem;
-    }
+
+  .staff-management .header h2 {
+    font-size: 1.25rem;
   }
-  
-  /* Responsive cho Desktop (992px - 1200px) */
-  @media (max-width: 1200px) {
-    .staff-management {
-      margin: 20px;
-    }
-  
-    .staff-management .header h2 {
-      font-size: 1.6rem;
-    }
-  
-    .staff-management .header button {
-      padding: 10px 20px;
-      font-size: 1rem;
-    }
-  
-    .staff-management input {
-      padding: 10px;
-      font-size: 1rem;
-    }
-  
-    .staff-management .ant-form-item button {
-      padding: 10px 20px;
-      font-size: 1rem;
-    }
+
+  .staff-management .header button {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 0.9rem;
   }
-  
-  /* Responsive cho Tablet (768px - 991px) */
-  @media (max-width: 991px) {
-    .staff-management {
-      margin: 15px;
-    }
-  
-    .staff-management .header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 10px;
-    }
-  
-    .staff-management .header h2 {
-      font-size: 1.4rem;
-    }
-  
-    .staff-management .header button {
-      padding: 8px 18px;
-      font-size: 0.95rem;
-    }
-  
-    .staff-management input {
-      padding: 8px;
-      font-size: 0.95rem;
-    }
-  
-    .staff-management .ant-form-item button {
-      padding: 8px 18px;
-      font-size: 0.95rem;
-    }
+
+  .staff-management .ant-table {
+    font-size: 0.85rem;
+    overflow-x: auto;
   }
-  
-  /* Responsive cho Mobile (<768px) */
-  @media (max-width: 767px) {
-    .staff-management {
-      margin: 10px;
-    }
-  
-    .staff-management .header h2 {
-      font-size: 1.3rem;
-    }
-  
-    .staff-management .header button {
-      width: 100%;
-      padding: 10px;
-      font-size: 0.9rem;
-    }
-  
-    .staff-management input {
-      padding: 10px;
-      font-size: 0.9rem;
-    }
-  
-    .staff-management .ant-form-item button {
-      width: 100%;
-      padding: 10px;
-      font-size: 0.9rem;
-    }
-  
-    .staff-management .ant-table {
-      font-size: 0.9rem;
-    }
-  
-    .staff-management .ant-table-tbody > tr > td {
-      padding: 8px;
-    }
+
+  .staff-management .ant-table-thead > tr > th,
+  .staff-management .ant-table-tbody > tr > td {
+    padding: 0.5rem;
+    font-size: 0.85rem;
   }
-  
-  /* Responsive cho Mobile nhỏ (<576px) */
-  @media (max-width: 576px) {
-    .staff-management {
-      margin: 8px;
-    }
-  
-    .staff-management .header h2 {
-      font-size: 1.2rem;
-    }
-  
-    .staff-management .header button {
-      padding: 8px;
-      font-size: 0.85rem;
-    }
-  
-    .staff-management input {
-      padding: 8px;
-      font-size: 0.85rem;
-    }
-  
-    .staff-management .ant-form-item button {
-      padding: 8px;
-      font-size: 0.85rem;
-    }
+
+  .staff-management .ant-btn-primary,
+  .staff-management .ant-btn-danger {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
   }
-  
-  /* Responsive cho Mobile rất nhỏ (<400px) */
-  @media (max-width: 400px) {
-    .staff-management {
-      margin: 6px;
-    }
-  
-    .staff-management .header h2 {
-      font-size: 1.1rem;
-    }
-  
-    .staff-management .header button {
-      padding: 7px;
-      font-size: 0.8rem;
-    }
-  
-    .staff-management input {
-      padding: 7px;
-      font-size: 0.8rem;
-    }
-  
-    .staff-management .ant-form-item button {
-      padding: 7px;
-      font-size: 0.8rem;
-    }
+
+  .staff-management input {
+    padding: 0.5rem;
+    font-size: 0.9rem;
   }
-  
-  /* Responsive cho Mobile cực nhỏ (<320px) */
-  @media (max-width: 320px) {
-    .staff-management {
-      margin: 5px;
-    }
-  
-    .staff-management .header h2 {
-      font-size: 1rem;
-    }
-  
-    .staff-management .header button {
-      padding: 6px;
-      font-size: 0.75rem;
-    }
-  
-    .staff-management input {
-      padding: 6px;
-      font-size: 0.75rem;
-    }
-  
-    .staff-management .ant-form-item button {
-      padding: 6px;
-      font-size: 0.75rem;
-    }
+
+  .staff-management .ant-form-item button {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 0.9rem;
   }
+}
+
+/* Responsive cho Mobile nhỏ (<576px) */
+@media (max-width: 576px) {
+  .staff-management {
+    margin: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .staff-management .header h2 {
+    font-size: 1.1rem;
+  }
+
+  .staff-management .header button {
+    padding: 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  .staff-management .ant-table-thead > tr > th,
+  .staff-management .ant-table-tbody > tr > td {
+    font-size: 0.8rem;
+    padding: 0.4rem;
+  }
+
+  .staff-management input {
+    padding: 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  .staff-management .ant-form-item button {
+    padding: 0.4rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Responsive cho Mobile rất nhỏ (<400px) */
+@media (max-width: 400px) {
+  .staff-management {
+    margin: 0.3rem;
+    padding: 0.3rem;
+  }
+
+  .staff-management .header h2 {
+    font-size: 1rem;
+  }
+
+  .staff-management .header button {
+    padding: 0.3rem;
+    font-size: 0.8rem;
+  }
+
+  .staff-management .ant-table-thead > tr > th,
+  .staff-management .ant-table-tbody > tr > td {
+    font-size: 0.75rem;
+    padding: 0.3rem;
+  }
+
+  .staff-management input {
+    padding: 0.3rem;
+    font-size: 0.8rem;
+  }
+
+  .staff-management .ant-form-item button {
+    padding: 0.3rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Responsive cho Mobile cực nhỏ (<320px) */
+@media (max-width: 320px) {
+  .staff-management {
+    margin: 0.2rem;
+    padding: 0.2rem;
+  }
+
+  .staff-management .header h2 {
+    font-size: 0.9rem;
+  }
+
+  .staff-management .header button {
+    padding: 0.2rem;
+    font-size: 0.75rem;
+  }
+
+  .staff-management .ant-table-thead > tr > th,
+  .staff-management .ant-table-tbody > tr > td {
+    font-size: 0.7rem;
+    padding: 0.2rem;
+  }
+
+  .staff-management input {
+    padding: 0.2rem;
+    font-size: 0.75rem;
+  }
+
+  .staff-management .ant-form-item button {
+    padding: 0.2rem;
+    font-size: 0.75rem;
+  }
+}

@@ -54,6 +54,7 @@ app.use('/api/bookings', bookingRoute);
 app.use('/api/users', usersRoute);
 
 
+
 app.use('/api/reviews', reviewRoute);
 app.use('/api', contactRoute);
 app.use('/api/dashboard', dashboardRoute);
