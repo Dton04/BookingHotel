@@ -1,25 +1,25 @@
-// screens/Bookingscreen.js
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import '../css/bookingscreen.css';
-import Loader from '../components/Loader';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
+import "../css/bookingscreen.css";
+import Loader from "../components/Loader";
 
 function Bookingscreen() {
   const { roomid } = useParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [room, setRoom] = useState(null);
   const [error, setError] = useState(false);
   const [bookingData, setBookingData] = useState({
-    name: '',
-    email: '',
-    phone: '', // Thêm phone vào state
-    checkin: '',
-    checkout: '',
+    name: "",
+    email: "",
+    phone: "",
+    checkin: "",
+    checkout: "",
     adults: 1,
     children: 0,
-    roomType: '',
-    specialRequest: '',
+    roomType: "",
+    specialRequest: "",
   });
   const [bookingStatus, setBookingStatus] = useState(null);
 
@@ -27,9 +27,9 @@ function Bookingscreen() {
     const fetchRoomData = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.post('/api/rooms/getroombyid', { roomid });
+        const { data } = await axios.post("/api/rooms/getroombyid", { roomid });
         setRoom(data);
-        setBookingData((prev) => ({ ...prev, roomType: data.type || '' }));
+        setBookingData((prev) => ({ ...prev, roomType: data.type || "" }));
       } catch (error) {
         setError(true);
       } finally {
@@ -48,39 +48,27 @@ function Bookingscreen() {
   const handleBooking = async (e) => {
     e.preventDefault();
     try {
-      // Chuyển đổi dữ liệu trước khi gửi
-      const formattedData = {
+      setLoading(true);
+      setBookingStatus(null);
+      const response = await axios.post("/api/bookings/bookroom", {
         roomid,
-        name: bookingData.name,
-        email: bookingData.email,
-        phone: bookingData.phone,
-        checkin: new Date(bookingData.checkin).toISOString(), // Chuyển thành Date
-        checkout: new Date(bookingData.checkout).toISOString(), // Chuyển thành Date
-        adults: Number(bookingData.adults), // Chuyển thành Number
-        children: Number(bookingData.children), // Chuyển thành Number
-        roomType: bookingData.roomType,
-        specialRequest: bookingData.specialRequest,
-      };
-
-      const response = await axios.post('/api/bookings/bookroom', formattedData);
-      setBookingStatus({ type: 'success', message: 'Booking successful!' });
-      setBookingData({
-        name: '',
-        email: '',
-        phone: '', // Reset phone
-        checkin: '',
-        checkout: '',
-        adults: 1,
-        children: 0,
-        roomType: room?.type || '',
-        specialRequest: '',
+        ...bookingData,
       });
+      setBookingStatus({
+        type: "success",
+        message: "Đặt phòng thành công! Bạn sẽ được chuyển đến trang đánh giá.",
+      });
+      localStorage.setItem("userEmail", bookingData.email);
+      setTimeout(() => {
+        navigate(`/testimonial?roomId=${roomid}&showReviewForm=true`);
+      }, 2000); // Tăng thời gian chờ để người dùng đọc thông báo
     } catch (error) {
       setBookingStatus({
-        type: 'error',
-        message: error.response?.data?.message || 'Error booking room. Please try again.',
+        type: "error",
+        message: "Lỗi khi đặt phòng. Vui lòng thử lại.",
       });
-      console.error('Booking error:', error.response?.data || error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,66 +78,41 @@ function Bookingscreen() {
         <div className="booking-header text-center">
           <h2 className="subtitle">
             <span className="line"></span>
-            ROOM BOOKING
+            ĐẶT PHÒNG
             <span className="line"></span>
           </h2>
           <h1 className="title">
-            Book A <span>LUXURY</span> ROOM
+            Đặt một <span>PHÒNG SANG TRỌNG</span>
           </h1>
         </div>
 
         {loading ? (
           <Loader loading={loading} />
         ) : error ? (
-          <h1 className="text-center text-danger">Error loading room details...</h1>
+          <h1 className="text-center text-danger">Lỗi khi tải chi tiết phòng...</h1>
         ) : room ? (
           <div className="row align-items-center">
             <div className="col-md-6">
               <div className="booking-images">
                 <div className="row">
-                  <div className="col-6 mb-3">
-                    <div className="image-wrapper">
-                      <img
-                        src={room.imageurls[0] || 'https://via.placeholder.com/300x200?text=Image+1'}
-                        alt="Hotel 1"
-                        className="img-fluid"
-                      />
+                  {room.imageurls.slice(0, 4).map((url, index) => (
+                    <div key={index} className="col-6 mb-3">
+                      <div className="image-wrapper">
+                        <img
+                          src={url || `https://via.placeholder.com/300x200?text=Image+${index + 1}`}
+                          alt={`Phòng ${index + 1}`}
+                          className="img-fluid"
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-6 mb-3">
-                    <div className="image-wrapper">
-                      <img
-                        src={room.imageurls[1] || 'https://via.placeholder.com/300x200?text=Image+2'}
-                        alt="Hotel 2"
-                        className="img-fluid"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-6 mb-3">
-                    <div className="image-wrapper">
-                      <img
-                        src={room.imageurls[2] || 'https://via.placeholder.com/300x200?text=Image+3'}
-                        alt="Hotel 3"
-                        className="img-fluid"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-6 mb-3">
-                    <div className="image-wrapper">
-                      <img
-                        src={room.imageurls[3] || 'https://via.placeholder.com/300x200?text=Image+4'}
-                        alt="Hotel 4"
-                        className="img-fluid"
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
 
             <div className="col-md-6">
               {bookingStatus && (
-                <div className={`alert ${bookingStatus.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
+                <div className={`alert ${bookingStatus.type === "success" ? "alert-success" : "alert-danger"}`}>
                   {bookingStatus.message}
                 </div>
               )}
@@ -164,7 +127,7 @@ function Bookingscreen() {
                           name="name"
                           value={bookingData.name}
                           onChange={handleInputChange}
-                          placeholder="Your Name"
+                          placeholder="Họ và tên"
                           required
                         />
                       </div>
@@ -177,7 +140,7 @@ function Bookingscreen() {
                           name="email"
                           value={bookingData.email}
                           onChange={handleInputChange}
-                          placeholder="Your Email"
+                          placeholder="Email của bạn"
                           required
                         />
                       </div>
@@ -187,12 +150,12 @@ function Bookingscreen() {
                     <div className="col-md-6">
                       <div className="form-group">
                         <input
-                          type="text"
+                          type="tel"
                           className="form-control"
-                          name="phone" // Thêm input cho phone
+                          name="phone"
                           value={bookingData.phone}
                           onChange={handleInputChange}
-                          placeholder="Your Phone"
+                          placeholder="Số điện thoại"
                           required
                         />
                       </div>
@@ -205,7 +168,7 @@ function Bookingscreen() {
                           name="checkin"
                           value={bookingData.checkin}
                           onChange={handleInputChange}
-                          placeholder="Check In"
+                          placeholder="Ngày nhận phòng"
                           required
                         />
                       </div>
@@ -220,7 +183,7 @@ function Bookingscreen() {
                           name="checkout"
                           value={bookingData.checkout}
                           onChange={handleInputChange}
-                          placeholder="Check Out"
+                          placeholder="Ngày trả phòng"
                           required
                         />
                       </div>
@@ -235,12 +198,13 @@ function Bookingscreen() {
                           required
                         >
                           <option value="" disabled>
-                            Select Adult
+                            Chọn số người lớn
                           </option>
-                          <option value="1">Adult 1</option>
-                          <option value="2">Adult 2</option>
-                          <option value="3">Adult 3</option>
-                          <option value="4">Adult 4</option>
+                          {[1, 2, 3, 4].map((num) => (
+                            <option key={num} value={num}>
+                              {num} Người lớn
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -256,12 +220,13 @@ function Bookingscreen() {
                           required
                         >
                           <option value="" disabled>
-                            Select Child
+                            Chọn số trẻ em
                           </option>
-                          <option value="0">Child 0</option>
-                          <option value="1">Child 1</option>
-                          <option value="2">Child 2</option>
-                          <option value="3">Child 3</option>
+                          {[0, 1, 2, 3].map((num) => (
+                            <option key={num} value={num}>
+                              {num} Trẻ em
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -275,7 +240,7 @@ function Bookingscreen() {
                           required
                         >
                           <option value="" disabled>
-                            Select A Room
+                            Chọn loại phòng
                           </option>
                           <option value={room.type}>{room.type}</option>
                         </select>
@@ -288,19 +253,19 @@ function Bookingscreen() {
                       name="specialRequest"
                       value={bookingData.specialRequest}
                       onChange={handleInputChange}
-                      placeholder="Special Request"
+                      placeholder="Yêu cầu đặc biệt"
                       rows="3"
-                    ></textarea>
+                    />
                   </div>
-                  <button type="submit" className="btn btn-book-now">
-                    BOOK NOW
+                  <button type="submit" className="btn btn-book-now" disabled={loading}>
+                    {loading ? "Đang xử lý..." : "ĐẶT PHÒNG NGAY"}
                   </button>
                 </form>
               </div>
             </div>
           </div>
         ) : (
-          <h1 className="text-center text-danger">Room not found</h1>
+          <h1 className="text-center text-danger">Không tìm thấy phòng</h1>
         )}
       </div>
     </div>

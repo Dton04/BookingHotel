@@ -1,9 +1,14 @@
+
 require('dotenv').config();
+
+
+// server.js
 
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
+const mongoose = require('mongoose'); // Thêm mongoose
 
 // Kiểm tra JWT_SECRET
 console.log('JWT_SECRET:', process.env.JWT_SECRET);
@@ -46,8 +51,10 @@ app.use(express.json());
 app.use('/api/rooms', roomsRoute);
 app.use('/api/bookings', bookingRoute);
 app.use('/api/users', usersRoute);
-app.use('/api/reviews', upload.single('image'), reviewRoute);
+
 app.use('/api', contactRoute);
+app.use('/api/reviews', reviewRoute);
+
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server is running on port ${port}`));

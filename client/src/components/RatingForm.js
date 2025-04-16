@@ -1,137 +1,161 @@
-// RatingForm.js
-import React, { useState } from 'react';
-import '../css/rating-form.css';
+import React, { useState } from "react";
 
-const RatingForm = ({ onSubmit, hasBooked }) => {
-  const [rating, setRating] = useState(0);
-  const [content, setContent] = useState('');
-  const [image, setImage] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [error, setError] = useState('');
+function RatingForm({ onSubmit, hasBooked, rooms, selectedRoom, setSelectedRoom, submitStatus }) {
+  const [formData, setFormData] = useState({
+    userName: "",
+    rating: "",
+    comment: "",
+    image: null,
+    userEmail: localStorage.getItem("userEmail") || "",
+  });
+  const [formLoading, setFormLoading] = useState(false);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Ảnh quá lớn! Vui lòng chọn ảnh dưới 5MB.');
-        return;
-      }
-      setImage(file);
-      setPreview(URL.createObjectURL(file));
-      setError('');
-    }
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleFileChange = (e) => {
+    setFormData((prev) => ({ ...prev, image: e.target.files[0] }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!hasBooked) {
-      setError('Bạn cần đặt phòng trước khi đánh giá!');
+    if (!selectedRoom) {
+      alert("Vui lòng chọn một phòng để đánh giá!");
       return;
     }
-    if (rating === 0) {
-      setError('Vui lòng chọn số sao!');
+    if (!formData.userEmail) {
+      alert("Email không hợp lệ. Vui lòng đặt phòng trước khi gửi đánh giá.");
       return;
     }
-    if (!content) {
-      setError('Vui lòng nhập nội dung đánh giá!');
-      return;
+    setFormLoading(true);
+    const data = new FormData();
+    data.append("roomId", selectedRoom);
+    data.append("userName", formData.userName);
+    data.append("rating", formData.rating);
+    data.append("comment", formData.comment);
+    data.append("userEmail", formData.userEmail);
+    if (formData.image) {
+      data.append("image", formData.image);
     }
-
-    const formData = new FormData();
-    formData.append('rating', rating);
-    formData.append('content', content);
-    if (image) formData.append('image', image);
-
-    onSubmit(formData);
-    setRating(0);
-    setContent('');
-    setImage(null);
-    setPreview(null);
-    setError('');
+    await onSubmit(data);
+    setFormLoading(false);
   };
-
-  if (!hasBooked) {
-    return (
-      <div className="rating-message-container">
-        <div className="message-icon">🏡</div>
-        <h3>Khám phá trải nghiệm tuyệt vời!</h3>
-        <p className="rating-message">
-          Để chia sẻ đánh giá của bạn, hãy đặt phòng ngay hôm nay và bắt đầu hành trình đáng nhớ!
-        </p>
-        <a href="/rooms" className="booking-link">
-          <span className="booking-link-icon">🚪</span> Đặt phòng ngay
-        </a>
-      </div>
-    );
-  }
 
   return (
     <div className="rating-form-container">
-      <h3>Chia sẻ trải nghiệm của bạn</h3>
-      <form onSubmit={handleSubmit}>
+      {submitStatus && (
+        <div className={`alert ${submitStatus.type === "success" ? "alert-success" : "alert-danger"}`}>
+          {submitStatus.message}
+        </div>
+      )}
+      <form className="rating-form" onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Đánh giá của bạn:</label>
-          <div className="star-rating">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <span
-                key={star}
-                className={`star ${rating >= star ? 'filled' : ''}`}
-                onClick={() => setRating(star)}
-              >
-                ★
-              </span>
+          <label>Chọn phòng:</label>
+          <select
+            className="form-control"
+            value={selectedRoom}
+            onChange={(e) => setSelectedRoom(e.target.value)}
+            required
+            disabled={rooms.length === 0 || formLoading}
+          >
+            <option value="" disabled>
+              Chọn một phòng
+            </option>
+            {rooms.map((room) => (
+              <option key={room._id} value={room._id}>
+                {room.name}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
-        <div className="form-group">
-          <label>Nội dung đánh giá:</label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Hãy chia sẻ cảm nhận của bạn về trải nghiệm này..."
-            rows="5"
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Thêm ảnh (tùy chọn):</label>
-          <div className="image-upload">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              id="image-upload"
-            />
-            <label htmlFor="image-upload">
-              <span className="upload-icon">📷</span> Chọn ảnh
-            </label>
-            {preview && (
-              <div className="image-preview">
-                <img src={preview} alt="Preview" />
-                <button
-                  type="button"
-                  className="remove-image"
-                  onClick={() => {
-                    setImage(null);
-                    setPreview(null);
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {error && <p className="error-message">{error}</p>}
-
-        <button type="submit" disabled={rating === 0 || !content}>
-          Gửi đánh giá
-        </button>
+        {hasBooked ? (
+          <>
+            <div className="form-group">
+              <label>Tên của bạn:</label>
+              <input
+                type="text"
+                className="form-control"
+                name="userName"
+                value={formData.userName}
+                onChange={handleInputChange}
+                placeholder="Nhập tên của bạn"
+                required
+                disabled={formLoading}
+              />
+            </div>
+            <div className="form-group">
+              <label>Email của bạn:</label>
+              <input
+                type="email"
+                className="form-control"
+                name="userEmail"
+                value={formData.userEmail}
+                onChange={handleInputChange}
+                placeholder="Email của bạn"
+                required
+                disabled
+              />
+              {!formData.userEmail && (
+                <p className="text-danger mt-1">
+                  Email không hợp lệ. Vui lòng đặt phòng trước khi gửi đánh giá.
+                </p>
+              )}
+            </div>
+            <div className="form-group">
+              <label>Đánh giá (1-5 sao):</label>
+              <input
+                type="number"
+                className="form-control"
+                name="rating"
+                min="1"
+                max="5"
+                value={formData.rating}
+                onChange={handleInputChange}
+                placeholder="Nhập số sao (1-5)"
+                required
+                disabled={formLoading}
+              />
+            </div>
+            <div className="form-group">
+              <label>Nội dung đánh giá:</label>
+              <textarea
+                className="form-control"
+                name="comment"
+                rows="3"
+                value={formData.comment}
+                onChange={handleInputChange}
+                placeholder="Nhập nội dung đánh giá của bạn"
+                required
+                disabled={formLoading}
+              ></textarea>
+            </div>
+            <div className="form-group">
+              <label>Ảnh minh họa (tùy chọn):</label>
+              <input
+                type="file"
+                className="form-control"
+                accept="image/*"
+                onChange={handleFileChange}
+                disabled={formLoading}
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={formLoading || !formData.userEmail}
+            >
+              {formLoading ? "Đang gửi..." : "Gửi đánh giá"}
+            </button>
+          </>
+        ) : (
+          <p className="text-danger">Bạn cần đặt phòng này trước khi gửi đánh giá.</p>
+        )}
       </form>
     </div>
   );
-};
+}
 
 export default RatingForm;
