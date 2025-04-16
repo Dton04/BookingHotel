@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 const Booking = require("../models/booking");
+const Room = require("../models/room");
 
 router.post("/bookroom", async (req, res) => {
   const {
@@ -36,6 +37,31 @@ router.post("/bookroom", async (req, res) => {
       return res.status(400).json({ message: "Ngày nhận phòng hoặc trả phòng không hợp lệ" });
     }
 
+    // Kiểm tra trạng thái phòng
+    const room = await Room.findById(roomid);
+    if (!room) {
+      return res.status(404).json({ message: "Không tìm thấy phòng" });
+    }
+
+    if (room.availabilityStatus !== 'available') {
+      return res.status(400).json({ message: `Phòng đang ở trạng thái ${room.availabilityStatus}, không thể đặt` });
+    }
+
+    // Kiểm tra xem phòng có sẵn trong khoảng thời gian không
+    const isRoomBooked = room.currentbookings.some(booking => {
+      const existingCheckin = new Date(booking.checkin);
+      const existingCheckout = new Date(booking.checkout);
+      return (
+        (checkinDate >= existingCheckin && checkinDate < existingCheckout) ||
+        (checkoutDate > existingCheckin && checkoutDate <= existingCheckout) ||
+        (checkinDate <= existingCheckin && checkoutDate >= existingCheckout)
+      );
+    });
+
+    if (isRoomBooked) {
+      return res.status(400).json({ message: "Phòng đã được đặt trong khoảng thời gian này" });
+    }
+
     const newBooking = new Booking({
       roomid,
       name,
@@ -50,6 +76,15 @@ router.post("/bookroom", async (req, res) => {
     });
 
     await newBooking.save();
+
+    // Cập nhật currentbookings của phòng
+    room.currentbookings.push({
+      bookingId: newBooking._id,
+      checkin: checkinDate,
+      checkout: checkoutDate,
+    });
+    await room.save();
+
     res.status(201).json({ message: "Đặt phòng thành công", booking: newBooking });
   } catch (error) {
     console.error("Lỗi trong API đặt phòng:", error.message, error.stack);
@@ -135,6 +170,15 @@ router.put("/:id/cancel", async (req, res) => {
 
     booking.status = "canceled";
     await booking.save();
+
+    // Xóa booking khỏi currentbookings của phòng
+    const room = await Room.findById(booking.roomid);
+    if (room) {
+      room.currentbookings = room.currentbookings.filter(
+        (b) => b.bookingId.toString() !== id
+      );
+      await room.save();
+    }
 
     res.status(200).json({ message: "Hủy đặt phòng thành công", booking });
   } catch (error) {

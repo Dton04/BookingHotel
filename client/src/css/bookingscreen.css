@@ -3,6 +3,15 @@
   background: #f8f8f8;
 }
 
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.booking-header {
+  margin-bottom: 40px;
+}
+
 .booking-header .subtitle {
   font-size: 1.2rem;
   color: #d4a373;
@@ -22,26 +31,21 @@
 .booking-header .title {
   font-size: 2.5rem;
   margin-bottom: 20px;
+  font-weight: bold;
+  color: #333;
 }
 
 .booking-header .title span {
   color: #d4a373;
 }
 
-.booking-images .image-wrapper {
-  position: relative;
-  overflow: hidden;
-  border-radius: 5px;
+.booking-images {
+  margin-bottom: 20px;
 }
 
-.booking-images img {
-  width: 100%;
-  height: auto;
-  transition: transform 0.3s ease;
-}
 
-.booking-images img:hover {
-  transform: scale(1.05);
+.room-image:hover {
+  transform: scale(1.05); /* Hiệu ứng phóng to khi hover */
 }
 
 .booking-screen-wrapper {
@@ -85,10 +89,60 @@
   background: #b5895e;
 }
 
+.booking-screen .btn-book-now:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
 .alert {
-  margin-bottom: 20px;
   padding: 10px;
-  border-radius: 5px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+}
+
+.alert-success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.sweet-loading {
+  width: 100%;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+}
+
+.review-form {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.review-form h3 {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.review-form .form-group {
+  margin-bottom: 15px;
+}
+
+.review-form label {
+  font-weight: bold;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
 }
 
 /* Responsive cho Tablet lớn (992px - 1200px) */
@@ -264,76 +318,4 @@
     padding: 7px;
     font-size: 0.8rem;
   }
-}
-.sweet-loading {
-  width: 100%;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 8px;
-}
-
-.review-form {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-.review-form h3 {
-  margin-bottom: 20px;
-  font-size: 1.5rem;
-}
-
-.review-form .form-group {
-  margin-bottom: 15px;
-}
-
-.review-form label {
-  font-weight: bold;
-}
-
-.btn-secondary {
-  background-color: #6c757d;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background-color: #5a6268;
-}
-
-
-
-
-
-
-
-
-
-
-.alert {
-  padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 4px;
-}
-
-.alert-success {
-  background: #d4edda;
-  color: #155724;
-}
-
-.alert-danger {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-.btn-book-now {
-  background-color: #007bff;
-  color: #fff;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  width: 100%;
-}
-
-.btn-book-now:hover {
-  background-color: #0056b3;
 }

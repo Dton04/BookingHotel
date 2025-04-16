@@ -44,6 +44,7 @@ const bookingRoute = require('./routes/bookingRoutes');
 const usersRoute = require('./routes/usersRoutes');
 const contactRoute = require('./routes/contactRoutes');
 const reviewRoute = require('./routes/reviewRoutes');
+const dashboardRoute = require('./routes/dashboardRoutes');
 
 app.use(cors());
 app.use(express.json());
@@ -55,7 +56,7 @@ app.use('/api/users', usersRoute);
 
 app.use('/api/reviews', reviewRoute);
 app.use('/api', contactRoute);
-
+app.use('/api/dashboard', dashboardRoute);
 
 
 const port = process.env.PORT || 5000;
