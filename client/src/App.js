@@ -12,7 +12,8 @@ import About from './screens/About';
 import Footer from './components/Footer';
 import Registerscreen from './screens/Auth/Registerscreen';
 import LoginScreen from './screens/Auth/Loginscreen';
-import StaffManagement from './components/StaffManagement'; // Import StaffManagement
+import StaffManagement from './components/StaffManagement';
+import UserManagement from './components/UserManagement';
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -51,6 +52,15 @@ function App() {
               <AdminRoute>
                 <StaffManagement />
               </AdminRoute>
+            }
+          />
+          {/* Route cho UserManagement, cả admin và staff truy cập được */}
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute>
+                <UserManagement />
+              </ProtectedRoute>
             }
           />
         </Routes>
