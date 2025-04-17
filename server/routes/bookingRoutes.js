@@ -37,7 +37,6 @@ router.post("/bookroom", async (req, res) => {
       return res.status(400).json({ message: "Ngày nhận phòng hoặc trả phòng không hợp lệ" });
     }
 
-    // Kiểm tra trạng thái phòng
     const room = await Room.findById(roomid);
     if (!room) {
       return res.status(404).json({ message: "Không tìm thấy phòng" });
@@ -47,7 +46,6 @@ router.post("/bookroom", async (req, res) => {
       return res.status(400).json({ message: `Phòng đang ở trạng thái ${room.availabilityStatus}, không thể đặt` });
     }
 
-    // Kiểm tra xem phòng có sẵn trong khoảng thời gian không
     const isRoomBooked = room.currentbookings.some(booking => {
       const existingCheckin = new Date(booking.checkin);
       const existingCheckout = new Date(booking.checkout);
@@ -77,7 +75,6 @@ router.post("/bookroom", async (req, res) => {
 
     await newBooking.save();
 
-    // Cập nhật currentbookings của phòng
     room.currentbookings.push({
       bookingId: newBooking._id,
       checkin: checkinDate,
@@ -92,7 +89,6 @@ router.post("/bookroom", async (req, res) => {
   }
 });
 
-// GET /api/bookings/check?email=...&roomId=...
 router.get("/check", async (req, res) => {
   const { email, roomId } = req.query;
 
@@ -121,7 +117,6 @@ router.get("/check", async (req, res) => {
   }
 });
 
-// GET /api/bookings/:id - Lấy chi tiết 1 lượt đặt phòng
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -146,7 +141,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// PUT /api/bookings/:id/cancel - Hủy đặt phòng
 router.put("/:id/cancel", async (req, res) => {
   const { id } = req.params;
 
@@ -171,7 +165,6 @@ router.put("/:id/cancel", async (req, res) => {
     booking.status = "canceled";
     await booking.save();
 
-    // Xóa booking khỏi currentbookings của phòng
     const room = await Room.findById(booking.roomid);
     if (room) {
       room.currentbookings = room.currentbookings.filter(
@@ -187,7 +180,6 @@ router.put("/:id/cancel", async (req, res) => {
   }
 });
 
-// PUT /api/bookings/:id/confirm - Xác nhận đã thanh toán
 router.put("/:id/confirm", async (req, res) => {
   const { id } = req.params;
 
@@ -223,20 +215,22 @@ router.put("/:id/confirm", async (req, res) => {
   }
 });
 
-// GET /api/bookings?status=... - Lọc đặt phòng theo trạng thái
 router.get("/", async (req, res) => {
-  const { status } = req.query;
+  const { status, email } = req.query;
 
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
     }
 
-    if (status && !["pending", "confirmed", "canceled"].includes(status)) {
-      return res.status(400).json({ message: "Trạng thái không hợp lệ. Phải là: pending, confirmed, hoặc canceled" });
+    const query = {};
+    if (status && ["pending", "confirmed", "canceled"].includes(status)) {
+      query.status = status;
+    }
+    if (email) {
+      query.email = email;
     }
 
-    const query = status ? { status } : {};
     const bookings = await Booking.find(query).populate("roomid");
 
     res.status(200).json(bookings);

@@ -13,6 +13,7 @@ import Footer from './components/Footer';
 import Registerscreen from './screens/Auth/Registerscreen';
 import LoginScreen from './screens/Auth/Loginscreen';
 import StaffManagement from './components/StaffManagement'; // Import StaffManagement
+import HistoryBookings from './components/HistoryBookings';
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -47,6 +48,8 @@ function App() {
               </AdminRoute>
             }
           />
+          <Route path="/bookings" element={<HistoryBookings />} />
+          
         </Routes>
         <Footer />
       </div>

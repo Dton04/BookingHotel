@@ -9,9 +9,18 @@ function RatingForm({ onSubmit, hasBooked, rooms, selectedRoom, setSelectedRoom,
     userEmail: localStorage.getItem("userEmail") || "",
   });
   const [formLoading, setFormLoading] = useState(false);
+  const [ratingError, setRatingError] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    if (name === "rating") {
+      const ratingValue = parseInt(value, 10);
+      if (value === "" || (ratingValue >= 1 && ratingValue <= 5)) {
+        setRatingError(null);
+      } else {
+        setRatingError("Điểm đánh giá phải từ 1 đến 5");
+      }
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -29,16 +38,22 @@ function RatingForm({ onSubmit, hasBooked, rooms, selectedRoom, setSelectedRoom,
       alert("Email không hợp lệ. Vui lòng đặt phòng trước khi gửi đánh giá.");
       return;
     }
-    setFormLoading(true);
-    const data = new FormData();
-    data.append("roomId", selectedRoom);
-    data.append("userName", formData.userName);
-    data.append("rating", formData.rating);
-    data.append("comment", formData.comment);
-    data.append("userEmail", formData.userEmail);
-    if (formData.image) {
-      data.append("image", formData.image);
+
+    const ratingValue = parseInt(formData.rating, 10);
+    if (isNaN(ratingValue) || ratingValue < 1 || ratingValue > 5) {
+      setRatingError("Điểm đánh giá phải từ 1 đến 5");
+      return;
     }
+
+    setFormLoading(true);
+    const data = {
+      roomId: selectedRoom,
+      userName: formData.userName,
+      rating: ratingValue, // Send as a number
+      comment: formData.comment,
+      email: formData.userEmail,
+      image: formData.image,
+    };
     await onSubmit(data);
     setFormLoading(false);
   };
@@ -118,6 +133,7 @@ function RatingForm({ onSubmit, hasBooked, rooms, selectedRoom, setSelectedRoom,
                 required
                 disabled={formLoading}
               />
+              {ratingError && <p className="text-danger mt-1">{ratingError}</p>}
             </div>
             <div className="form-group">
               <label>Nội dung đánh giá:</label>
@@ -145,7 +161,7 @@ function RatingForm({ onSubmit, hasBooked, rooms, selectedRoom, setSelectedRoom,
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={formLoading || !formData.userEmail}
+              disabled={formLoading || !formData.userEmail || ratingError}
             >
               {formLoading ? "Đang gửi..." : "Gửi đánh giá"}
             </button>

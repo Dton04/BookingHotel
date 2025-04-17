@@ -172,12 +172,23 @@ function Testimonial() {
       setLoading(true);
       setSubmitStatus(null);
 
+      // Chuyển đổi rating thành số và kiểm tra giá trị hợp lệ
+      const ratingValue = parseInt(formData.rating, 10);
+      if (isNaN(ratingValue) || ratingValue < 1 || ratingValue > 5) {
+        setSubmitStatus({
+          type: "error",
+          message: "Điểm đánh giá phải từ 1 đến 5",
+        });
+        setLoading(false);
+        return;
+      }
+
       // Đảm bảo formData chứa đầy đủ các trường
       const reviewData = {
         roomId: selectedRoom,
         userName: formData.userName || "Ẩn danh",
         email: localStorage.getItem("userEmail") || formData.email || "",
-        rating: Number(formData.rating) || 0,
+        rating: ratingValue, // Sử dụng giá trị đã chuyển đổi
         comment: formData.comment || "",
       };
 
