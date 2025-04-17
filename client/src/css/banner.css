@@ -160,11 +160,11 @@
 /* Responsive cho Desktop (992px - 1200px) */
 @media (max-width: 1200px) {
   .banner {
-    height: 80vh;
+    height: 50vh;
   }
 
   .banner-slide {
-    height: 80vh;
+    height: 50vh;
   }
 
   .banner-subtitle {
@@ -188,11 +188,11 @@
 /* Responsive cho Tablet (768px - 991px) */
 @media (max-width: 991px) {
   .banner {
-    height: 70vh;
+    height: 45vh;
   }
 
   .banner-slide {
-    height: 70vh;
+    height: 45vh;
   }
 
   .banner-subtitle {
@@ -215,9 +215,10 @@
 
 /* Responsive cho Mobile (<768px) */
 @media (max-width: 767px) {
-  .banner {
-    height: 60vh;
+  .banner { 
     margin-top: 0; /* Xóa khoảng cách thừa phía trên */
+    height: 60vh;
+   
   }
 
   .banner-slide {
@@ -251,12 +252,12 @@
 /* Responsive cho Mobile nhỏ (<576px) */
 @media (max-width: 576px) {
   .banner {
-    height: 50vh;
+    height: 40vh;
     margin-top: 0; /* Đảm bảo không có khoảng cách thừa */
   }
 
   .banner-slide {
-    height: 50vh;
+    height: 40vh;
   }
 
   .banner-subtitle {

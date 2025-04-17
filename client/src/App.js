@@ -14,6 +14,7 @@ import Registerscreen from './screens/Auth/Registerscreen';
 import LoginScreen from './screens/Auth/Loginscreen';
 import StaffManagement from './components/StaffManagement';
 import UserManagement from './components/UserManagement';
+import HistoryBookings from './components/HistoryBookings';
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -63,6 +64,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/bookings" element={<HistoryBookings />} />
         </Routes>
         <Footer />
       </div>

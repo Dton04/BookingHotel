@@ -1,5 +1,5 @@
 .header {
-  max-width: 1500px;
+  max-width: 1400px;
   margin: 0 auto;
   background-color: #1a252f;
   color: #e69500;
@@ -189,6 +189,10 @@
 
 /* Tablet (768px - 991px) */
 @media (max-width: 991px) {
+  body {
+    padding-top: 90px; /* Điều chỉnh padding-top cho tablet */
+  }
+
   .top-bar {
     flex-direction: row;
     justify-content: space-between;
@@ -246,6 +250,10 @@
 
 /* Mobile (dưới 768px) */
 @media (max-width: 767px) {
+  body {
+    padding-top: 60px; /* Điều chỉnh padding-top cho mobile */
+  }
+
   .top-bar {
     padding: 8px 10px;
   }
@@ -351,6 +359,10 @@
 
 /* Mobile nhỏ hơn (dưới 576px) */
 @media (max-width: 576px) {
+  body {
+    padding-top: 50px; /* Điều chỉnh padding-top cho mobile nhỏ */
+  }
+
   .top-bar {
     padding: 5px 10px;
   }
@@ -392,9 +404,4 @@
     width: 10px;
     height: 10px;
   }
-}
-
-/* Đảm bảo nội dung không bị che */
-body {
-  padding-top: 100px; /* top-bar + navbar height */
 }

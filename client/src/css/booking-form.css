@@ -70,6 +70,10 @@
 
 /* Responsive cho Desktop (992px - 1200px) */
 @media (max-width: 1200px) {
+  .booking-form {
+    margin-top: 180px; /* Thêm khoảng cách phía trên để xích xuống */
+  }
+
   .booking-form form {
     padding: 15px;
   }
@@ -77,7 +81,7 @@
   .booking-form input,
   .booking-form select {
     width: 140px;
-    padding: 10px;
+    padding: 10px; /* Sửa padding từ 30px thành 10px để tránh quá lớn */
     font-size: 1rem;
   }
 
@@ -89,6 +93,9 @@
 
 /* Responsive cho Tablet (768px - 991px) */
 @media (max-width: 991px) {
+  .booking-form{
+    margin-top: 30px;
+  }
   .booking-form form {
     padding: 15px;
     gap: 10px;
@@ -110,26 +117,26 @@
 /* Responsive cho Mobile (<768px) */
 @media (max-width: 767px) {
   .booking-form {
-    margin: 15px 0;
+    margin: 10px 0; /* Giảm khoảng cách phía trên để sát banner */
   }
 
   .booking-form form {
     flex-direction: column; /* Xếp các phần tử thành cột */
     padding: 15px;
-    gap: 15px;
+    gap: 12px; /* Giảm khoảng cách giữa các phần tử */
   }
 
   .booking-form input,
   .booking-form select {
     width: 100%; /* Chiếm toàn bộ chiều rộng */
-    max-width: 300px; /* Giới hạn chiều rộng tối đa */
+    max-width: 350px; /* Tăng max-width để phù hợp với banner */
     padding: 10px;
     font-size: 0.9rem;
   }
 
   .booking-form button {
     width: 100%;
-    max-width: 300px;
+    max-width: 350px;
     padding: 10px;
     font-size: 0.9rem;
   }
@@ -138,7 +145,7 @@
 /* Responsive cho Mobile nhỏ (<576px) */
 @media (max-width: 576px) {
   .booking-form {
-    margin: 10px 0;
+    margin: 5px 0; /* Giảm thêm khoảng cách để sát banner */
   }
 
   .booking-form form {
@@ -148,11 +155,13 @@
 
   .booking-form input,
   .booking-form select {
+    max-width: 320px; /* Giảm max-width để phù hợp với màn hình nhỏ */
     padding: 8px;
     font-size: 0.85rem;
   }
 
   .booking-form button {
+    max-width: 320px;
     padding: 8px;
     font-size: 0.85rem;
   }
@@ -167,11 +176,13 @@
 
   .booking-form input,
   .booking-form select {
+    max-width: 280px; /* Giảm thêm max-width */
     padding: 7px;
     font-size: 0.8rem;
   }
 
   .booking-form button {
+    max-width: 280px;
     padding: 7px;
     font-size: 0.8rem;
   }
@@ -186,11 +197,13 @@
 
   .booking-form input,
   .booking-form select {
+    max-width: 250px; /* Giảm max-width cho màn hình rất nhỏ */
     padding: 6px;
     font-size: 0.75rem;
   }
 
   .booking-form button {
+    max-width: 250px;
     padding: 6px;
     font-size: 0.75rem;
   }
