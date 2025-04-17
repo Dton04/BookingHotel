@@ -15,26 +15,22 @@ function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
 
-  // Hàm để kiểm tra trạng thái đăng nhập
   const checkLoginStatus = () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-    console.log('User Info from localStorage:', userInfo); // Debug line
+    console.log('User Info from localStorage:', userInfo);
     if (userInfo && userInfo.name) {
       setIsLoggedIn(true);
-      setUser(userInfo); // Sử dụng trực tiếp object từ localStorage
-      console.log('Set User State:', userInfo); // Debug line
+      setUser(userInfo);
     } else {
       setIsLoggedIn(false);
       setUser(null);
     }
   };
 
-  // Kiểm tra trạng thái đăng nhập khi component mount
   useEffect(() => {
     checkLoginStatus();
   }, []);
 
-  // Kiểm tra lại trạng thái khi location thay đổi (để xử lý chuyển hướng)
   useEffect(() => {
     checkLoginStatus();
   }, [location]);
@@ -57,10 +53,9 @@ function Navbar() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('userInfo'); // Xóa thông tin người dùng
+    localStorage.removeItem('userInfo');
     setIsLoggedIn(false);
     setUser(null);
-    // Chuyển hướng về trang chủ
     window.location.href = '/home';
   };
 
@@ -93,34 +88,62 @@ function Navbar() {
           </div>
           <div className="auth-buttons d-none d-md-flex">
             {isLoggedIn ? (
-              <div class="dropdown">
-              <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                {user.name}
-              </button>
-              <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                <li><Link class="dropdown-item" to="/bookings">Bookings</Link></li>
-                {user && user.isAdmin && (
-                  <>
+              <div className="dropdown">
+                <button
+                  className="btn btn-secondary dropdown-toggle"
+                  type="button"
+                  id="dropdownMenuButton1"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  {user.name}
+                </button>
+                <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                  {user.role === 'admin' ? (
+                    <>
+                      <li>
+                        <Link className="dropdown-item" to="/bookings">
+                          Bookings
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/admin/staffmanagement">
+                          <i className="fas fa-users-cog me-2"></i>Staff Management
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/admin/bookings">
+                          <i className="fas fa-book me-2"></i>All Bookings
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/admin/users">
+                          <i className="fas fa-user-cog me-2"></i>User Management
+                        </Link>
+                      </li>
+                    </>
+                  ) : user.role === 'staff' ? (
+                    <>
+                      <li>
+                        <Link className="dropdown-item" to="/admin/users">
+                          <i className="fas fa-user-cog me-2"></i>User Management
+                        </Link>
+                      </li>
+                    </>
+                  ) : (
                     <li>
-                      <Link class="dropdown-item" to="/admin/staffmanagement">
-                        <i class="fas fa-users-cog me-2"></i>Staff Management
+                      <Link className="dropdown-item" to="/bookings">
+                        Bookings
                       </Link>
                     </li>
-                    <li>
-                      <Link class="dropdown-item" to="/admin/bookings">
-                        <i class="fas fa-book me-2"></i>All Bookings
-                      </Link>
-                    </li>
-                    <li>
-                      <Link class="dropdown-item" to="/admin/users">
-                        <i class="fas fa-user-cog me-2"></i>User Management
-                      </Link>
-                    </li>
-                  </>
-                )}
-                <li><a class="dropdown-item" href="#" onClick={handleLogout}>Logout</a></li>
-              </ul>
-            </div>
+                  )}
+                  <li>
+                    <a className="dropdown-item" href="#" onClick={handleLogout}>
+                      Logout
+                    </a>
+                  </li>
+                </ul>
+              </div>
             ) : (
               <>
                 <Link to="/login" className="btn btn-outline-primary btn-sm me-2">
@@ -149,16 +172,24 @@ function Navbar() {
         <div className={`collapse navbar-collapse ${isNavOpen ? 'show' : ''}`} id="navbarNav">
           <ul className="navbar-nav">
             <li className={`nav-item ${['/home', '/'].includes(location.pathname) ? 'active' : ''}`}>
-              <Link className="nav-link" to="/home" onClick={closeNav}>HOME</Link>
+              <Link className="nav-link" to="/home" onClick={closeNav}>
+                HOME
+              </Link>
             </li>
             <li className={`nav-item ${location.pathname === '/about' ? 'active' : ''}`}>
-              <Link className="nav-link" to="/about" onClick={closeNav}>ABOUT</Link>
+              <Link className="nav-link" to="/about" onClick={closeNav}>
+                ABOUT
+              </Link>
             </li>
             <li className={`nav-item ${location.pathname === '/services' ? 'active' : ''}`}>
-              <Link className="nav-link" to="/services" onClick={closeNav}>SERVICES</Link>
+              <Link className="nav-link" to="/services" onClick={closeNav}>
+                SERVICES
+              </Link>
             </li>
             <li className={`nav-item ${location.pathname === '/rooms' ? 'active' : ''}`}>
-              <Link className="nav-link" to="/rooms" onClick={closeNav}>ROOMS</Link>
+              <Link className="nav-link" to="/rooms" onClick={closeNav}>
+                ROOMS
+              </Link>
             </li>
             <li
               className={`nav-item dropdown ${
@@ -178,17 +209,33 @@ function Navbar() {
               </span>
               {isDropdownOpen && (
                 <div className="dropdown-menu show" aria-labelledby="pagesDropdown">
-                  <Link className="dropdown-item" to="/ourteam" onClick={() => { closeDropdown(); closeNav(); }}>
+                  <Link
+                    className="dropdown-item"
+                    to="/ourteam"
+                    onClick={() => {
+                      closeDropdown();
+                      closeNav();
+                    }}
+                  >
                     Our Team
                   </Link>
-                  <Link className="dropdown-item" to="/testimonial" onClick={() => { closeDropdown(); closeNav(); }}>
+                  <Link
+                    className="dropdown-item"
+                    to="/testimonial"
+                    onClick={() => {
+                      closeDropdown();
+                      closeNav();
+                    }}
+                  >
                     Testimonial
                   </Link>
                 </div>
               )}
             </li>
             <li className={`nav-item ${location.pathname === '/contact' ? 'active' : ''}`}>
-              <Link className="nav-link" to="/contact" onClick={closeNav}>CONTACT</Link>
+              <Link className="nav-link" to="/contact" onClick={closeNav}>
+                CONTACT
+              </Link>
             </li>
           </ul>
           <div className="premium-button">
@@ -210,7 +257,6 @@ function Navbar() {
               <img src={youtubeIcon} alt="YouTube" className="social-icon-img" />
             </a>
           </div>
-        
         </div>
       </nav>
     </header>
