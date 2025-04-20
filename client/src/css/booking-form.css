@@ -1,30 +1,57 @@
-.booking-form {
+/* Section chính chứa form */
+.booking-form-section {
   display: flex;
   justify-content: center;
-  margin: 20px 0;
+  position: relative;
+  align-items: center;
+  padding: 40px 15px;
+ 
 }
 
-.booking-form form {
-  background-color: white;
+/* Container căn giữa form */
+.booking-form-container {
+  max-width: 1200px;
+  width: 100%;
+  padding: 0 15px;
+}
+
+/* Form booking */
+.booking-form {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  background: #ffffff;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  flex-wrap: wrap; /* Cho phép các phần tử xuống dòng trên mobile */
-  gap: 15px; /* Thêm khoảng cách giữa các phần tử */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   justify-content: center;
+  align-items: flex-end;
+}
+
+/* Nhóm input/select */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #343a40;
+  margin-bottom: 5px;
+  text-transform: uppercase;
 }
 
 .booking-form input,
 .booking-form select {
-  margin: 0;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
-  width: 150px;
   font-size: 1rem;
   transition: border-color 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .booking-form input:focus,
@@ -34,109 +61,317 @@
   box-shadow: 0 0 5px rgba(245, 166, 35, 0.3);
 }
 
+/* Placeholder cho input date */
+.booking-form input[type="date"]::-webkit-datetime-edit-text,
+.booking-form input[type="date"]::-webkit-datetime-edit-month-field,
+.booking-form input[type="date"]::-webkit-datetime-edit-day-field,
+.booking-form input[type="date"]::-webkit-datetime-edit-year-field {
+  color: #6c757d;
+}
+
+.booking-form input[type="date"]:invalid::-webkit-datetime-edit {
+  color: #6c757d;
+}
+
+/* Button */
 .booking-form button {
   background-color: #f5a623;
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 12px 20px;
   border-radius: 5px;
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  min-width: 150px;
+  transform: translateY(-20px);
+  
 }
 
 .booking-form button:hover {
   background-color: #e69500;
 }
 
+.booking-form button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Alert căn giữa */
+.alert-centered {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Kết quả phòng */
+.room-results {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.room-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.room-card:hover {
+  transform: translateY(-5px);
+}
+
+.room-image {
+  position: relative;
+  height: 200px;
+}
+
+.room-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.room-price {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: #271383;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.room-content {
+  padding: 15px;
+}
+
+.room-content h3 {
+  font-size: 1.5rem;
+  color: #343a40;
+  margin: 0 0 10px;
+}
+
+.room-type {
+  font-size: 1rem;
+  color: #d4a373;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.room-description {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin: 0 0 15px;
+}
+
+.btn-book {
+  width: 100%;
+  background: #f5a623;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-book:hover {
+  background: #e69500;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 30px;
+  font-size: 1.1rem;
+  color: #f5a623;
+}
+
+.loading-spinner .spinner-border {
+  margin-right: 10px;
+}
+
 /* Responsive cho Desktop lớn (>1200px) */
 @media (min-width: 1200px) {
-  .booking-form form {
+  .booking-form {
     padding: 25px;
+    gap: 20px;
+  }
+
+  .form-group {
+    min-width: 180px;
   }
 
   .booking-form input,
   .booking-form select {
-    width: 180px;
     padding: 12px;
     font-size: 1.1rem;
   }
 
   .booking-form button {
-    padding: 12px 25px;
+    padding: 14px 25px;
     font-size: 1.1rem;
+    min-width: 180px;
+  }
+
+  .room-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+  }
+
+  .room-image {
+    height: 220px;
+  }
+
+  .room-content h3 {
+    font-size: 1.6rem;
   }
 }
 
 /* Responsive cho Desktop (992px - 1200px) */
 @media (max-width: 1200px) {
-  .booking-form {
-    margin-top: 180px; /* Thêm khoảng cách phía trên để xích xuống */
+  .booking-form-section {
+    padding: 30px 15px;
   }
 
-  .booking-form form {
-    padding: 15px;
+  .booking-form {
+    padding: 20px;
+    gap: 15px;
+  }
+
+  .form-group {
+    min-width: 160px;
   }
 
   .booking-form input,
   .booking-form select {
-    width: 140px;
-    padding: 10px; /* Sửa padding từ 30px thành 10px để tránh quá lớn */
+    padding: 10px;
     font-size: 1rem;
   }
 
   .booking-form button {
-    padding: 10px 20px;
+    padding: 12px 20px;
     font-size: 1rem;
+    min-width: 160px;
+  }
+
+  .room-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+  }
+
+  .room-image {
+    height: 200px;
   }
 }
 
 /* Responsive cho Tablet (768px - 991px) */
 @media (max-width: 991px) {
-  .booking-form{
-    margin-top: 30px;
+  .booking-form-section {
+    padding: 20px 15px;
   }
-  .booking-form form {
+
+  .booking-form {
     padding: 15px;
-    gap: 10px;
+    gap: 12px;
+  }
+
+  .form-group {
+    min-width: 140px;
   }
 
   .booking-form input,
   .booking-form select {
-    width: 130px;
     padding: 8px;
     font-size: 0.95rem;
   }
 
   .booking-form button {
-    padding: 8px 18px;
+    padding: 10px 18px;
     font-size: 0.95rem;
+    min-width: 140px;
+  }
+
+  .room-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+  }
+
+  .room-image {
+    height: 180px;
+  }
+
+  .room-content h3 {
+    font-size: 1.4rem;
   }
 }
 
 /* Responsive cho Mobile (<768px) */
 @media (max-width: 767px) {
-  .booking-form {
-    margin: 10px 0; /* Giảm khoảng cách phía trên để sát banner */
+  .booking-form-section {
+    padding: 15px;
   }
 
-  .booking-form form {
-    flex-direction: column; /* Xếp các phần tử thành cột */
+  .booking-form {
+    flex-direction: column;
+    align-items: stretch;
     padding: 15px;
-    gap: 12px; /* Giảm khoảng cách giữa các phần tử */
+    gap: 15px;
+  }
+
+  .form-group {
+    width: 100%;
+    max-width: 350px;
+    margin: 0 auto;
   }
 
   .booking-form input,
   .booking-form select {
-    width: 100%; /* Chiếm toàn bộ chiều rộng */
-    max-width: 350px; /* Tăng max-width để phù hợp với banner */
     padding: 10px;
     font-size: 0.9rem;
+    min-width: 200px;
   }
 
   .booking-form button {
     width: 100%;
     max-width: 350px;
+    padding: 12px;
+    font-size: 0.9rem;
+    margin: 0 auto;
+  }
+
+  .room-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .room-card {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .room-image {
+    height: 200px;
+  }
+
+  .room-content h3 {
+    font-size: 1.3rem;
+  }
+
+  .room-description {
+    font-size: 0.85rem;
+  }
+
+  .btn-book {
     padding: 10px;
     font-size: 0.9rem;
   }
@@ -144,67 +379,152 @@
 
 /* Responsive cho Mobile nhỏ (<576px) */
 @media (max-width: 576px) {
-  .booking-form {
-    margin: 5px 0; /* Giảm thêm khoảng cách để sát banner */
+  .booking-form-section {
+    padding: 10px;
   }
 
-  .booking-form form {
+  .booking-form {
     padding: 10px;
-    gap: 10px;
+    gap: 12px;
+  }
+
+  .form-group {
+    max-width: 320px;
   }
 
   .booking-form input,
   .booking-form select {
-    max-width: 320px; /* Giảm max-width để phù hợp với màn hình nhỏ */
     padding: 8px;
     font-size: 0.85rem;
+    min-width: 180px;
   }
 
   .booking-form button {
     max-width: 320px;
-    padding: 8px;
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+
+  .room-grid {
+    gap: 12px;
+  }
+
+  .room-card {
+    max-width: 350px;
+  }
+
+  .room-image {
+    height: 180px;
+  }
+
+  .room-content h3 {
+    font-size: 1.2rem;
+  }
+
+  .room-description {
+    font-size: 0.8rem;
+  }
+
+  .btn-book {
     font-size: 0.85rem;
   }
 }
 
 /* Responsive cho Mobile rất nhỏ (<400px) */
 @media (max-width: 400px) {
-  .booking-form form {
-    padding: 8px;
-    gap: 8px;
+  .booking-form {
+    gap: 10px;
+  }
+
+  .form-group {
+    max-width: 300px;
   }
 
   .booking-form input,
   .booking-form select {
-    max-width: 280px; /* Giảm thêm max-width */
-    padding: 7px;
+    padding: 8px;
     font-size: 0.8rem;
+    min-width: 160px;
   }
 
   .booking-form button {
-    max-width: 280px;
-    padding: 7px;
+    max-width: 300px;
+    padding: 10px;
+    font-size: 0.8rem;
+  }
+
+  .room-card {
+    max-width: 320px;
+  }
+
+  .room-image {
+    height: 160px;
+  }
+
+  .room-content h3 {
+    font-size: 1.1rem;
+  }
+
+  .room-price {
+    font-size: 0.9rem;
+    padding: 4px 8px;
+  }
+
+  .room-description {
+    font-size: 0.75rem;
+  }
+
+  .btn-book {
     font-size: 0.8rem;
   }
 }
 
 /* Responsive cho Mobile cực nhỏ (<320px) */
 @media (max-width: 320px) {
-  .booking-form form {
-    padding: 6px;
-    gap: 6px;
+  .booking-form {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .form-group {
+    max-width: 280px;
   }
 
   .booking-form input,
   .booking-form select {
-    max-width: 250px; /* Giảm max-width cho màn hình rất nhỏ */
-    padding: 6px;
+    padding: 8px;
     font-size: 0.75rem;
+    min-width: 140px;
   }
 
   .booking-form button {
-    max-width: 250px;
-    padding: 6px;
+    max-width: 280px;
+    padding: 10px;
+    font-size: 0.75rem;
+  }
+
+  .room-card {
+    max-width: 300px;
+  }
+
+  .room-image {
+    height: 150px;
+  }
+
+  .room-content h3 {
+    font-size: 1rem;
+  }
+
+  .room-price {
+    font-size: 0.85rem;
+    padding: 3px 7px;
+  }
+
+  .room-description {
+    font-size: 0.7rem;
+  }
+
+  .btn-book {
     font-size: 0.75rem;
   }
 }

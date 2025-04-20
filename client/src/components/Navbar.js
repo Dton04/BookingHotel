@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import '../css/navbar.css';
 
-// Import hình ảnh icon
+// Import icons
 import facebookIcon from '../assets/icons/facebook-icon.jpg';
 import twitterIcon from '../assets/icons/x-icon.jpg';
 import instagramIcon from '../assets/icons/instagram-icon.png';
@@ -102,11 +102,6 @@ function Navbar() {
                   {user.role === 'admin' ? (
                     <>
                       <li>
-                        <Link className="dropdown-item" to="/bookings">
-                          Bookings
-                        </Link>
-                      </li>
-                      <li>
                         <Link className="dropdown-item" to="/admin/staffmanagement">
                           <i className="fas fa-users-cog me-2"></i>Staff Management
                         </Link>
@@ -129,17 +124,29 @@ function Navbar() {
                           <i className="fas fa-user-cog me-2"></i>User Management
                         </Link>
                       </li>
+                      <li>
+                        <Link className="dropdown-item" to="/stats">
+                          Thống Kê
+                        </Link>
+                      </li>
                     </>
                   ) : (
-                    <li>
-                      <Link className="dropdown-item" to="/bookings">
-                        Bookings
-                      </Link>
-                    </li>
+                    <>
+                      <li>
+                        <Link className="dropdown-item" to="/bookings">
+                          Bookings
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/stats">
+                          Thống Kê
+                        </Link>
+                      </li>
+                    </>
                   )}
                   <li>
                     <a className="dropdown-item" href="#" onClick={handleLogout}>
-                      Logout
+                      <i className="fas fa-sign-out-alt me-2"></i>Logout
                     </a>
                   </li>
                 </ul>
@@ -155,17 +162,17 @@ function Navbar() {
               </>
             )}
           </div>
+          <button
+            className="navbar-toggler d-md-none"
+            type="button"
+            onClick={toggleNav}
+            aria-controls="navbarNav"
+            aria-expanded={isNavOpen}
+            aria-label="Toggle navigation"
+          >
+            <span className="navbar-toggler-icon">☰</span>
+          </button>
         </div>
-        <button
-          className="navbar-toggler d-md-none"
-          type="button"
-          onClick={toggleNav}
-          aria-controls="navbarNav"
-          aria-expanded={isNavOpen}
-          aria-label="Toggle navigation"
-        >
-          <span className="navbar-toggler-icon">☰</span>
-        </button>
       </div>
 
       <nav className="navbar navbar-expand-md">
@@ -192,11 +199,12 @@ function Navbar() {
               </Link>
             </li>
             <li
-              className={`nav-item dropdown ${
-                ['/book', '/ourteam', '/testimonial'].includes(location.pathname) ? 'active' : ''
-              }`}
+              className={`nav-item dropdown ${['/book', '/ourteam', '/testimonial'].includes(location.pathname) ? 'active' : ''
+                }`}
               onMouseLeave={closeDropdown}
             >
+
+  
               <span
                 className="nav-link dropdown-toggle"
                 role="button"
@@ -227,7 +235,7 @@ function Navbar() {
                       closeNav();
                     }}
                   >
-                    Testimonial
+                    Testimonials
                   </Link>
                 </div>
               )}

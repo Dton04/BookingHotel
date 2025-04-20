@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Carousel, Badge } from "react-bootstrap";
+import { Modal, Button, Carousel, Badge, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Rating from "react-rating";
@@ -14,7 +14,7 @@ function Room({ room }) {
   const handleClose = () => setShow(false);
   const handleShow = async () => {
     setShow(true);
-    await Promise.all([fetchReviews(), fetchAverageRating()]);
+    await fetchReviews();
   };
 
   const handleBooking = () => {
@@ -36,22 +36,57 @@ function Room({ room }) {
       });
       setReviews(response.data);
     } catch (error) {
-      console.error("Error fetching reviews:", error);
+      console.error("Lỗi khi lấy đánh giá:", error);
     } finally {
       setLoadingReviews(false);
     }
   };
 
-  const fetchAverageRating = async () => {
-    try {
-      const response = await axios.get("/api/reviews/average", {
-        params: { roomId: room._id },
-      });
-      setAverageRating(response.data);
-    } catch (error) {
-      console.error("Error fetching average rating:", error);
+  useEffect(() => {
+    const fetchAverageRating = async () => {
+      try {
+        const response = await axios.get("/api/reviews/average", {
+          params: { roomId: room._id },
+        });
+        setAverageRating(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy điểm đánh giá trung bình:", error);
+      }
+    };
+
+    fetchAverageRating();
+  }, [room._id]); // Sửa room.id thành room._id
+
+  const getRoomStatus = () => {
+    switch (room.availabilityStatus) {
+      case "maintenance":
+        return {
+          variant: "warning",
+          message: "Phòng đang bảo trì",
+          bookable: false,
+        };
+      case "busy":
+        return {
+          variant: "danger",
+          message: "Phòng đã hết",
+          bookable: false,
+        };
+      case "available":
+        return {
+          variant: "success",
+          message: "Còn phòng",
+          bookable: true,
+        };
+      default:
+        return {
+          variant: "success",
+          message: "Còn phòng",
+          bookable: true,
+        };
     }
   };
+
+  const status = getRoomStatus();
 
   return (
     <div className="room-card">
@@ -66,6 +101,9 @@ function Room({ room }) {
         />
         <div className="room-badge">{room.type}</div>
         <div className="room-price-tag">{formatPriceVND(room.rentperday)}</div>
+        <Alert variant={status.variant} className="room-status-alert">
+          {status.message}
+        </Alert>
       </div>
 
       <div className="room-content">
@@ -101,19 +139,22 @@ function Room({ room }) {
           </div>
 
           <div className="room-actions">
-            <button className="btn btn-view" onClick={handleShow}>
+            <button className="btn-view" onClick={handleShow}>
               Chi tiết
             </button>
-            <button className="btn btn-book" onClick={handleBooking}>
+            <button
+              className="btn-book"
+              onClick={handleBooking}
+              disabled={!status.bookable}
+            >
               Đặt ngay
             </button>
           </div>
         </div>
       </div>
 
-      {/* Modal chi tiết phòng */}
       <Modal show={show} onHide={handleClose} size="lg" centered>
-        <Modal.Header closeButton>
+        <Modal.Header close有个Button>
           <Modal.Title>{room.name}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -158,10 +199,13 @@ function Room({ room }) {
               </div>
             </div>
 
+            <div className="room-modal-status">
+              <h5>Trạng thái phòng</h5>
+              <Alert variant={status.variant}>{status.message}</Alert>
+            </div>
+
             <div className="room-reviews">
-              <h5>
-                Đánh giá ({averageRating.totalReviews})
-              </h5>
+              <h5>Đánh giá ({averageRating.totalReviews})</h5>
               {loadingReviews ? (
                 <p>Đang tải đánh giá...</p>
               ) : reviews.length > 0 ? (
@@ -178,6 +222,19 @@ function Room({ room }) {
                         <span>{review.userName || "Khách ẩn danh"}</span>
                       </div>
                       <p className="review-text">{review.comment}</p>
+                      {/* Hiển thị hình ảnh nếu có */}
+                      {review.image && (
+                        <div className="review-image-container">
+                          <img
+                            src={review.image}
+                            alt="Review"
+                            className="review-image"
+                            onError={(e) => {
+                              e.target.src = "https://via.placeholder.com/400";
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -191,7 +248,11 @@ function Room({ room }) {
           <Button variant="outline-secondary" onClick={handleClose}>
             Đóng
           </Button>
-          <Button variant="primary" onClick={handleBooking}>
+          <Button
+            variant="primary"
+            onClick={handleBooking}
+            disabled={!status.bookable}
+          >
             Đặt phòng ngay
           </Button>
         </Modal.Footer>

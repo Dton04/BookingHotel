@@ -99,6 +99,7 @@ function Testimonial() {
           params: { roomId: selectedRoom },
         });
         setReviews(response.data);
+        setCurrentIndex(0);
       } catch (error) {
         setError("Không thể tải đánh giá. Vui lòng thử lại.");
         console.error("Error fetching reviews:", error);
@@ -128,25 +129,28 @@ function Testimonial() {
     fetchAverageRating();
   }, [selectedRoom]);
 
+  // Số lượng nhóm (mỗi nhóm 2 đánh giá)
+  const groupCount = Math.ceil(reviews.length / 2);
+
   // Auto slider
   useEffect(() => {
-    if (reviews.length <= 1) return;
+    if (groupCount <= 1) return;
 
     const interval = setInterval(() => {
       handleNext();
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [currentIndex, reviews]);
+  }, [groupCount]);
 
   const handlePrev = () => {
-    if (isAnimating || reviews.length <= 1) return;
+    if (isAnimating || groupCount <= 1) return;
     setIsAnimating(true);
     setAnimationState("fade-prev");
 
     setTimeout(() => {
       setCurrentIndex((prevIndex) =>
-        prevIndex === 0 ? reviews.length - 1 : prevIndex - 1
+        prevIndex === 0 ? (groupCount - 1) * 2 : prevIndex - 2
       );
       setAnimationState("fade-in");
       setIsAnimating(false);
@@ -154,13 +158,13 @@ function Testimonial() {
   };
 
   const handleNext = () => {
-    if (isAnimating || reviews.length <= 1) return;
+    if (isAnimating || groupCount <= 1) return;
     setIsAnimating(true);
     setAnimationState("fade-next");
 
     setTimeout(() => {
       setCurrentIndex((prevIndex) =>
-        prevIndex === reviews.length - 1 ? 0 : prevIndex + 1
+        prevIndex === (groupCount - 1) * 2 ? 0 : prevIndex + 2
       );
       setAnimationState("fade-in");
       setIsAnimating(false);
@@ -172,7 +176,6 @@ function Testimonial() {
       setLoading(true);
       setSubmitStatus(null);
 
-      // Chuyển đổi rating thành số và kiểm tra giá trị hợp lệ
       const ratingValue = parseInt(formData.rating, 10);
       if (isNaN(ratingValue) || ratingValue < 1 || ratingValue > 5) {
         setSubmitStatus({
@@ -183,22 +186,18 @@ function Testimonial() {
         return;
       }
 
-      // Đảm bảo formData chứa đầy đủ các trường
       const reviewData = {
         roomId: selectedRoom,
         userName: formData.userName || "Ẩn danh",
         email: localStorage.getItem("userEmail") || formData.email || "",
-        rating: ratingValue, // Sử dụng giá trị đã chuyển đổi
+        rating: ratingValue,
         comment: formData.comment || "",
       };
-
-      console.log("Sending review data:", reviewData); // Log để debug
 
       const response = await axios.post("/api/reviews", reviewData);
       setSubmitStatus({ type: "success", message: "Gửi đánh giá thành công!" });
       setShowRatingForm(false);
 
-      // Cập nhật danh sách đánh giá và điểm trung bình
       const updatedReviews = await axios.get("/api/reviews", {
         params: { roomId: selectedRoom },
       });
@@ -209,12 +208,10 @@ function Testimonial() {
       });
       setAverageRating(updatedAverage.data);
 
-      // Xóa localStorage sau khi gửi đánh giá
       localStorage.removeItem("userEmail");
       localStorage.removeItem("hasBooked");
       localStorage.removeItem("bookedRoomId");
 
-      // Chuyển hướng về trang phòng sau khi gửi đánh giá thành công
       setTimeout(() => {
         navigate("/rooms");
       }, 2000);
@@ -227,6 +224,23 @@ function Testimonial() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Lấy 2 đánh giá hiện tại để hiển thị
+  const displayedReviews = reviews.slice(currentIndex, currentIndex + 2);
+
+  // Tạo star rating
+  const renderStars = (rating) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <i
+          key={i}
+          className={`fas fa-star ${i <= rating ? "star-filled" : "star-empty"}`}
+        ></i>
+      );
+    }
+    return stars;
   };
 
   return (
@@ -257,7 +271,7 @@ function Testimonial() {
               <button
                 className="nav-btn prev"
                 onClick={handlePrev}
-                disabled={isAnimating || reviews.length <= 1}
+                disabled={isAnimating || groupCount <= 1}
               >
                 <div className="arrow-circle">
                   <i className="fas fa-chevron-left"></i>
@@ -266,32 +280,38 @@ function Testimonial() {
 
               <div className="testimonial-wrapper">
                 <div className={`testimonial-cards ${animationState}`}>
-                  {reviews.map((review, index) => (
+                  {displayedReviews.map((review) => (
                     <div
                       key={review._id}
-                      className={`testimonial-card ${
-                        index === currentIndex ? "active" : ""
-                      }`}
+                      className="testimonial-card"
+                      // Không sử dụng backgroundImage nữa
                     >
-                      <p className="testimonial-text">{review.comment}</p>
-                      <div className="testimonial-author">
-                        <img
-                          src={review.image || "https://via.placeholder.com/60"}
-                          alt={review.userName}
-                          className="author-image"
-                          onError={(e) => {
-                            e.target.src = "https://via.placeholder.com/60";
-                          }}
-                        />
-                        <div className="author-info">
-                          <h4 className="author-name">{review.userName}</h4>
-                          <p className="author-profession">
-                            Đánh giá: {review.rating}/5
-                          </p>
+                      <div className="testimonial-content">
+                        <p className="testimonial-text">{review.comment}</p>
+                        {/* Hiển thị hình ảnh nếu có */}
+                        {review.image && (
+                          <div className="review-image-container">
+                            <img
+                              src={review.image}
+                              alt="Review"
+                              className="review-image"
+                              onError={(e) => {
+                                e.target.src = "https://via.placeholder.com/400";
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="testimonial-author">
+                          <div className="author-info">
+                            <h4 className="author-name">{review.userName}</h4>
+                            <p className="author-profession">
+                              {review.profession || "Khách hàng"}
+                            </p>
+                            <div className="star-rating">
+                              {renderStars(review.rating)}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="quote-icon">
-                        <i className="fas fa-quote-right"></i>
                       </div>
                     </div>
                   ))}
@@ -301,7 +321,7 @@ function Testimonial() {
               <button
                 className="nav-btn next"
                 onClick={handleNext}
-                disabled={isAnimating || reviews.length <= 1}
+                disabled={isAnimating || groupCount <= 1}
               >
                 <div className="arrow-circle">
                   <i className="fas fa-chevron-right"></i>
@@ -311,11 +331,13 @@ function Testimonial() {
           )}
 
           <div className="testimonial-indicator">
-            {reviews.map((_, index) => (
+            {Array.from({ length: groupCount }).map((_, index) => (
               <span
                 key={index}
-                className={`indicator ${index === currentIndex ? "active" : ""}`}
-                onClick={() => !isAnimating && setCurrentIndex(index)}
+                className={`indicator ${
+                  currentIndex / 2 === index ? "active" : ""
+                }`}
+                onClick={() => !isAnimating && setCurrentIndex(index * 2)}
               ></span>
             ))}
           </div>

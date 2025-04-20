@@ -9,6 +9,9 @@
   --light-color: #ffffff;
   --text-color: #495057;
   --border-color: #e9ecef;
+  --success-color: #2ecc71; /* Available */
+  --warning-color: #f39c12; /* Maintenance */
+  --danger-color: #e74c3c; /* Busy */
 }
 
 .rooms-content {
@@ -128,6 +131,66 @@
   font-weight: 600;
 }
 
+/* Cảnh báo trạng thái phòng */
+.room-status-alert {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: auto;
+  padding: 8px 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: left;
+  border-radius: 25px;
+  opacity: 0.95;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+  cursor: default;
+}
+
+.room-status-alert:hover {
+  opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.room-status-alert.alert-success {
+  background-color: var(--success-color);
+  color: var(--light-color);
+}
+
+.room-status-alert.alert-warning {
+  background-color: var(--warning-color);
+  color: var(--dark-color);
+}
+
+.room-status-alert.alert-danger {
+  background-color: var(--danger-color);
+  color: var(--light-color);
+}
+
+.room-status-alert::before {
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  font-size: 0.9rem;
+}
+
+.room-status-alert.alert-success::before {
+  content: '\f00c'; /* Icon check */
+}
+
+.room-status-alert.alert-warning::before {
+  content: '\f0ad'; /* Icon cờ lê */
+}
+
+.room-status-alert.alert-danger::before {
+  content: '\f00d'; /* Icon X */
+}
+
 .room-content {
   padding: 25px;
 }
@@ -184,6 +247,7 @@
 }
 
 .room-actions {
+
   display: flex;
   gap: 10px;
 }
@@ -215,6 +279,34 @@
 
 .btn-book:hover {
   background: #c08e5f;
+}
+
+.btn-book:disabled {
+  background: #d9d9d9;
+  color: #6c757d;
+  border: none;
+  cursor: not-allowed;
+  opacity: 0.7;
+  position: relative;
+}
+
+.btn-book:disabled::after {
+  content: 'Not Available';
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark-color);
+  color: var(--light-color);
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-book:disabled:hover::after {
+  opacity: 1;
 }
 
 /* Modal Styles */
@@ -272,6 +364,16 @@
   font-size: 1rem;
   color: var(--text-color);
   font-weight: 400;
+}
+
+.room-modal-status {
+  margin-bottom: 20px;
+}
+
+.room-modal-status h5 {
+  font-size: 1.2rem;
+  color: var(--dark-color);
+  margin-bottom: 10px;
 }
 
 .room-reviews h5 {
@@ -342,6 +444,17 @@
   .room-image {
     height: 220px;
   }
+  
+  .room-status-alert {
+    top: 15px;
+    left: 15px;
+    padding: 6px 15px;
+    font-size: 0.8rem;
+  }
+  
+  .room-status-alert::before {
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 576px) {
@@ -374,5 +487,16 @@
   .btn-view, .btn-book {
     flex: 1;
     text-align: center;
+  }
+  
+  .room-status-alert {
+    top: 10px;
+    left: 10px;
+    padding: 5px 12px;
+    font-size: 0.75rem;
+  }
+  
+  .room-status-alert::before {
+    font-size: 0.75rem;
   }
 }

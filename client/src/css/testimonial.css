@@ -1,4 +1,15 @@
 /* ----------------------------------------------------Testimonial page----------------------------------------------- */
+.review-image-container {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.review-image {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+}
 
 /* Page Container */
 .testimonial-page {
@@ -365,17 +376,115 @@
   }
 
   .testimonial-card {
-    padding: 25px;
+    padding: 15px;
   }
 
   .testimonial-text {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+  }
+
+  .author-name {
+    font-size: 16px;
+  }
+
+  .author-profession {
+    font-size: 12px;
+  }
+
+  .quote-icon {
+    font-size: 2rem;
+    bottom: 10px;
+    right: 15px;
   }
 
   .nav-btn {
-    width: 35px;
-    height: 35px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .nav-btn.prev {
+    left: -10px;
+  }
+
+  .nav-btn.next {
+    right: -10px;
+  }
+
+  .nav-btn i {
     font-size: 1rem;
+  }
+
+  .rating-form-container {
+    padding: 15px;
+    margin: 15px;
+  }
+
+  .rating-form .form-control {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .rating-form .btn-primary {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .rating-form .form-group {
+    margin-bottom: 12px;
+  }
+
+  .rating-form label {
+    font-size: 14px;
+  }
+
+  .rating-section {
+    padding: 15px;
+    margin: 20px auto;
+  }
+
+  .room-selector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .room-selector label {
+    margin-bottom: 5px;
+    font-size: 14px;
+  }
+
+  .room-selector select {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .testimonial-title {
+    font-size: 2rem;
+  }
+
+  .testimonial-title span {
+    font-size: 1rem;
+  }
+
+  .testimonial-wrapper {
+    perspective: none;
+  }
+
+  .testimonial-cards {
+    transform-style: flat;
+  }
+
+  .fade-next .testimonial-card,
+  .fade-prev .testimonial-card {
+    transform: none;
+    opacity: 0;
+  }
+
+  .fade-in .testimonial-card {
+    transform: none;
+    opacity: 1;
   }
 }
 
@@ -385,17 +494,81 @@
   }
 
   .testimonial-card {
-    padding: 20px;
+    padding: 12px;
+  }
+
+  .testimonial-text {
+    font-size: 0.85rem;
   }
 
   .author-image {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .author-name {
+    font-size: 14px;
+  }
+
+  .author-profession {
+    font-size: 11px;
   }
 
   .nav-btn {
-    width: 30px;
-    height: 30px;
+    width: 35px;
+    height: 35px;
+  }
+
+  .nav-btn.prev {
+    left: -5px;
+  }
+
+  .nav-btn.next {
+    right: -5px;
+  }
+
+  .nav-btn i {
+    font-size: 0.9rem;
+  }
+
+  .rating-form-container {
+    padding: 10px;
+    margin: 10px;
+  }
+
+  .rating-form .form-control {
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .rating-form .btn-primary {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .rating-form label {
+    font-size: 13px;
+  }
+
+  .rating-section {
+    padding: 10px;
+    margin: 15px auto;
+  }
+
+  .room-selector label {
+    font-size: 13px;
+  }
+
+  .room-selector select {
+    padding: 6px;
+    font-size: 13px;
+  }
+
+  .testimonial-title {
+    font-size: 1.5rem;
+  }
+
+  .testimonial-title span {
     font-size: 0.9rem;
   }
 }

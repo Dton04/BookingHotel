@@ -46,6 +46,27 @@ router.get("/average", async (req, res) => {
   }
 });
 
+// GET /api/reviews/by-email?email=...
+router.get("/by-email", async (req, res) => {
+  const { email } = req.query;
+
+  try {
+    if (!email || email.trim() === "") {
+      return res.status(400).json({ message: "Email là bắt buộc" });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
+    }
+
+    const reviews = await Review.find({ email });
+    res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách đánh giá theo email:", error.message, error.stack);
+    res.status(500).json({ message: "Lỗi khi lấy danh sách đánh giá theo email", error: error.message });
+  }
+});
+
 // POST /api/reviews – Gửi đánh giá mới
 router.post("/", async (req, res) => {
   const { roomId, userName, rating, comment, email } = req.body;

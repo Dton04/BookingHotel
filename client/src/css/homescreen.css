@@ -1,16 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+
+body {
+  font-family: 'Outfit', sans-serif;
+  perspective: 1000px;
+  background-color: #f4f4f4;
+  scroll-behavior: smooth;
+}
+
 .homescreen {
-  font-family: 'Arial', sans-serif;
+  background: linear-gradient(180deg, #ffffff, #f0f0f0);
+  animation: fadeIn 1s ease-in;
+}
+
+
+
+.homescreen {
+  font-family: 'Poppins', sans-serif;
   max-width: 1400px;
   margin: 0 auto;
-  padding: none;
+  padding: 0;
   color: #333;
-  background-color: #f9f9f9;
+  background: linear-gradient(180deg, #f9f9f9, #eaeaea);
+  overflow-x: hidden;
 }
 
 .booking-section {
-display: flex;
-justify-content: center;
-margin: 190px 0; /* Default margin for larger screens */
+  display: flex;
+  justify-content: center;
+  margin: 200px 0;
+  padding: 20px;
+  background: linear-gradient(90deg, #f8f8f8, #ffffff);
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .intro-section {

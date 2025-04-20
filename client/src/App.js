@@ -15,6 +15,9 @@ import LoginScreen from './screens/Auth/Loginscreen';
 import StaffManagement from './components/StaffManagement';
 import UserManagement from './components/UserManagement';
 import HistoryBookings from './components/HistoryBookings';
+import UserStats from './components/UserStats';
+import AdminBookings from './components/AdminBookings';
+
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -46,6 +49,11 @@ function App() {
           <Route path="/" element={<Homescreen />} />
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/register" element={<Registerscreen />} />
+          <Route path="/bookings" element={<HistoryBookings />} />
+          <Route path="/stats" element={<UserStats/>} />
+
+
+
           {/* Route cho StaffManagement, chỉ admin truy cập được */}
           <Route
             path="/admin/staffmanagement"
@@ -54,6 +62,14 @@ function App() {
                 <StaffManagement />
               </AdminRoute>
             }
+          />
+           <Route
+            path="/admin/bookings"
+            element={
+              <AdminRoute>
+                <AdminBookings />
+              </AdminRoute>
+            }   
           />
           {/* Route cho UserManagement, cả admin và staff truy cập được */}
           <Route
@@ -64,7 +80,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/bookings" element={<HistoryBookings />} />
+        
         </Routes>
         <Footer />
       </div>

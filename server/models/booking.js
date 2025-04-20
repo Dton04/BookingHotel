@@ -32,7 +32,7 @@ const bookingSchema = new mongoose.Schema({
   },
   children: {
     type: Number,
-    required: true,
+    required: false,
   },
   roomType: {
     type: String,
