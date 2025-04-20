@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Table, Button, Modal, Form, message } from 'antd';
+import { Table, Button, Modal, Form, message, Input } from 'antd';
 import Loader from '../components/Loader';
 import Navbar from './Navbar';
 import '../css/StaffManagement.css';
@@ -8,10 +8,12 @@ import { useNavigate } from 'react-router-dom';
 
 function StaffManagement() {
   const [staff, setStaff] = useState([]);
+  const [filteredStaff, setFilteredStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
+  const [searchText, setSearchText] = useState('');
   const [addForm] = Form.useForm();
   const [editForm] = Form.useForm();
   const navigate = useNavigate();
@@ -23,11 +25,36 @@ function StaffManagement() {
       const response = await axios.get('/api/users/staff', {
         headers: { Authorization: `Bearer ${userInfo?.token}` },
       });
-      setStaff(response.data);
+      const staffData = response.data;
+      setStaff(staffData);
+      // Áp dụng bộ lọc tìm kiếm nếu có searchText
+      if (searchText) {
+        const filtered = staffData.filter(
+          (staffMember) =>
+            staffMember.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            staffMember.email.toLowerCase().includes(searchText.toLowerCase())
+        );
+        setFilteredStaff(filtered);
+      } else {
+        setFilteredStaff(staffData);
+      }
       setLoading(false);
     } catch (error) {
       message.error('Failed to fetch staff list');
       setLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    if (searchText) {
+      const filtered = staff.filter(
+        (staffMember) =>
+          staffMember.name.toLowerCase().includes(searchText.toLowerCase()) ||
+          staffMember.email.toLowerCase().includes(searchText.toLowerCase())
+      );
+      setFilteredStaff(filtered);
+    } else {
+      setFilteredStaff(staff);
     }
   };
 
@@ -141,14 +168,21 @@ function StaffManagement() {
       <Navbar />
       <div className="staff-management" style={{ marginTop: '120px' }}>
         <div>
-          <h2>Staff List</h2>        
-          <div style={{ marginBottom: '1.5rem', textAlign: 'right' }}>
+          <h2>Staff List</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <Input
+              placeholder="Search by name or email"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)} // Chỉ cập nhật searchText, không tìm kiếm ngay
+              onPressEnter={handleSearch} // Tìm kiếm khi nhấn Enter
+              style={{ width: 200 }}
+            />
             <Button type="primary" onClick={() => setIsAddModalVisible(true)}>
               Add New Staff
             </Button>
           </div>
         </div>
-        <Table dataSource={staff} columns={columns} rowKey="_id" />
+        <Table dataSource={filteredStaff} columns={columns} rowKey="_id" />
 
         {/* Modal Thêm Staff */}
         <Modal

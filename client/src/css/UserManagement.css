@@ -9,19 +9,24 @@
   min-height: 80vh;
 }
 
-.user-management .header {
+.user-management > div {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.user-management .header h2 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: #2d3748;
-  margin: 0;
-  letter-spacing: 0.5px;
+.user-management .ant-input {
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem;
+  font-size: 0.95rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.user-management .ant-input:focus {
+  outline: none;
+  border-color: #f5a623;
+  box-shadow: 0 0 6px rgba(245, 166, 35, 0.3);
 }
 
 /* Table styling */
@@ -57,7 +62,7 @@
 
 /* Button styling */
 .user-management .ant-btn-danger {
-  background: #e53e3e;
+  background: #ff0000; /* Màu đỏ */
   border: none;
   border-radius: 6px;
   padding: 0.5rem 1rem;
@@ -67,9 +72,9 @@
 }
 
 .user-management .ant-btn-danger:hover {
-  background: #c53030;
+  background: #cc0000; /* Màu đỏ đậm hơn khi hover */
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3); /* Shadow đỏ */
 }
 
 /* Responsive cho Desktop lớn (>1200px) */
@@ -77,10 +82,6 @@
   .user-management {
     margin: 3rem;
     padding: 2rem;
-  }
-
-  .user-management .header h2 {
-    font-size: 2rem;
   }
 
   .user-management .ant-table-thead > tr > th,
@@ -96,10 +97,6 @@
     margin: 2rem;
     padding: 1.5rem;
   }
-
-  .user-management .header h2 {
-    font-size: 1.75rem;
-  }
 }
 
 /* Responsive cho Tablet (768px - 991px) */
@@ -107,16 +104,6 @@
   .user-management {
     margin: 1.5rem;
     padding: 1rem;
-  }
-
-  .user-management .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .user-management .header h2 {
-    font-size: 1.5rem;
   }
 
   .user-management .ant-table-thead > tr > th,
@@ -131,10 +118,6 @@
   .user-management {
     margin: 1rem;
     padding: 0.75rem;
-  }
-
-  .user-management .header h2 {
-    font-size: 1.25rem;
   }
 
   .user-management .ant-table {
@@ -161,10 +144,6 @@
     padding: 0.5rem;
   }
 
-  .user-management .header h2 {
-    font-size: 1.1rem;
-  }
-
   .user-management .ant-table-thead > tr > th,
   .user-management .ant-table-tbody > tr > td {
     font-size: 0.8rem;
@@ -184,10 +163,6 @@
     padding: 0.3rem;
   }
 
-  .user-management .header h2 {
-    font-size: 1rem;
-  }
-
   .user-management .ant-table-thead > tr > th,
   .user-management .ant-table-tbody > tr > td {
     font-size: 0.75rem;
@@ -200,10 +175,6 @@
   .user-management {
     margin: 0.2rem;
     padding: 0.2rem;
-  }
-
-  .user-management .header h2 {
-    font-size: 0.9rem;
   }
 
   .user-management .ant-table-thead > tr > th,
