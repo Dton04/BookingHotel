@@ -66,14 +66,14 @@ function Navbar() {
         <div className="top-bar-right d-flex align-items-center">
           <div className="contact-info d-none d-lg-flex">
             <span>
-              <i className="fas fa-envelope"></i> info@example.com
+              <i className="fas fa-envelope"></i> Hotelier@gmail.com
             </span>
             <span>
               <i className="fas fa-phone"></i> +012 345 6789
             </span>
           </div>
           <div className="social-icons d-none d-md-flex">
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
+            <a href="https://facebook.com/tandat0811" target="_blank" rel="noopener noreferrer">
               <img src={facebookIcon} alt="Facebook" className="social-icon-img" />
             </a>
             <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
@@ -251,20 +251,7 @@ function Navbar() {
               PREMIUM VERSION <i className="fas fa-arrow-right"></i>
             </Link>
           </div>
-          <div className="social-icons-mobile d-md-none mt-3 d-flex justify-content-center gap-3">
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
-              <img src={facebookIcon} alt="Facebook" className="social-icon-img" />
-            </a>
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-              <img src={twitterIcon} alt="Twitter" className="social-icon-img" />
-            </a>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">
-              <img src={instagramIcon} alt="Instagram" className="social-icon-img" />
-            </a>
-            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer">
-              <img src={youtubeIcon} alt="YouTube" className="social-icon-img" />
-            </a>
-          </div>
+          
         </div>
       </nav>
     </header>

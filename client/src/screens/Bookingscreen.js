@@ -220,7 +220,6 @@ function Bookingscreen() {
                           name="children"
                           value={bookingData.children}
                           onChange={handleInputChange}
-                          required
                         >
                           <option value="" disabled>
                             Chọn số trẻ em
