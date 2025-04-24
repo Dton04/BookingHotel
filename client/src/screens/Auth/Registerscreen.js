@@ -8,6 +8,7 @@ function Registerscreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [phone, setPhone] = useState(''); // Thêm trạng thái cho phone
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -24,18 +25,30 @@ function Registerscreen() {
     }
 
     if (!name || !email || !password) {
-      setError('Please fill in all fields.');
+      setError('Please fill in all required fields.');
+      return;
+    }
+
+    // Kiểm tra phone (tùy chọn, nhưng nếu nhập thì phải hợp lệ)
+    if (phone && (phone.length > 10 || !/^[0-9]*$/.test(phone))) {
+      setError('Phone number must be up to 10 digits and contain only numbers.');
       return;
     }
 
     try {
       setLoading(true);
-      const response = await axios.post('/api/users/register', { name, email, password });
+      const response = await axios.post('/api/users/register', { 
+        name, 
+        email, 
+        password, 
+        phone // Gửi phone trong payload
+      });
       setSuccess('Registration successful! Redirecting to login...');
       setName('');
       setEmail('');
       setPassword('');
       setConfirmPassword('');
+      setPhone(''); // Reset phone
 
       setTimeout(() => {
         navigate('/login');
@@ -80,6 +93,19 @@ function Registerscreen() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="phone">Phone Number (Optional)</label>
+            <input
+              type="text"
+              className="form-control"
+              id="phone"
+              placeholder="Enter your phone number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               disabled={loading}
             />
           </div>
