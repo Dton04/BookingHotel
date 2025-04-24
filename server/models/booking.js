@@ -1,3 +1,4 @@
+// booking.js
 const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
@@ -46,6 +47,17 @@ const bookingSchema = new mongoose.Schema({
     enum: ['pending', 'confirmed', 'canceled'],
     default: 'pending',
   },
+  paymentMethod: {
+    type: String,
+    enum: ['cash', 'credit_card', 'bank_transfer', 'mobile_payment'],
+    default: null,
+  },
+  
+  cancelReason: { // Thêm trường mới để lưu lý do hủy
+    type: String,
+    default: null,
+  },
+
   createdAt: {
     type: Date,
     default: Date.now,

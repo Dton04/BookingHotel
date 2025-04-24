@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../css/Contact.css';
 import Banner from './Banner';
-import BookingForm from './BookingForm';
+
 
 function Contact() {
   const [formData, setFormData] = useState({
@@ -44,9 +44,7 @@ function Contact() {
       <Banner />
 
       <div className="contact-container">
-        <section className="new-booking-section">
-          <BookingForm />
-        </section>
+   
 
         <div className="divider"></div>
 

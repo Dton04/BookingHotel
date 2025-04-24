@@ -41,8 +41,8 @@ function ServicesScreen() {
     <div className="services-page">
       {/* Banner */}
       <Banner />
-      <BookingForm />
-      
+
+      <div className="divider"></div>
 
       <div className="container">
         {/* Tiêu đề */}

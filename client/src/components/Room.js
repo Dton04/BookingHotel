@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Carousel, Badge, Alert } from "react-bootstrap";
+import { Modal, Button, Carousel, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Rating from "react-rating";
+import ReviewChart from "./ReviewChart";
 
 function Room({ room }) {
   const [show, setShow] = useState(false);
@@ -12,7 +13,7 @@ function Room({ room }) {
   const navigate = useNavigate();
 
   const handleClose = () => setShow(false);
-  const handleShow = async () => {
+  const handleImageClick = async () => {
     setShow(true);
     await fetchReviews();
   };
@@ -55,7 +56,7 @@ function Room({ room }) {
     };
 
     fetchAverageRating();
-  }, [room._id]); // Sửa room.id thành room._id
+  }, [room._id]);
 
   const getRoomStatus = () => {
     switch (room.availabilityStatus) {
@@ -90,7 +91,7 @@ function Room({ room }) {
 
   return (
     <div className="room-card">
-      <div className="room-image">
+      <div className="room-image" onClick={handleImageClick} style={{ cursor: "pointer" }}>
         <img
           src={room.imageurls?.[0] || "/images/default-room.jpg"}
           alt={room.name}
@@ -114,7 +115,7 @@ function Room({ room }) {
             <i className="fas fa-bed"></i> {room.beds || "3"} Giường
           </span>
           <span>
-            <i className="fas fa-bath"></i> {room.baths || "2"} Phòng tắm
+            <i className="fas fa-bath"></i> {room.baths || "1"} Phòng tắm
           </span>
           <span>
             <i className="fas fa-wifi"></i> WiFi
@@ -139,9 +140,6 @@ function Room({ room }) {
           </div>
 
           <div className="room-actions">
-            <button className="btn-view" onClick={handleShow}>
-              Chi tiết
-            </button>
             <button
               className="btn-book"
               onClick={handleBooking}
@@ -154,7 +152,7 @@ function Room({ room }) {
       </div>
 
       <Modal show={show} onHide={handleClose} size="lg" centered>
-        <Modal.Header close有个Button>
+        <Modal.Header closeButton>
           <Modal.Title>{room.name}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -206,6 +204,7 @@ function Room({ room }) {
 
             <div className="room-reviews">
               <h5>Đánh giá ({averageRating.totalReviews})</h5>
+              <ReviewChart roomId={room._id} />
               {loadingReviews ? (
                 <p>Đang tải đánh giá...</p>
               ) : reviews.length > 0 ? (
@@ -222,7 +221,6 @@ function Room({ room }) {
                         <span>{review.userName || "Khách ẩn danh"}</span>
                       </div>
                       <p className="review-text">{review.comment}</p>
-                      {/* Hiển thị hình ảnh nếu có */}
                       {review.image && (
                         <div className="review-image-container">
                           <img

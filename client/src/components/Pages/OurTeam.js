@@ -6,7 +6,8 @@ function OurTeam() {
   return (
     <div className="our-team-page">
       <Banner />
-      <BookingForm />
+
+       <div className="divider"></div>
       <div className="team-container">
         {/* Team Section */}
         <section className="team-section">

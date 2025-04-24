@@ -8,7 +8,7 @@ function Rooms() {
   return (
     <div className="room-page">
       <Banner />    
-      <BookingForm />
+      <div className="divider"></div>
       <RoomsContent />
     </div>
 

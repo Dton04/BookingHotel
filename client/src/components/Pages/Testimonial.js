@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Banner from "../Banner";
-import BookingForm from "../BookingForm";
 import RatingForm from "../RatingForm";
 import axios from "axios";
 import "../../css/testimonial.css";
@@ -246,7 +245,7 @@ function Testimonial() {
   return (
     <div className="testimonial-page">
       <Banner />
-      <BookingForm />
+      <div className="divider"></div>
 
       <div className="testimonial-section">
         <div className="testimonial-container">

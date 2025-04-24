@@ -3,6 +3,9 @@
   margin: 0 auto;
   background-color: #1a252f;
   color: #e69500;
+  animation: slideDown 1s ease-in-out;
+  animation-fill-mode: forwards;
+  animation-delay: 0.2s;
   padding: 10px 0;
   position: fixed;
   top: 0;
@@ -10,6 +13,13 @@
   right: 0;
   z-index: 500;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+/* Animation vào từ trên xuống */
+@keyframes slideDown {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 body {

@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Room from "./Room";
-import './../css/rooms-content.css';
+import { Pagination } from "react-bootstrap";
+import "./../css/rooms-content.css";
 
 function RoomsContent() {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const roomsPerPage = 6;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,6 +28,32 @@ function RoomsContent() {
 
     fetchData();
   }, []);
+
+  // Tính toán phân trang
+  const indexOfLastRoom = currentPage * roomsPerPage;
+  const indexOfFirstRoom = indexOfLastRoom - roomsPerPage;
+  const currentRooms = rooms.slice(indexOfFirstRoom, indexOfLastRoom);
+  const totalPages = Math.ceil(rooms.length / roomsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const renderPaginationItems = () => {
+    const items = [];
+    for (let number = 1; number <= totalPages; number++) {
+      items.push(
+        <Pagination.Item
+          key={number}
+          active={number === currentPage}
+          onClick={() => handlePageChange(number)}
+        >
+          {number}
+        </Pagination.Item>
+      );
+    }
+    return items;
+  };
 
   return (
     <section className="rooms-content">
@@ -48,12 +77,32 @@ function RoomsContent() {
             <div className="error-message">
               <i className="fas fa-exclamation-triangle"></i> Đã có lỗi xảy ra khi tải dữ liệu
             </div>
-          ) : (
-            rooms.map((room, index) => (
+          ) : currentRooms.length > 0 ? (
+            currentRooms.map((room, index) => (
               <Room key={index} room={room} />
             ))
+          ) : (
+            <div className="no-rooms">
+              <p>Không tìm thấy phòng nào.</p>
+            </div>
           )}
         </div>
+
+        {totalPages > 1 && (
+          <div className="pagination-container">
+            <Pagination>
+              <Pagination.Prev
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              />
+              {renderPaginationItems()}
+              <Pagination.Next
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              />
+            </Pagination>
+          </div>
+        )}
       </div>
     </section>
   );

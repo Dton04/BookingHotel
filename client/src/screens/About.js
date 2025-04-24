@@ -9,10 +9,7 @@ function About() {
     <div className="about-page">
     <Banner />
 
-      {/* Thêm BookingForm Component lên đầu */}
-      <section className="new-booking-section">
-        <BookingForm />
-      </section>
+      
 
       <div className="divider"></div>
 
