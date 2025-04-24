@@ -22,7 +22,15 @@ const userSchema = mongoose.Schema({
       type: String,
       enum: ['user', 'admin', 'staff'],
       default: 'user'
-   }
+   },
+   isDelete: { 
+      type: Boolean, 
+      default: false 
+   },
+   phone: { 
+      type: String, 
+      maxlength: 10 
+   }, 
 } , {
    timestamps: true,
 })
