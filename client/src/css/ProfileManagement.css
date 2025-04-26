@@ -1,0 +1,220 @@
+.profile-management {
+  display: flex;
+  flex-direction: column;
+  margin: 2rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f9f9f9, #ffffff);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  min-height: 80vh;
+}
+
+.profile-management h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.profile-container {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+}
+
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.avatar-image {
+  width: 150px;
+  height: 150px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+}
+
+.upload-button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: #333;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.3s ease;
+}
+
+.upload-button:hover {
+  background: #555;
+}
+
+.avatar-note {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.profile-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.form-group input {
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #f5a623;
+}
+
+.form-group input:disabled {
+  background: #f7fafc;
+  color: #999;
+}
+
+.form-group .edit-icon,
+.form-group .lock-icon {
+  position: absolute;
+  right: 0.5rem;
+  top: 2.25rem;
+  font-size: 1rem;
+}
+
+.change-password-button {
+  padding: 0.5rem 1rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.change-password-button:hover {
+  background: #218838;
+}
+
+.password-form {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+}
+
+.update-button,
+.update-password-button,
+.view-stats-button {
+  padding: 0.5rem 1rem;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.update-button:hover,
+.update-password-button:hover,
+.view-stats-button:hover {
+  background: #0056b3;
+}
+
+.update-button:disabled,
+.update-password-button:disabled,
+.view-stats-button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Responsive cho Desktop lớn (>1200px) */
+@media (min-width: 1200px) {
+  .profile-management {
+      margin: 3rem;
+      padding: 2rem;
+  }
+}
+
+/* Responsive cho Desktop (992px - 1200px) */
+@media (max-width: 1200px) {
+  .profile-management {
+      margin: 2rem;
+      padding: 1.5rem;
+  }
+}
+
+/* Responsive cho Tablet (768px - 991px) */
+@media (max-width: 991px) {
+  .profile-container {
+      flex-direction: column;
+      align-items: center;
+  }
+
+  .avatar-image {
+      width: 120px;
+      height: 120px;
+  }
+}
+
+/* Responsive cho Mobile (<768px) */
+@media (max-width: 767px) {
+  .profile-management {
+      margin: 1rem;
+      padding: 0.75rem;
+  }
+
+  .avatar-image {
+      width: 100px;
+      height: 100px;
+  }
+
+  .form-group input {
+      font-size: 0.85rem;
+      padding: 0.4rem;
+  }
+
+  .update-button,
+  .update-password-button,
+  .change-password-button,
+  .view-stats-button {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+  }
+}
+
+/* Responsive cho Mobile nhỏ (<576px) */
+@media (max-width: 576px) {
+  .profile-management {
+      margin: 0.5rem;
+      padding: 0.5rem;
+  }
+
+  .avatar-image {
+      width: 80px;
+      height: 80px;
+  }
+}

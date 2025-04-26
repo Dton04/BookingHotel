@@ -17,7 +17,7 @@ import UserManagement from './components/UserManagement';
 import HistoryBookings from './components/HistoryBookings';
 import UserStats from './components/UserStats';
 import AdminBookings from './components/AdminBookings';
-
+import ProfileManagement from './components/ProfileManagement'; 
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -29,6 +29,12 @@ const AdminRoute = ({ children }) => {
 const ProtectedRoute = ({ children }) => {
   const userInfo = JSON.parse(localStorage.getItem('userInfo'));
   return userInfo && (userInfo.role === 'admin' || userInfo.role === 'staff') ? children : <Navigate to="/" replace />;
+};
+
+// Component bảo vệ route cho người dùng đã đăng nhập
+const UserRoute = ({ children }) => {
+  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+  return userInfo ? children : <Navigate to="/login" replace />;
 };
 
 function App() {
@@ -50,9 +56,7 @@ function App() {
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/register" element={<Registerscreen />} />
           <Route path="/bookings" element={<HistoryBookings />} />
-          <Route path="/stats" element={<UserStats/>} />
-
-
+          <Route path="/stats" element={<UserStats />} />
 
           {/* Route cho StaffManagement, chỉ admin truy cập được */}
           <Route
@@ -63,13 +67,13 @@ function App() {
               </AdminRoute>
             }
           />
-           <Route
+          <Route
             path="/admin/bookings"
             element={
               <AdminRoute>
                 <AdminBookings />
               </AdminRoute>
-            }   
+            }
           />
           {/* Route cho UserManagement, cả admin và staff truy cập được */}
           <Route
@@ -80,7 +84,15 @@ function App() {
               </ProtectedRoute>
             }
           />
-        
+          {/* Route cho ProfileManagement, chỉ người dùng đã đăng nhập truy cập được */}
+          <Route
+            path="/profile"
+            element={
+              <UserRoute>
+                <ProfileManagement />
+              </UserRoute>
+            }
+          />
         </Routes>
         <Footer />
       </div>

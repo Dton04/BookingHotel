@@ -144,6 +144,19 @@ function Navbar() {
                       </li>
                     </>
                   )}
+                  {/* Thêm liên kết Profile cho tất cả role */}
+                  <li>
+                    <Link
+                      className="dropdown-item"
+                      to="/profile"
+                      onClick={() => {
+                        closeDropdown();
+                        closeNav();
+                      }}
+                    >
+                      <i className="fas fa-user me-2"></i>Profile
+                    </Link>
+                  </li>
                   <li>
                     <a className="dropdown-item" href="#" onClick={handleLogout}>
                       <i className="fas fa-sign-out-alt me-2"></i>Logout
@@ -203,8 +216,6 @@ function Navbar() {
                 }`}
               onMouseLeave={closeDropdown}
             >
-
-  
               <span
                 className="nav-link dropdown-toggle"
                 role="button"
@@ -251,7 +262,6 @@ function Navbar() {
               PREMIUM VERSION <i className="fas fa-arrow-right"></i>
             </Link>
           </div>
-          
         </div>
       </nav>
     </header>
