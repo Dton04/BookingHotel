@@ -1,35 +1,40 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Alert, Spinner } from "react-bootstrap";
+import { Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import AlertMessage from "../components/AlertMessage"; // Thêm AlertMessage
 import "./../css/booking-form.css";
 
-function BookingForm() {
+function BookingForm({ onBookingStatus }) {
   const [checkin, setCheckin] = useState("");
   const [checkout, setCheckout] = useState("");
   const [adults, setAdults] = useState("1");
   const [children, setChildren] = useState("0");
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [alertStatus, setAlertStatus] = useState(null); // { type, message }
   const [searched, setSearched] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setAlertStatus(null);
     setRooms([]);
     setSearched(true);
 
     if (!checkin || !checkout) {
-      setError("Vui lòng chọn ngày nhận phòng và trả phòng");
+      const errorMessage = "Vui lòng chọn ngày nhận phòng và trả phòng";
+      setAlertStatus({ type: "error", message: errorMessage });
+      onBookingStatus({ type: "error", message: errorMessage });
       return;
     }
 
     const checkinDate = new Date(checkin);
     const checkoutDate = new Date(checkout);
     if (checkinDate >= checkoutDate) {
-      setError("Ngày nhận phòng phải trước ngày trả phòng");
+      const errorMessage = "Ngày nhận phòng phải trước ngày trả phòng";
+      setAlertStatus({ type: "error", message: errorMessage });
+      onBookingStatus({ type: "error", message: errorMessage });
       return;
     }
 
@@ -42,9 +47,20 @@ function BookingForm() {
         },
       });
       setRooms(response.data);
+      if (response.data.length > 0) {
+        const successMessage = "Tìm thấy phòng phù hợp! Vui lòng chọn phòng để đặt.";
+        setAlertStatus({ type: "success", message: successMessage });
+        onBookingStatus({ type: "success", message: successMessage });
+      } else {
+        const infoMessage = "Không tìm thấy phòng trống trong khoảng thời gian này. Vui lòng thử lại với ngày khác.";
+        setAlertStatus({ type: "error", message: infoMessage });
+        onBookingStatus({ type: "error", message: infoMessage });
+      }
     } catch (err) {
       console.error("Error fetching available rooms:", err.response?.data, err.message);
-      setError(err.response?.data?.message || "Lỗi khi kiểm tra phòng trống");
+      const errorMessage = err.response?.data?.message || "Lỗi khi kiểm tra phòng trống";
+      setAlertStatus({ type: "error", message: errorMessage });
+      onBookingStatus({ type: "error", message: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -57,9 +73,18 @@ function BookingForm() {
     }).format(price || 1000000);
   };
 
+  const handleCloseAlert = () => {
+    setAlertStatus(null);
+  };
+
   return (
     <section className="booking-form-section">
       <div className="booking-form-container">
+        <AlertMessage
+          type={alertStatus?.type}
+          message={alertStatus?.message}
+          onClose={handleCloseAlert}
+        />
         <form className="booking-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label>CHECK IN</label>
@@ -118,21 +143,11 @@ function BookingForm() {
           </button>
         </form>
 
-        {error && (
-          <Alert variant="danger" className="mt-3 alert-centered" onClose={() => setError(null)} dismissible>
-            {error}
-          </Alert>
-        )}
-
         <div className="room-results mt-4">
           {loading ? (
             <div className="loading-spinner">
               <Spinner animation="border" variant="primary" /> Đang tải danh sách phòng...
             </div>
-          ) : searched && rooms.length === 0 ? (
-            <Alert variant="info" className="alert-centered">
-              Không tìm thấy phòng trống trong khoảng thời gian này. Vui lòng thử lại với ngày khác.
-            </Alert>
           ) : (
             <div className="room-grid">
               {rooms.map((room, index) => (
