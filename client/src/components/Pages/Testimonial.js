@@ -11,6 +11,9 @@ function Testimonial() {
   const [animationState, setAnimationState] = useState("fade-in");
   const [isAnimating, setIsAnimating] = useState(false);
   const [hasBooked, setHasBooked] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [checkoutDate, setCheckoutDate] = useState(null);
+  const [canReview, setCanReview] = useState(false);
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState("");
@@ -29,7 +32,6 @@ function Testimonial() {
     };
   };
 
-  // Fetch danh sách phòng
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -54,40 +56,59 @@ function Testimonial() {
     fetchRooms();
   }, []);
 
-  // Kiểm tra trạng thái đặt phòng
-  useEffect(() => {
-    const checkBookingStatus = async () => {
-      try {
-        const userEmail = localStorage.getItem("userEmail");
-        if (!userEmail || !selectedRoom) {
-          setHasBooked(false);
-          return;
-        }
-
-        const response = await axios.get(`/api/bookings/check`, {
-          params: { email: userEmail, roomId: selectedRoom },
-        });
-        setHasBooked(response.data.hasBooked || false);
-      } catch (error) {
-        console.error("Error checking booking status:", error);
+  const checkBookingStatus = async () => {
+    try {
+      const userEmail = localStorage.getItem("userEmail");
+      if (!userEmail || !selectedRoom) {
         setHasBooked(false);
+        setPaymentStatus(null);
+        setCheckoutDate(null);
+        setCanReview(false);
+        return;
       }
-    };
 
+      const response = await axios.get(`/api/bookings/check`, {
+        params: { email: userEmail, roomId: selectedRoom },
+      });
+      setHasBooked(response.data.hasBooked || false);
+      setPaymentStatus(response.data.paymentStatus || null);
+      setCheckoutDate(response.data.booking?.checkout || null);
+
+      const currentDate = new Date();
+      const checkout = new Date(response.data.booking?.checkout);
+      setCanReview(response.data.hasBooked && response.data.paymentStatus === "paid" && currentDate >= checkout);
+    } catch (error) {
+      console.error("Error checking booking status:", error);
+      setHasBooked(false);
+      setPaymentStatus(null);
+      setCheckoutDate(null);
+      setCanReview(false);
+    }
+  };
+
+  useEffect(() => {
     if (selectedRoom) {
       checkBookingStatus();
     }
   }, [selectedRoom]);
 
-  // Xử lý showReviewForm từ query
+  useEffect(() => {
+    let interval;
+    if (hasBooked && paymentStatus === "pending") {
+      interval = setInterval(async () => {
+        await checkBookingStatus();
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [hasBooked, paymentStatus]);
+
   useEffect(() => {
     const { showReviewForm } = getQueryParams();
-    if (showReviewForm && hasBooked) {
+    if (showReviewForm && canReview) {
       setShowRatingForm(true);
     }
-  }, [hasBooked]);
+  }, [hasBooked, paymentStatus, checkoutDate]);
 
-  // Fetch danh sách đánh giá
   useEffect(() => {
     const fetchReviews = async () => {
       if (!selectedRoom) return;
@@ -110,7 +131,6 @@ function Testimonial() {
     fetchReviews();
   }, [selectedRoom]);
 
-  // Fetch điểm trung bình đánh giá
   useEffect(() => {
     const fetchAverageRating = async () => {
       if (!selectedRoom) return;
@@ -128,10 +148,8 @@ function Testimonial() {
     fetchAverageRating();
   }, [selectedRoom]);
 
-  // Số lượng nhóm (mỗi nhóm 2 đánh giá)
   const groupCount = Math.ceil(reviews.length / 2);
 
-  // Auto slider
   useEffect(() => {
     if (groupCount <= 1) return;
 
@@ -210,6 +228,7 @@ function Testimonial() {
       localStorage.removeItem("userEmail");
       localStorage.removeItem("hasBooked");
       localStorage.removeItem("bookedRoomId");
+      localStorage.removeItem("bookingId");
 
       setTimeout(() => {
         navigate("/rooms");
@@ -225,10 +244,8 @@ function Testimonial() {
     }
   };
 
-  // Lấy 2 đánh giá hiện tại để hiển thị
   const displayedReviews = reviews.slice(currentIndex, currentIndex + 2);
 
-  // Tạo star rating
   const renderStars = (rating) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
@@ -283,11 +300,9 @@ function Testimonial() {
                     <div
                       key={review._id}
                       className="testimonial-card"
-                      // Không sử dụng backgroundImage nữa
                     >
                       <div className="testimonial-content">
                         <p className="testimonial-text">{review.comment}</p>
-                        {/* Hiển thị hình ảnh nếu có */}
                         {review.image && (
                           <div className="review-image-container">
                             <img
@@ -370,6 +385,30 @@ function Testimonial() {
             <div className="rating-message-container">
               <p className="rating-message">
                 Bạn cần đặt phòng này để có thể đánh giá.
+              </p>
+            </div>
+          ) : paymentStatus === "pending" ? (
+            <div className="rating-message-container">
+              <p className="rating-message">
+                Đang chờ xác nhận thanh toán qua ngân hàng. Vui lòng đợi.
+              </p>
+            </div>
+          ) : paymentStatus === "canceled" ? (
+            <div className="rating-message-container">
+              <p className="rating-message">
+                Đặt phòng đã bị hủy do không thanh toán kịp thời. Bạn không thể đánh giá.
+              </p>
+            </div>
+          ) : paymentStatus !== "paid" ? (
+            <div className="rating-message-container">
+              <p className="rating-message">
+                Bạn cần hoàn tất thanh toán để có thể đánh giá.
+              </p>
+            </div>
+          ) : !canReview ? (
+            <div className="rating-message-container">
+              <p className="rating-message">
+                Bạn chỉ có thể đánh giá sau khi trả phòng (ngày {new Date(checkoutDate).toLocaleDateString()}).
               </p>
             </div>
           ) : (

@@ -52,8 +52,18 @@ const bookingSchema = new mongoose.Schema({
     enum: ['cash', 'credit_card', 'bank_transfer', 'mobile_payment'],
     default: null,
   },
+  paymentStatus: { //lưu trạng thái thanh toán
+    type: String,
+    enum: ['pending', 'paid', 'canceled'],
+    default: 'pending',
+  },
+
+  paymentDeadline: { //thời gian hết hạn thanh toán
+    type: Date,
+    default: null,
+  },
   
-  cancelReason: { // Thêm trường mới để lưu lý do hủy
+  cancelReason: { 
     type: String,
     default: null,
   },

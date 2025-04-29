@@ -30,8 +30,15 @@ const userSchema = mongoose.Schema({
    phone: { 
       type: String, 
       maxlength: 10 
-   }, 
-} , {
+   },
+   avatar: {
+      type: String,
+      default: ''
+   
+   }
+},
+
+   {
    timestamps: true,
 })
 const userModel = mongoose.model('users', userSchema)

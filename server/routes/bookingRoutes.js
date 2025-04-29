@@ -4,6 +4,42 @@ const mongoose = require("mongoose");
 const Booking = require("../models/booking");
 const Room = require("../models/room");
 
+// Giả lập hàm xử lý thanh toán qua tài khoản ngân hàng
+const processBankPayment = async (bookingData) => {
+  try {
+    // Lấy thông tin phòng để tính số tiền
+    const room = await Room.findById(bookingData.roomid);
+    if (!room) {
+      throw new Error("Không tìm thấy phòng để tính toán thanh toán.");
+    }
+
+    // Tính số ngày lưu trú
+    const checkinDate = new Date(bookingData.checkin);
+    const checkoutDate = new Date(bookingData.checkout);
+    const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
+    
+    // Tính số tiền cần thanh toán
+    const amount = room.rentperday * days;
+
+    // Giả lập thông tin tài khoản ngân hàng để khách hàng chuyển khoản
+    const bankInfo = {
+      bankName: "Vietinbank",
+      accountNumber: "104872827498",
+      accountHolder: "Nguyen Tan Dat",
+      amount: amount, // Số tiền thực tế dựa trên giá phòng và số ngày
+      content: `Thanh toán đặt phòng ${bookingData._id}`,
+    };
+
+    return {
+      success: true,
+      message: "Vui lòng chuyển khoản theo thông tin dưới đây để hoàn tất thanh toán. Bạn có 5 phút để hoàn thành.",
+      bankInfo,
+    };
+  } catch (error) {
+    throw new Error("Lỗi khi xử lý thanh toán qua tài khoản ngân hàng: " + error.message);
+  }
+};
+
 router.post("/bookroom", async (req, res) => {
   const {
     roomid,
@@ -16,6 +52,7 @@ router.post("/bookroom", async (req, res) => {
     children,
     roomType,
     specialRequest,
+    paymentMethod,
   } = req.body;
 
   try {
@@ -27,8 +64,12 @@ router.post("/bookroom", async (req, res) => {
       return res.status(400).json({ message: "ID phòng không hợp lệ" });
     }
 
-    if (!name || !email || !phone || !checkin || !checkout || !adults || !children || !roomType) {
+    if (!name || !email || !phone || !checkin || !checkout || !adults || children == null || !roomType || !paymentMethod) {
       return res.status(400).json({ message: "Thiếu các trường bắt buộc" });
+    }
+
+    if (!['cash', 'credit_card', 'bank_transfer', 'mobile_payment'].includes(paymentMethod)) {
+      return res.status(400).json({ message: "Phương thức thanh toán không hợp lệ" });
     }
 
     const checkinDate = new Date(checkin);
@@ -71,9 +112,18 @@ router.post("/bookroom", async (req, res) => {
       children: Number(children),
       roomType,
       specialRequest,
+      paymentMethod,
+      paymentStatus: 'pending',
+      paymentDeadline: paymentMethod === 'bank_transfer' ? new Date(Date.now() + 5 * 60 * 1000) : null, // 5 phút
     });
 
     await newBooking.save();
+
+    // Xử lý thanh toán qua ngân hàng nếu được chọn
+    let paymentResult;
+    if (paymentMethod === 'bank_transfer') {
+      paymentResult = await processBankPayment(newBooking);
+    }
 
     room.currentbookings.push({
       bookingId: newBooking._id,
@@ -82,10 +132,71 @@ router.post("/bookroom", async (req, res) => {
     });
     await room.save();
 
-    res.status(201).json({ message: "Đặt phòng thành công", booking: newBooking });
+    res.status(201).json({ message: "Đặt phòng thành công", booking: newBooking, paymentResult });
   } catch (error) {
     console.error("Lỗi trong API đặt phòng:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi đặt phòng", error: error.message });
+  }
+});
+
+// Endpoint để kiểm tra thời gian thanh toán còn lại
+router.get("/:id/payment-deadline", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID đặt phòng không hợp lệ" });
+    }
+
+    const booking = await Booking.findById(id).populate("roomid");
+    if (!booking) {
+      return res.status(404).json({ message: "Không tìm thấy đặt phòng với ID này" });
+    }
+
+    if (booking.paymentMethod !== 'bank_transfer') {
+      return res.status(400).json({ message: "Đặt phòng này không sử dụng thanh toán qua ngân hàng" });
+    }
+
+    if (!booking.paymentDeadline) {
+      return res.status(400).json({ message: "Không có thời hạn thanh toán cho đặt phòng này" });
+    }
+
+    const currentTime = new Date();
+    const timeRemaining = booking.paymentDeadline - currentTime; // Thời gian còn lại (ms)
+
+    if (timeRemaining <= 0 && booking.paymentStatus === 'pending') {
+      // Hủy đặt phòng nếu hết thời gian
+      booking.status = 'canceled';
+      booking.paymentStatus = 'canceled';
+      await booking.save();
+
+      const room = await Room.findById(booking.roomid);
+      if (room) {
+        room.currentbookings = room.currentbookings.filter(
+          (b) => b.bookingId.toString() !== id
+        );
+        await room.save();
+      }
+
+      return res.status(200).json({
+        message: "Thời gian thanh toán đã hết. Đặt phòng đã bị hủy.",
+        timeRemaining: 0,
+        expired: true,
+      });
+    }
+
+    res.status(200).json({
+      message: "Thời gian thanh toán còn lại",
+      timeRemaining: Math.max(0, Math.floor(timeRemaining / 1000)), // Chuyển sang giây
+      expired: false,
+    });
+  } catch (error) {
+    console.error("Lỗi khi kiểm tra thời gian thanh toán:", error.message, error.stack);
+    res.status(500).json({ message: "Lỗi khi kiểm tra thời gian thanh toán", error: error.message });
   }
 });
 
@@ -109,7 +220,6 @@ router.get("/summary", async (req, res) => {
       res.status(500).json({ message: "Lỗi khi lấy thống kê trạng thái đặt phòng", error: error.message });
   }
 });
-
 
 // GET /api/bookings/recent?limit=n - Lấy các booking mới nhất
 router.get("/recent", async (req, res) => {
@@ -136,7 +246,6 @@ router.get("/recent", async (req, res) => {
     res.status(500).json({ message: "Lỗi khi lấy danh sách đặt phòng mới nhất", error: error.message });
   }
 });
-
 
 // /api/bookings/validate - Kiểm tra dữ liệu booking có hợp lệ
 router.post("/validate", async (req, res) => {
@@ -210,6 +319,38 @@ router.post("/validate", async (req, res) => {
   }
 });
 
+// BE4.11 GET /api/bookings/cancel-reason - Lấy lý do hủy đặt phòng từ client
+router.get("/cancel-reason", async (req, res) => {
+  const { bookingId } = req.query;
+
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
+    }
+
+    if (!bookingId || !mongoose.Types.ObjectId.isValid(bookingId)) {
+      return res.status(400).json({ message: "ID đặt phòng không hợp lệ hoặc thiếu" });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: "Không tìm thấy đặt phòng với ID này" });
+    }
+
+    if (booking.status !== "canceled") {
+      return res.status(400).json({ message: "Đặt phòng này chưa bị hủy" });
+    }
+
+    if (!booking.cancelReason) {
+      return res.status(404).json({ message: "Không tìm thấy lý do hủy cho đặt phòng này" });
+    }
+
+    res.status(200).json({ cancelReason: booking.cancelReason });
+  } catch (error) {
+    console.error("Lỗi khi lấy lý do hủy:", error.message, error.stack);
+    res.status(500).json({ message: "Lỗi khi lấy lý do hủy", error: error.message });
+  }
+});
 
 router.get("/check", async (req, res) => {
   const { email, roomId } = req.query;
@@ -232,7 +373,7 @@ router.get("/check", async (req, res) => {
       return res.status(404).json({ hasBooked: false, message: "Không tìm thấy đặt phòng với email và roomId này" });
     }
 
-    res.status(200).json({ hasBooked: true, booking });
+    res.status(200).json({ hasBooked: true, booking, paymentStatus: booking.paymentStatus });
   } catch (error) {
     console.error("Lỗi khi kiểm tra đặt phòng:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi kiểm tra đặt phòng", error: error.message });
@@ -285,6 +426,7 @@ router.put("/:id/cancel", async (req, res) => {
     }
 
     booking.status = "canceled";
+    booking.paymentStatus = "canceled";
     await booking.save();
 
     const room = await Room.findById(booking.roomid);
@@ -328,6 +470,7 @@ router.put("/:id/confirm", async (req, res) => {
     }
 
     booking.status = "confirmed";
+    booking.paymentStatus = "paid";
     await booking.save();
 
     res.status(200).json({ message: "Xác nhận đặt phòng thành công", booking });
@@ -362,7 +505,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-
 // BE4.02 GET /api/bookings/room/:roomId - Lấy tất cả booking của một phòng
 router.get("/room/:roomId", async (req, res) => {
   const { roomId } = req.params;
@@ -388,7 +530,6 @@ router.get("/room/:roomId", async (req, res) => {
   }
 });
 
-
 // GET /api/bookings/stats/daily - Doanh thu theo ngày
 router.get("/stats/daily", async (req, res) => {
   try {
@@ -405,7 +546,6 @@ router.get("/stats/daily", async (req, res) => {
       const checkoutDate = new Date(booking.checkout);
       const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
       
-      // Tạo key theo định dạng YYYY-MM-DD
       const dateKey = checkinDate.toISOString().split('T')[0];
       
       acc[dateKey] = (acc[dateKey] || 0) + (booking.roomid.rentperday * days);
@@ -435,7 +575,6 @@ router.get("/stats/monthly", async (req, res) => {
       const checkoutDate = new Date(booking.checkout);
       const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
       
-      // Tạo key theo định dạng YYYY-MM
       const monthKey = `${checkinDate.getFullYear()}-${String(checkinDate.getMonth() + 1).padStart(2, '0')}`;
       
       acc[monthKey] = (acc[monthKey] || 0) + (booking.roomid.rentperday * days);
@@ -448,7 +587,6 @@ router.get("/stats/monthly", async (req, res) => {
     res.status(500).json({ message: "Lỗi khi lấy thống kê doanh thu theo tháng", error: error.message });
   }
 });
-
 
 // BE4.08 PATCH /api/bookings/:id/note - Ghi chú đặc biệt cho đặt phòng
 router.patch("/:id/note", async (req, res) => {
@@ -477,7 +615,7 @@ router.patch("/:id/note", async (req, res) => {
       return res.status(400).json({ message: "Không thể thêm ghi chú cho đặt phòng đã hủy" });
     }
 
-    booking.specialRequest = note; // Sử dụng trường specialRequest để lưu ghi chú
+    booking.specialRequest = note;
     await booking.save();
 
     res.status(200).json({ message: "Cập nhật ghi chú thành công", booking });
@@ -543,7 +681,6 @@ router.post("/:id/assign-room", async (req, res) => {
       return res.status(400).json({ message: "Phòng mới đã được đặt trong khoảng thời gian này" });
     }
 
-    // Xóa booking khỏi phòng cũ
     if (oldRoom) {
       oldRoom.currentbookings = oldRoom.currentbookings.filter(
         b => b.bookingId.toString() !== id
@@ -551,11 +688,9 @@ router.post("/:id/assign-room", async (req, res) => {
       await oldRoom.save();
     }
 
-    // Gán phòng mới cho booking
     booking.roomid = newRoomId;
     await booking.save();
 
-    // Thêm booking vào phòng mới
     newRoom.currentbookings.push({
       bookingId: booking._id,
       checkin: booking.checkin,
@@ -612,9 +747,8 @@ router.patch("/:id/extend", async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy phòng liên quan đến đặt phòng này" });
     }
 
-    // Kiểm tra xem phòng có sẵn trong khoảng thời gian gia hạn không
     const isRoomBooked = room.currentbookings.some(b => {
-      if (b.bookingId.toString() === id) return false; // Bỏ qua chính booking này
+      if (b.bookingId.toString() === id) return false;
       const existingCheckin = new Date(b.checkin);
       const existingCheckout = new Date(b.checkout);
       return (
@@ -627,11 +761,9 @@ router.patch("/:id/extend", async (req, res) => {
       return res.status(400).json({ message: "Phòng không khả dụng trong khoảng thời gian gia hạn" });
     }
 
-    // Cập nhật ngày trả phòng trong booking
     booking.checkout = newCheckoutDate;
     await booking.save();
 
-    // Cập nhật ngày trả phòng trong currentbookings của phòng
     const bookingInRoom = room.currentbookings.find(b => b.bookingId.toString() === id);
     if (bookingInRoom) {
       bookingInRoom.checkout = newCheckoutDate;
@@ -642,40 +774,6 @@ router.patch("/:id/extend", async (req, res) => {
   } catch (error) {
     console.error("Lỗi khi gia hạn thời gian lưu trú:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi gia hạn thời gian lưu trú", error: error.message });
-  }
-});
-
-// BE4.11 GET /api/bookings/cancel-reason - Lấy lý do hủy đặt phòng từ client
-router.get("/cancel-reason", async (req, res) => {
-  const { bookingId } = req.query;
-
-  try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
-    }
-
-    if (!bookingId || !mongoose.Types.ObjectId.isValid(bookingId)) {
-      return res.status(400).json({ message: "ID đặt phòng không hợp lệ hoặc thiếu" });
-    }
-
-    const booking = await Booking.findById(bookingId);
-    if (!booking) {
-      return res.status(404).json({ message: "Không tìm thấy đặt phòng với ID này" });
-    }
-
-    if (booking.status !== "canceled") {
-      return res.status(400).json({ message: "Đặt phòng này chưa bị hủy" });
-    }
-
-    // Giả sử lý do hủy được lưu trong một trường cancelReason (cần thêm vào schema)
-    if (!booking.cancelReason) {
-      return res.status(404).json({ message: "Không tìm thấy lý do hủy cho đặt phòng này" });
-    }
-
-    res.status(200).json({ cancelReason: booking.cancelReason });
-  } catch (error) {
-    console.error("Lỗi khi lấy lý do hủy:", error.message, error.stack);
-    res.status(500).json({ message: "Lỗi khi lấy lý do hủy", error: error.message });
   }
 });
 
@@ -705,7 +803,6 @@ router.post("/cancel-reason", async (req, res) => {
       return res.status(400).json({ message: "Đặt phòng này chưa bị hủy" });
     }
 
-    // Lưu lý do hủy vào trường cancelReason (cần thêm vào schema)
     booking.cancelReason = reason;
     await booking.save();
 
@@ -715,7 +812,6 @@ router.post("/cancel-reason", async (req, res) => {
     res.status(500).json({ message: "Lỗi khi gửi lý do hủy", error: error.message });
   }
 });
-
 
 // BE4.07 PATCH /api/bookings/:id/payment-method - Cập nhật phương thức thanh toán
 router.patch("/:id/payment-method", async (req, res) => {
@@ -753,4 +849,5 @@ router.patch("/:id/payment-method", async (req, res) => {
     res.status(500).json({ message: "Lỗi khi cập nhật phương thức thanh toán", error: error.message });
   }
 });
+
 module.exports = router;

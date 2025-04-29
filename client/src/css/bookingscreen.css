@@ -319,3 +319,55 @@
     font-size: 0.8rem;
   }
 }
+
+
+.payment-status {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+}
+
+.status-text {
+  font-weight: 500;
+}
+
+.text-success {
+  color: #28a745 !important;
+}
+
+.text-warning {
+  color: #ffc107 !important;
+}
+
+.text-danger {
+  color: #dc3545 !important;
+}
+
+
+
+.bank-info {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  padding: 15px;
+}
+
+.bank-info h4 {
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+}
+
+.bank-info p {
+  margin: 5px 0;
+}
+
+.bank-info .text-warning {
+  font-weight: 500;
+}
+.bank-info .text-warning {
+  font-weight: 500;
+}
+
+.bank-info p.time-remaining {
+  font-weight: bold;
+  color: #dc3545;
+}

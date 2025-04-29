@@ -20,8 +20,14 @@ function Bookingscreen() {
     children: 0,
     roomType: "",
     specialRequest: "",
+    paymentMethod: "cash",
   });
   const [bookingStatus, setBookingStatus] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [bankInfo, setBankInfo] = useState(null);
+  const [bookingId, setBookingId] = useState(null);
+  const [timeRemaining, setTimeRemaining] = useState(null);
+  const [paymentExpired, setPaymentExpired] = useState(false);
 
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -40,6 +46,33 @@ function Bookingscreen() {
     fetchRoomData();
   }, [roomid]);
 
+  useEffect(() => {
+    let interval;
+    if (bookingId && bookingData.paymentMethod === "bank_transfer") {
+      interval = setInterval(async () => {
+        try {
+          const response = await axios.get(`/api/bookings/${bookingId}/payment-deadline`);
+          const { timeRemaining: remaining, expired } = response.data;
+          setTimeRemaining(remaining);
+          setPaymentExpired(expired);
+
+          if (expired) {
+            setBookingStatus({
+              type: "error",
+              message: "Thời gian thanh toán đã hết. Đặt phòng đã bị hủy.",
+            });
+            setPaymentStatus("canceled");
+            clearInterval(interval);
+          }
+        } catch (error) {
+          console.error("Lỗi khi kiểm tra thời gian thanh toán:", error);
+          clearInterval(interval);
+        }
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [bookingId, bookingData.paymentMethod]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setBookingData((prev) => ({ ...prev, [name]: value }));
@@ -50,18 +83,34 @@ function Bookingscreen() {
     try {
       setLoading(true);
       setBookingStatus(null);
+      setPaymentStatus(null);
+      setBankInfo(null);
+      setTimeRemaining(null);
+      setPaymentExpired(false);
       const response = await axios.post("/api/bookings/bookroom", {
         roomid,
         ...bookingData,
       });
+      setBookingId(response.data.booking._id);
       setBookingStatus({
         type: "success",
-        message: "Đặt phòng thành công! Bạn sẽ được chuyển đến trang đánh giá.",
+        message: "Đặt phòng thành công! Vui lòng kiểm tra thông tin thanh toán.",
       });
+      setPaymentStatus(response.data.booking.paymentStatus);
+      
+      if (bookingData.paymentMethod === "bank_transfer" && response.data.paymentResult?.bankInfo) {
+        setBankInfo(response.data.paymentResult.bankInfo);
+      }
+
       localStorage.setItem("userEmail", bookingData.email);
-      setTimeout(() => {
-        navigate(`/testimonial?roomId=${roomid}&showReviewForm=true`);
-      }, 2000);
+      localStorage.setItem("bookingId", response.data.booking._id);
+      localStorage.setItem("bookedRoomId", roomid);
+
+      if (bookingData.paymentMethod !== "bank_transfer") {
+        setTimeout(() => {
+          navigate(`/testimonial?roomId=${roomid}&showReviewForm=true`);
+        }, 5000);
+      }
     } catch (error) {
       setBookingStatus({
         type: "error",
@@ -70,6 +119,86 @@ function Bookingscreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Hàm giả lập thanh toán thành công
+  const handleSimulatePayment = async () => {
+    if (!bookingId) return;
+    try {
+      setLoading(true);
+      await axios.put(`/api/bookings/${bookingId}/confirm`);
+      setPaymentStatus("paid");
+      setBookingStatus({
+        type: "success",
+        message: "Thanh toán thành công! Đang chuyển hướng đến trang đánh giá...",
+      });
+      setTimeout(() => {
+        navigate(`/testimonial?roomId=${roomid}&showReviewForm=true`);
+      }, 2000);
+    } catch (error) {
+      console.error("Lỗi khi giả lập thanh toán:", error);
+      setBookingStatus({
+        type: "error",
+        message: "Lỗi khi giả lập thanh toán. Vui lòng thử lại.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderPaymentStatus = () => {
+    if (!paymentStatus) return null;
+    let iconClass, statusText;
+    switch (paymentStatus) {
+      case "paid":
+        iconClass = "fas fa-check-circle text-success";
+        statusText = "Đã thanh toán";
+        break;
+      case "pending":
+        iconClass = "fas fa-hourglass-half text-warning";
+        statusText = "Đang chờ thanh toán";
+        break;
+      case "canceled":
+        iconClass = "fas fa-times-circle text-danger";
+        statusText = "Đã hủy";
+        break;
+      default:
+        return null;
+    }
+    return (
+      <div className="payment-status d-flex align-items-center mt-3">
+        <i className={`${iconClass} me-2`} style={{ fontSize: "24px" }}></i>
+        <span className="status-text">{statusText}</span>
+      </div>
+    );
+  };
+
+  const renderBankInfo = () => {
+    if (!bankInfo) return null;
+    return (
+      <div className="bank-info mt-3 p-3 border rounded">
+        <h4>Thông tin thanh toán qua ngân hàng</h4>
+        <p><strong>Ngân hàng:</strong> {bankInfo.bankName}</p>
+        <p><strong>Số tài khoản:</strong> {bankInfo.accountNumber}</p>
+        <p><strong>Chủ tài khoản:</strong> {bankInfo.accountHolder}</p>
+        <p><strong>Số tiền:</strong> {bankInfo.amount.toLocaleString()} VND</p>
+        <p><strong>Nội dung chuyển khoản:</strong> {bankInfo.content}</p>
+        {timeRemaining !== null && !paymentExpired && (
+          <p><strong>Thời gian còn lại:</strong> {Math.floor(timeRemaining / 60)} phút {timeRemaining % 60} giây</p>
+        )}
+        <p className="text-warning">Vui lòng chuyển khoản để hoàn tất thanh toán. Đặt phòng sẽ được xác nhận sau khi chúng tôi nhận được tiền.</p>
+        {/* Nút giả lập thanh toán */}
+        {!paymentExpired && paymentStatus === "pending" && (
+          <button
+            className="btn btn-primary mt-3"
+            onClick={handleSimulatePayment}
+            disabled={loading}
+          >
+            {loading ? "Đang xử lý..." : "Giả lập thanh toán thành công"}
+          </button>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -119,6 +248,8 @@ function Bookingscreen() {
                   {bookingStatus.message}
                 </div>
               )}
+              {renderPaymentStatus()}
+              {renderBankInfo()}
               <div className="booking-screen-wrapper">
                 <form className="booking-screen" onSubmit={handleBooking}>
                   <div className="row">
@@ -239,7 +370,6 @@ function Bookingscreen() {
                           name="roomType"
                           value={bookingData.roomType}
                           onChange={handleInputChange}
-                          required
                         >
                           <option value="" disabled>
                             Chọn loại phòng
@@ -248,6 +378,21 @@ function Bookingscreen() {
                         </select>
                       </div>
                     </div>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="paymentMethod">Phương thức thanh toán</label>
+                    <select
+                      className="form-control"
+                      name="paymentMethod"
+                      value={bookingData.paymentMethod}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="cash">Tiền mặt</option>
+                      <option value="credit_card">Thẻ tín dụng</option>
+                      <option value="bank_transfer">Tài khoản ngân hàng</option>
+                      <option value="mobile_payment">MoMo</option>
+                    </select>
                   </div>
                   <div className="form-group">
                     <textarea
@@ -259,8 +404,8 @@ function Bookingscreen() {
                       rows="3"
                     />
                   </div>
-                  <button type="submit" className="btn btn-book-now" disabled={loading}>
-                    {loading ? "Đang xử lý..." : "ĐẶT PHÒNG NGAY"}
+                  <button type="submit" className="btn btn-book-now" disabled={loading || paymentExpired}>
+                    {loading ? "Đang xử lý..." : paymentExpired ? "Đã hủy" : "ĐẶT PHÒNG NGAY"}
                   </button>
                 </form>
               </div>

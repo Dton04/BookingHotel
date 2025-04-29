@@ -14,13 +14,26 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Cấu hình multer để lưu ảnh
+// Cấu hình multer với kiểm tra định dạng và kích thước
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
+  destination: (req, file, cb) => cb(null, 'Uploads/'),
   filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
-const upload = multer({ storage });
 
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Chỉ chấp nhận file JPEG, PNG hoặc GIF'), false);
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }, // Giới hạn 5MB
+});
 // Middleware kiểm tra admin hoặc staff
 const adminOrStaff = (req, res, next) => {
   if (req.user && (req.user.role === 'admin' || req.user.role === 'staff')) {
@@ -29,6 +42,62 @@ const adminOrStaff = (req, res, next) => {
     res.status(403).json({ message: 'Not authorized as admin or staff' });
   }
 };
+
+/**
+ * @route   PUT /api/users/profile
+ * @desc    Cập nhật hồ sơ người dùng hiện tại
+ * @access  Riêng tư (yêu cầu token, tất cả vai trò: user, staff, admin)
+ */
+router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
+  try {
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const updates = {
+      name: req.body.name || user.name,
+      phone: req.body.phone || user.phone,
+    };
+
+    // Xử lý upload ảnh
+    if (req.file) {
+      // Xóa ảnh cũ nếu tồn tại
+      if (user.avatar && fs.existsSync(path.join(__dirname, '../', user.avatar))) {
+        fs.unlinkSync(path.join(__dirname, '../', user.avatar));
+      }
+      updates.avatar = `/Uploads/${req.file.filename}`;
+    }
+
+    // Xử lý thay đổi mật khẩu
+    if (req.body.oldPassword && req.body.newPassword) {
+      if (req.body.oldPassword !== user.password) {
+        return res.status(400).json({ message: 'Mật khẩu cũ không đúng' });
+      }
+      updates.password = req.body.newPassword;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, {
+      new: true,
+    }).select('-password');
+    const bookingsCount = await Booking.countDocuments({
+      email: user.email.toLowerCase(),
+    });
+
+    // Trả về URL đầy đủ cho ảnh
+    const avatarUrl = updates.avatar
+      ? `${req.protocol}://${req.get('host')}${updates.avatar}`
+      : user.avatar;
+
+    res.json({ ...updatedUser._doc, bookingsCount, avatar: avatarUrl });
+  } catch (error) {
+    console.error('Update profile error:', error.message);
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
+  }
+});
+
 
 /**
  * @route   POST /api/users/register
