@@ -69,7 +69,7 @@ function Navbar() {
               <i className="fas fa-envelope"></i> Hotelier@gmail.com
             </span>
             <span>
-              <i className="fas fa-phone"></i> +012 345 6789
+              <i className="fas fa-phone"></i> 0869708914
             </span>
           </div>
           <div className="social-icons d-none d-md-flex">

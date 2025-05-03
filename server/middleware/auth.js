@@ -1,3 +1,4 @@
+// auth.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
@@ -14,45 +15,57 @@ const protect = async (req, res, next) => {
       // Tìm user trong database
       req.user = await User.findById(decoded.id).select('-password');
       if (!req.user) {
-        return res.status(401).json({ message: 'Not authorized, user not found' });
+        return res.status(401).json({ message: 'Không được phép, không tìm thấy người dùng' });
       }
       next();
     } catch (error) {
       // Xử lý lỗi cụ thể
       if (error.name === 'TokenExpiredError') {
-        return res.status(401).json({ message: 'Not authorized, token expired' });
+        return res.status(401).json({ message: 'Không được phép, token đã hết hạn' });
       } else if (error.name === 'JsonWebTokenError') {
-        return res.status(401).json({ message: 'Not authorized, invalid token' });
+        return res.status(401).json({ message: 'Không được phép, token không hợp lệ' });
       }
-      return res.status(401).json({ message: 'Not authorized, token failed' });
+      return res.status(401).json({ message: 'Không được phép, xác thực token thất bại' });
     }
   } else {
-    return res.status(401).json({ message: 'Not authorized, no token provided' });
+    return res.status(401).json({ message: 'Không được phép, không cung cấp token' });
   }
 };
 
 // Middleware chỉ cho admin
 const admin = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authorized, user not found' });
+    return res.status(401).json({ message: 'Không được phép, không tìm thấy người dùng' });
   }
   if (req.user.isAdmin) {
     next();
   } else {
-    res.status(403).json({ message: 'Not authorized as an admin' });
+    res.status(403).json({ message: 'Không được phép với vai trò admin' });
   }
 };
 
 // Middleware chỉ cho staff
 const staff = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authorized, user not found' });
+    return res.status(401).json({ message: 'Không được phép, không tìm thấy người dùng' });
   }
   if (req.user.role === 'staff') {
     next();
   } else {
-    res.status(403).json({ message: 'Not authorized as staff' });
+    res.status(403).json({ message: 'Không được phép với vai trò nhân viên' });
   }
 };
 
-module.exports = { protect, admin, staff };
+// Middleware phân quyền cho API admin quản lý phòng (BE4.24)
+const restrictRoomManagement = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Không được phép, không tìm thấy người dùng' });
+  }
+  if (req.user.isAdmin) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Không được phép quản lý phòng' });
+  }
+};
+
+module.exports = { protect, admin, staff, restrictRoomManagement };

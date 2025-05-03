@@ -24,8 +24,8 @@ const Footer = () => {
         {/* Contact Section */}
         <FooterSection title="CONTACT">
           <p><span className="icon">📍</span> 123 Street, Thu Duc, HCM</p>
-          <p><span className="icon">📞</span> +012 345 67890</p>
-          <p><span className="icon">✉️</span> info@example.com</p>
+          <p><span className="icon">📞</span> 0869708914</p>
+          <p><span className="icon">✉️</span> Hotelier@gmail.com</p>
          
         </FooterSection>
 
