@@ -1,21 +1,25 @@
+// src/screens/Room.js
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Carousel, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Rating from "react-rating";
 import ReviewChart from "./ReviewChart";
+import SuggestionCard from "../components/SuggestionCard";
 
 function Room({ room }) {
   const [show, setShow] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState({ average: 0, totalReviews: 0 });
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const navigate = useNavigate();
 
   const handleClose = () => setShow(false);
   const handleImageClick = async () => {
     setShow(true);
-    await fetchReviews();
+    await Promise.all([fetchReviews(), fetchSuggestions()]);
   };
 
   const handleBooking = () => {
@@ -40,6 +44,22 @@ function Room({ room }) {
       console.error("Lỗi khi lấy đánh giá:", error);
     } finally {
       setLoadingReviews(false);
+    }
+  };
+
+  const fetchSuggestions = async () => {
+    if (room.availabilityStatus !== 'available') {
+      try {
+        setLoadingSuggestions(true);
+        const response = await axios.get("/api/rooms/suggestions", {
+          params: { roomId: room._id, roomType: room.type },
+        });
+        setSuggestions(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy phòng gợi ý:", error);
+      } finally {
+        setLoadingSuggestions(false);
+      }
     }
   };
 
@@ -109,7 +129,6 @@ function Room({ room }) {
 
       <div className="room-content">
         <h3 className="room-title">{room.name}</h3>
-
         <div className="room-features">
           <span>
             <i className="fas fa-bed"></i> {room.beds || "3"} Giường
@@ -121,13 +140,11 @@ function Room({ room }) {
             <i className="fas fa-wifi"></i> WiFi
           </span>
         </div>
-
         <p className="room-description">
           {room.description?.substring(0, 100) ||
             "Erat Ipsum justo amet duo et elit dolor, est duo duo eos lorem sed diam atet diam sed siet lorem."}
           ...
         </p>
-
         <div className="room-footer">
           <div className="room-rating">
             <Rating
@@ -138,7 +155,6 @@ function Room({ room }) {
             />
             <span>({averageRating.totalReviews} đánh giá)</span>
           </div>
-
           <div className="room-actions">
             <button
               className="btn-book"
@@ -168,7 +184,6 @@ function Room({ room }) {
               </Carousel.Item>
             ))}
           </Carousel>
-
           <div className="room-modal-content">
             <div className="room-highlights">
               <div>
@@ -184,24 +199,20 @@ function Room({ room }) {
                 <i className="fas fa-users"></i> Tối đa: {room.maxcount} người
               </div>
             </div>
-
             <div className="room-modal-description">
               <h5>Mô tả</h5>
               <p>{room.description || "Không có mô tả chi tiết."}</p>
             </div>
-
             <div className="room-modal-price">
               <h5>Giá phòng</h5>
               <div className="price">
                 {formatPriceVND(room.rentperday)} <span>/ đêm</span>
               </div>
             </div>
-
             <div className="room-modal-status">
               <h5>Trạng thái phòng</h5>
               <Alert variant={status.variant}>{status.message}</Alert>
             </div>
-
             <div className="room-reviews">
               <h5>Đánh giá ({averageRating.totalReviews})</h5>
               <ReviewChart roomId={room._id} />
@@ -240,6 +251,34 @@ function Room({ room }) {
                 <p>Chưa có đánh giá nào.</p>
               )}
             </div>
+            {room.availabilityStatus !== 'available' && (
+              <div className="room-suggestions">
+                <h5>Phòng tương tự</h5>
+                {loadingSuggestions ? (
+                  <p>Đang tải phòng gợi ý...</p>
+                ) : suggestions.length > 0 ? (
+                  <Carousel indicators={false} controls={true} interval={null}>
+                    {suggestions.reduce((acc, suggestion, index) => {
+                      if (index % 2 === 0) {
+                        acc.push(
+                          <Carousel.Item key={index}>
+                            <div className="d-flex justify-content-center">
+                              <SuggestionCard room={suggestions[index]} />
+                              {suggestions[index + 1] && (
+                                <SuggestionCard room={suggestions[index + 1]} />
+                              )}
+                            </div>
+                          </Carousel.Item>
+                        );
+                      }
+                      return acc;
+                    }, [])}
+                  </Carousel>
+                ) : (
+                  <p>Không tìm thấy phòng tương tự.</p>
+                )}
+              </div>
+            )}
           </div>
         </Modal.Body>
         <Modal.Footer>

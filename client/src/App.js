@@ -17,7 +17,14 @@ import UserManagement from './components/UserManagement';
 import HistoryBookings from './components/HistoryBookings';
 import UserStats from './components/UserStats';
 import AdminBookings from './components/AdminBookings';
+import BookingList from './components/BookingList';
+import BookingForm from './components/BookingForm';
+import AdminDashboard from './components/AdminDashboard';
+import CreateRoomForm from './components/CreateRoomForm';
+import RoomManagement from './components/RoomManagement';
+import EditRoomForm from './components/EditRoomForm';
 import ProfileManagement from './components/ProfileManagement'; 
+
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -56,7 +63,16 @@ function App() {
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/register" element={<Registerscreen />} />
           <Route path="/bookings" element={<HistoryBookings />} />
-          <Route path="/stats" element={<UserStats />} />
+          <Route path="/stats" element={<UserStats/>} />
+          <Route path="/bookings" element={<BookingList />} />
+          <Route path="/rooms" element={<BookingForm />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/createroom" element={<CreateRoomForm />} />
+          <Route path="/admin/rooms" element={<RoomManagement />} />
+          <Route path="/admin/editroom/:id" element={<EditRoomForm />} />
+         
+
+
 
           {/* Route cho StaffManagement, chỉ admin truy cập được */}
           <Route

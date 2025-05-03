@@ -3,6 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../css/bookingscreen.css";
 import Loader from "../components/Loader";
+import CancelConfirmationModal from "../components/CancelConfirmationModal";
+import SuggestionCard from "../components/SuggestionCard";
+import AlertMessage from "../components/AlertMessage"; // Thêm component AlertMessage
+import { Carousel } from "react-bootstrap";
 
 function Bookingscreen() {
   const { roomid } = useParams();
@@ -28,6 +32,10 @@ function Bookingscreen() {
   const [bookingId, setBookingId] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [paymentExpired, setPaymentExpired] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [newBookingId, setNewBookingId] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
 
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -36,6 +44,9 @@ function Bookingscreen() {
         const { data } = await axios.post("/api/rooms/getroombyid", { roomid });
         setRoom(data);
         setBookingData((prev) => ({ ...prev, roomType: data.type || "" }));
+        if (data.availabilityStatus !== 'available') {
+          await fetchSuggestions(data._id, data.type);
+        }
       } catch (error) {
         setError(true);
       } finally {
@@ -73,6 +84,20 @@ function Bookingscreen() {
     return () => clearInterval(interval);
   }, [bookingId, bookingData.paymentMethod]);
 
+  const fetchSuggestions = async (roomId, roomType) => {
+    try {
+      setLoadingSuggestions(true);
+      const response = await axios.get("/api/rooms/suggestions", {
+        params: { roomId, roomType },
+      });
+      setSuggestions(response.data);
+    } catch (error) {
+      console.error("Lỗi khi lấy phòng gợi ý:", error);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setBookingData((prev) => ({ ...prev, [name]: value }));
@@ -92,6 +117,7 @@ function Bookingscreen() {
         ...bookingData,
       });
       setBookingId(response.data.booking._id);
+      setNewBookingId(response.data.booking._id);
       setBookingStatus({
         type: "success",
         message: "Đặt phòng thành công! Vui lòng kiểm tra thông tin thanh toán.",
@@ -114,7 +140,7 @@ function Bookingscreen() {
     } catch (error) {
       setBookingStatus({
         type: "error",
-        message: "Lỗi khi đặt phòng. Vui lòng thử lại.",
+        message: error.response?.data?.message || "Lỗi khi đặt phòng. Vui lòng thử lại.",
       });
     } finally {
       setLoading(false);
@@ -201,6 +227,23 @@ function Bookingscreen() {
     );
   };
 
+  const handleOpenCancelModal = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmSuccess = () => {
+    setShowCancelModal(false);
+    setBookingStatus({
+      type: "success",
+      message: "Đã hủy đặt phòng thành công.",
+    });
+    setNewBookingId(null);
+  };
+
+  const handleCloseAlert = () => {
+    setBookingStatus(null);
+  };
+
   return (
     <div className="booking-page">
       <div className="container">
@@ -214,6 +257,12 @@ function Bookingscreen() {
             Đặt một <span>PHÒNG SANG TRỌNG</span>
           </h1>
         </div>
+
+        <AlertMessage
+          type={bookingStatus?.type}
+          message={bookingStatus?.message}
+          onClose={handleCloseAlert}
+        />
 
         {loading ? (
           <Loader loading={loading} />
@@ -303,6 +352,7 @@ function Bookingscreen() {
                           value={bookingData.checkin}
                           onChange={handleInputChange}
                           placeholder="Ngày nhận phòng"
+                          min={new Date().toISOString().split("T")[0]}
                           required
                         />
                       </div>
@@ -318,6 +368,7 @@ function Bookingscreen() {
                           value={bookingData.checkout}
                           onChange={handleInputChange}
                           placeholder="Ngày trả phòng"
+                          min={bookingData.checkin ? new Date(new Date(bookingData.checkin).setDate(new Date(bookingData.checkin).getDate() + 1)).toISOString().split("T")[0] : ""}
                           required
                         />
                       </div>
@@ -404,17 +455,69 @@ function Bookingscreen() {
                       rows="3"
                     />
                   </div>
-                  <button type="submit" className="btn btn-book-now" disabled={loading || paymentExpired}>
-                    {loading ? "Đang xử lý..." : paymentExpired ? "Đã hủy" : "ĐẶT PHÒNG NGAY"}
+                  <button
+                    type="submit"
+                    className="btn btn-book-now"
+                    disabled={loading || room.availabilityStatus !== 'available'}
+                  >
+                    {loading ? "Đang xử lý..." : "ĐẶT PHÒNG NGAY"}
                   </button>
+                  {bookingStatus?.type === "success" && newBookingId && (
+                    <button
+                      type="button"
+                      className="btn btn-danger mt-2"
+                      onClick={handleOpenCancelModal}
+                    >
+                      Hủy Đặt Phòng
+                    </button>
+                  )}
                 </form>
               </div>
+              {room.availabilityStatus !== 'available' && (
+                <div className="suggestions-container">
+                  <h5>Phòng tương tự</h5>
+                  {loadingSuggestions ? (
+                    <p>Đang tải phòng gợi ý...</p>
+                  ) : suggestions.length > 0 ? (
+                    <Carousel indicators={false} controls={true} interval={null}>
+                      {suggestions.reduce((acc, suggestion, index) => {
+                        if (index % 2 === 0) {
+                          acc.push(
+                            <Carousel.Item key={index}>
+                              <div className="d-flex justify-content-center">
+                                <SuggestionCard room={suggestions[index]} />
+                                {suggestions[index + 1] && (
+                                  <SuggestionCard room={suggestions[index + 1]} />
+                                )}
+                              </div>
+                            </Carousel.Item>
+                          );
+                        }
+                        return acc;
+                      }, [])}
+                    </Carousel>
+                  ) : (
+                    <p>Không tìm thấy phòng tương tự.</p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ) : (
           <h1 className="text-center text-danger">Không tìm thấy phòng</h1>
         )}
       </div>
+      <CancelConfirmationModal
+        show={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirmSuccess={handleConfirmSuccess}
+        bookingId={newBookingId}
+        bookingDetails={{
+          roomName: room?.name,
+          checkin: bookingData.checkin,
+          checkout: bookingData.checkout,
+        }}
+      />
     </div>
   );
 }

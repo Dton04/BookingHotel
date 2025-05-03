@@ -102,6 +102,11 @@ function Navbar() {
                   {user.role === 'admin' ? (
                     <>
                       <li>
+                        <Link className="dropdown-item" to="/admin/dashboard">
+                          <i className="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </Link>
+                      </li>
+                      <li>
                         <Link className="dropdown-item" to="/admin/staffmanagement">
                           <i className="fas fa-users-cog me-2"></i>Staff Management
                         </Link>
@@ -116,6 +121,16 @@ function Navbar() {
                           <i className="fas fa-user-cog me-2"></i>User Management
                         </Link>
                       </li>
+                      <li>
+                        <Link className="dropdown-item" to="/admin/createroom">
+                          <i className="fas fa-plus me-2"></i>Tạo Phòng Mới
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/admin/rooms">
+                          <i className="fas fa-bed me-2"></i>Quản Lý Phòng
+                        </Link>
+                      </li>
                     </>
                   ) : user.role === 'staff' ? (
                     <>
@@ -126,7 +141,7 @@ function Navbar() {
                       </li>
                       <li>
                         <Link className="dropdown-item" to="/stats">
-                          Thống Kê
+                          Thống Kê  
                         </Link>
                       </li>
                     </>
@@ -212,8 +227,7 @@ function Navbar() {
               </Link>
             </li>
             <li
-              className={`nav-item dropdown ${['/book', '/ourteam', '/testimonial'].includes(location.pathname) ? 'active' : ''
-                }`}
+              className={`nav-item dropdown ${['/book', '/ourteam', '/testimonial'].includes(location.pathname) ? 'active' : ''}`}
               onMouseLeave={closeDropdown}
             >
               <span

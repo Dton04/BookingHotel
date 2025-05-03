@@ -1,22 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Banner from "../components/Banner";
 import BookingForm from "../components/BookingForm";
 import RoomsContent from "../components/RoomsContent";
+import AlertMessage from "../components/AlertMessage";
 import "../css/homescreen.css";
 
 function Homescreen() {
+  const [bookingStatus, setBookingStatus] = useState(null); // { type, message }
+
+  const handleBookingStatus = (status) => {
+    setBookingStatus(status);
+  };
+
+  const handleCloseAlert = () => {
+    setBookingStatus(null);
+  };
+
   return (
     <div className="homescreen">
-      {/* Banner */}
+      <AlertMessage
+        type={bookingStatus?.type}
+        message={bookingStatus?.message}
+        onClose={handleCloseAlert}
+      />
       <Banner />
-
-      {/* Form đặt phòng */}
       <section className="booking-section">
-        <BookingForm />
+        <BookingForm onBookingStatus={handleBookingStatus} />
       </section>
-
-      {/* Phần giới thiệu ngắn */}
       <section className="intro-section">
         <div className="intro-container">
           <h2 className="subtitle">
@@ -33,8 +44,6 @@ function Homescreen() {
           <Link to="/about" className="btn btn-explore">Learn More</Link>
         </div>
       </section>
-
-      {/* Phần Services */}
       <section className="services-section">
         <div className="container">
           <div className="services-header text-center">
@@ -67,13 +76,9 @@ function Homescreen() {
           </div>
         </div>
       </section>
-
-      {/* Phần Rooms */}
       <section className="rooms-section">
         <RoomsContent />
       </section>
-
-      {/* Phần OurTeam */}
       <section className="team-section">
         <div className="container">
           <div className="team-header text-center">
@@ -89,9 +94,7 @@ function Homescreen() {
           <p className="team-description">Đội ngũ chuyên gia của chúng tôi luôn sẵn sàng phục vụ bạn.</p>
           <Link to="/ourteam" className="btn btn-explore">Meet The Team</Link>
         </div>
-        </section>
-
-      {/* Phần Contact */}
+      </section>
       <section className="contact-section">
         <div className="container">
           <div className="contact-header text-center">
@@ -107,8 +110,7 @@ function Homescreen() {
           <p className="contact-description">Chúng tôi luôn sẵn sàng hỗ trợ bạn.</p>
           <Link to="/contact" className="btn btn-explore">Contact Us</Link>
         </div>
-        </section>
-
+      </section>
     </div>
   );
 }

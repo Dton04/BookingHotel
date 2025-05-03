@@ -1,0 +1,337 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.dashboard-page {
+  padding: 80px 0;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  font-family: 'Inter', sans-serif;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  margin-bottom: 50px;
+  text-align: center;
+}
+
+.dashboard-header .subtitle {
+  font-size: 1.25rem;
+  color: #4a5568;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+
+.dashboard-header .subtitle .line {
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(to right, #3498db, #2ecc71);
+  margin: 0 15px;
+  border-radius: 2px;
+}
+
+.dashboard-header .title {
+  font-size: 2.75rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.dashboard-header .title span {
+  background: linear-gradient(to right, #3498db, #2ecc71);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.stat-card.modern-card {
+  border: none;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card.modern-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card.modern-card .card-body {
+  padding: 25px;
+  text-align: center;
+}
+
+.stat-card.modern-card .modern-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 15px;
+}
+
+.stat-card.modern-card .stat-value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  background: linear-gradient(to right, #3498db, #2ecc71);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.chart-card.modern-card {
+  border: none;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.3s ease;
+}
+
+.chart-card.modern-card:hover {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.chart-card.modern-card .card-body {
+  padding: 30px;
+}
+
+.chart-filter {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.chart-filter .modern-label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #2d3748;
+  margin-right: 15px;
+}
+
+.chart-filter .modern-select {
+  max-width: 220px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  font-size: 0.95rem;
+  color: #2d3748;
+  background: #ffffff;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chart-filter .modern-select:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+  outline: none;
+}
+
+.chart-filter .modern-button {
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-color: #3498db;
+  color: #3498db;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.chart-filter .modern-button:hover {
+  background-color: #3498db;
+  color: #ffffff;
+}
+
+.modern-alert {
+  border-radius: 8px;
+  padding: 15px;
+  font-size: 1rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive cho Desktop lớn (>1400px) */
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1600px;
+  }
+
+  .dashboard-header .title {
+    font-size: 3rem;
+  }
+
+  .stat-card.modern-card .stat-value {
+    font-size: 2.5rem;
+  }
+}
+
+/* Responsive cho Tablet lớn (992px - 1400px) */
+@media (max-width: 1400px) {
+  .dashboard-page {
+    padding: 60px 0;
+  }
+
+  .dashboard-header .subtitle {
+    font-size: 1.15rem;
+  }
+
+  .dashboard-header .title {
+    font-size: 2.5rem;
+  }
+
+  .stat-card.modern-card .modern-title {
+    font-size: 1.2rem;
+  }
+
+  .stat-card.modern-card .stat-value {
+    font-size: 2rem;
+  }
+
+  .chart-filter .modern-select {
+    max-width: 200px;
+  }
+}
+
+/* Responsive cho Tablet (768px - 991px) */
+@media (max-width: 991px) {
+  .dashboard-page {
+    padding: 50px 0;
+  }
+
+  .dashboard-header .subtitle {
+    font-size: 1.1rem;
+  }
+
+  .dashboard-header .subtitle .line {
+    width: 50px;
+  }
+
+  .dashboard-header .title {
+    font-size: 2.25rem;
+  }
+
+  .stat-card.modern-card .modern-title {
+    font-size: 1.15rem;
+  }
+
+  .stat-card.modern-card .stat-value {
+    font-size: 1.75rem;
+  }
+
+  .chart-card.modern-card .card-body {
+    padding: 25px;
+  }
+
+  .chart-filter .modern-select {
+    max-width: 180px;
+  }
+}
+
+/* Responsive cho Mobile (<768px) */
+@media (max-width: 767px) {
+  .dashboard-page {
+    padding: 40px 0;
+  }
+
+  .dashboard-header .subtitle {
+    font-size: 1rem;
+  }
+
+  .dashboard-header .subtitle .line {
+    width: 40px;
+  }
+
+  .dashboard-header .title {
+    font-size: 2rem;
+  }
+
+  .stat-card.modern-card {
+    margin-bottom: 20px;
+  }
+
+  .stat-card.modern-card .modern-title {
+    font-size: 1.1rem;
+  }
+
+  .stat-card.modern-card .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .chart-card.modern-card {
+    padding: 15px;
+  }
+
+  .chart-card.modern-card .card-body {
+    padding: 20px;
+  }
+
+  .chart-filter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .chart-filter .modern-label {
+    margin-bottom: 10px;
+  }
+
+  .chart-filter .modern-select {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .chart-filter .modern-button {
+    width: 100%;
+    margin-top: 10px;
+  }
+}
+
+/* Responsive cho Mobile nhỏ (<576px) */
+@media (max-width: 576px) {
+  .dashboard-page {
+    padding: 30px 0;
+  }
+
+  .dashboard-header .subtitle {
+    font-size: 0.95rem;
+  }
+
+  .dashboard-header .subtitle .line {
+    width: 30px;
+  }
+
+  .dashboard-header .title {
+    font-size: 1.75rem;
+  }
+
+  .stat-card.modern-card .modern-title {
+    font-size: 1rem;
+  }
+
+  .stat-card.modern-card .stat-value {
+    font-size: 1.4rem;
+  }
+
+  .chart-card.modern-card {
+    padding: 10px;
+  }
+}
+
+/* Responsive cho Mobile rất nhỏ (<400px) */
+@media (max-width: 400px) {
+  .dashboard-header .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .dashboard-header .subtitle .line {
+    width: 25px;
+  }
+
+  .dashboard-header .title {
+    font-size: 1.5rem;
+  }
+
+  .stat-card.modern-card .modern-title {
+    font-size: 0.95rem;
+  }
+
+  .stat-card.modern-card .stat-value {
+    font-size: 1.3rem;
+  }
+}
