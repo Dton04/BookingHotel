@@ -4,13 +4,18 @@ const User = require('../models/user');
 const Booking = require('../models/booking');
 const Review = require('../models/review');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { protect, admin, staff } = require('../middleware/auth');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const nodemailer = require('nodemailer');
+const otpGenerator = require('otp-generator');
 
 // Tạo thư mục uploads nếu chưa tồn tại
-const uploadDir = path.join(__dirname, '../uploads');
+const uploadDir = path.join(__dirname, '../Uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -35,6 +40,7 @@ const upload = multer({
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 }, // Giới hạn 5MB
 });
+
 // Middleware kiểm tra admin hoặc staff
 const adminOrStaff = (req, res, next) => {
   if (req.user && (req.user.role === 'admin' || req.user.role === 'staff')) {
@@ -44,66 +50,69 @@ const adminOrStaff = (req, res, next) => {
   }
 };
 
-/**
- * @route   PUT /api/users/profile
- * @desc    Cập nhật hồ sơ người dùng hiện tại
- * @access  Riêng tư (yêu cầu token, tất cả vai trò: user, staff, admin)
- */
-router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
-  try {
-    console.log('Request body:', req.body);
-    console.log('Request file:', req.file);
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    const updates = {
-      name: req.body.name || user.name,
-      phone: req.body.phone || user.phone,
-    };
-
-    // Xử lý upload ảnh
-    if (req.file) {
-      // Xóa ảnh cũ nếu tồn tại
-      if (user.avatar && fs.existsSync(path.join(__dirname, '../', user.avatar))) {
-        fs.unlinkSync(path.join(__dirname, '../', user.avatar));
-      }
-      updates.avatar = `/Uploads/${req.file.filename}`;
-    }
-
-    // Xử lý thay đổi mật khẩu
-    if (req.body.oldPassword && req.body.newPassword) {
-      if (req.body.oldPassword !== user.password) {
-        return res.status(400).json({ message: 'Mật khẩu cũ không đúng' });
-      }
-      updates.password = req.body.newPassword;
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, {
-      new: true,
-    }).select('-password');
-    const bookingsCount = await Booking.countDocuments({
-      email: user.email.toLowerCase(),
-    });
-
-    // Trả về URL đầy đủ cho ảnh
-    const avatarUrl = updates.avatar
-      ? `${req.protocol}://${req.get('host')}${updates.avatar}`
-      : user.avatar;
-
-    res.json({ ...updatedUser._doc, bookingsCount, avatar: avatarUrl });
-  } catch (error) {
-    console.error('Update profile error:', error.message);
-    res.status(500).json({ message: 'Lỗi server: ' + error.message });
+// Cấu hình nodemailer với Brevo SMTP
+const transporter = nodemailer.createTransport({
+  host: 'smtp-relay.brevo.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USERNAME,
+    pass: process.env.SMTP_PASSWORD
   }
 });
 
+// Cấu hình Passport cho Google OAuth
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: process.env.GOOGLE_REDIRECT_URI
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    let user = await User.findOne({ googleId: profile.id });
+    if (!user) {
+      user = await User.findOne({ email: profile.emails[0].value });
+      if (user) {
+        user.googleId = profile.id;
+        await user.save();
+      } else {
+        user = new User({
+          name: profile.displayName,
+          email: profile.emails[0].value.toLowerCase(),
+          googleId: profile.id,
+          role: 'user',
+          isAdmin: false,
+          isDeleted: false
+        });
+        await user.save();
+      }
+    }
+    if (user.isDeleted) {
+      return done(null, false, { message: 'Tài khoản của bạn đã bị xóa' });
+    }
+    return done(null, user);
+  } catch (error) {
+    return done(error, null);
+  }
+}));
+
+// Serialize và deserialize user
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
+});
 
 /**
  * @route   POST /api/users/register
  * @desc    Đăng ký người dùng mới
- * @access  Công khai (không yêu cầu xác thực)
+ * @access  Công khai
  */
 router.post('/register', async (req, res) => {
   const { name, email, password, isAdmin, role, phone } = req.body;
@@ -112,13 +121,15 @@ router.post('/register', async (req, res) => {
     const normalizedEmail = email.toLowerCase();
     const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
-      return res.status(400).json({ message: 'Email already registered' });
+      return res.status(400).json({ message: 'Email đã được đăng ký' });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
       name,
       email: normalizedEmail,
-      password, // Lưu mật khẩu dạng plain text
+      password: hashedPassword,
       isAdmin: isAdmin || false,
       role: role || 'user',
       phone,
@@ -143,20 +154,42 @@ router.post('/register', async (req, res) => {
 /**
  * @route   POST /api/users/login
  * @desc    Đăng nhập và nhận JWT token
- * @access  Công khai (không yêu cầu xác thực)
+ * @access  Công khai
  */
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
     const normalizedEmail = email.toLowerCase();
-    const user = await User.findOne({ email: normalizedEmail, password }); // So sánh trực tiếp
+    const user = await User.findOne({ email: normalizedEmail, isDeleted: false });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid email or password' });
+      if(isDeleted = true){
+        return res.status(400).json({ message: 'Tài khoản không tồn tại nếu gặp vấn đề hãy liên hệ CSKH' });
+      }   
+      return res.status(400).json({ message: 'Email không tồn tại hoặc tài khoản đã bị xóa' });
+    }
+
+    // Kiểm tra nếu mật khẩu là plaintext (chưa băm)
+    if (!user.password.startsWith('$2b$')) { // Kiểm tra tiền tố của bcrypt hash
+      const isMatch = (user.password === password); // So sánh plaintext
+      if (isMatch) {
+        // Băm lại mật khẩu và cập nhật
+        const newHashedPassword = await bcrypt.hash(password, 10);
+        user.password = newHashedPassword;
+        await user.save();
+      } else {
+        return res.status(400).json({ message: 'Mật khẩu không đúng' });
+      }
+    } else {
+      // Nếu đã băm bằng bcrypt, so sánh bình thường
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Mật khẩu không đúng' });
+      }
     }
 
     if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET is not defined');
+      throw new Error('JWT_SECRET không được định nghĩa');
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -179,17 +212,141 @@ router.post('/login', async (req, res) => {
 });
 
 /**
- * @route   GET /api/users/profile
- * @desc    Lấy hồ sơ người dùng hiện tại
- * @access  Riêng tư (yêu cầu token, tất cả vai trò: user, staff, admin)
+ * @route   GET /api/users/google
+ * @desc    Chuyển hướng đến Google OAuth
+ * @access  Công khai
  */
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+/**
+ * @route   GET /api/users/google/callback
+ * @desc    Xử lý callback từ Google OAuth
+ * @access  Công khai
+ */
+router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: '/login' }), async (req, res) => {
+  try {
+    const user = req.user;
+
+    // Tạo mã OTP
+    const otp = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
+    user.otp = otp;
+    await user.save();
+
+    // Gửi email chứa OTP
+    await transporter.sendMail({
+      from: process.env.SENDER_EMAIL,
+      to: user.email,
+      subject: 'Xác minh tài khoản BookingHotel',
+      text: `Mã OTP của bạn là: ${otp}. Vui lòng nhập mã này để hoàn tất đăng ký.`,
+    });
+
+    // Chuyển hướng về client để nhập OTP
+    const userData = encodeURIComponent(JSON.stringify({
+      _id: user._id,
+      email: user.email,
+    }));
+    res.redirect(`http://localhost:3000/auth/google/callback?user=${userData}`);
+  } catch (error) {
+    console.error('Google callback error:', error.message);
+    res.redirect('http://localhost:3000/login?error=Google authentication failed');
+  }
+});
+
+/**
+ * @route   POST /api/users/verify-otp
+ * @desc    Xác minh mã OTP
+ * @access  Công khai
+ */
+router.post('/verify-otp', async (req, res) => {
+  const { userId, otp } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({ message: 'Mã OTP không đúng' });
+    }
+
+    // Xóa OTP sau khi xác minh thành công
+    user.otp = null;
+    await user.save();
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '1d',
+    });
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      role: user.role,
+      phone: user.phone,
+      token,
+    });
+  } catch (error) {
+    console.error('Verify OTP error:', error.message);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Các route hiện có khác (giữ nguyên)
+router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
+  try {
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
+    }
+
+    const updates = {
+      name: req.body.name || user.name,
+      phone: req.body.phone || user.phone,
+    };
+
+    if (req.file) {
+      if (user.avatar && fs.existsSync(path.join(__dirname, '../', user.avatar))) {
+        fs.unlinkSync(path.join(__dirname, '../', user.avatar));
+      }
+      updates.avatar = `/Uploads/${req.file.filename}`;
+    }
+
+    if (req.body.oldPassword && req.body.newPassword) {
+      const isMatch = await bcrypt.compare(req.body.oldPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Mật khẩu cũ không đúng' });
+      }
+      updates.password = await bcrypt.hash(req.body.newPassword, 10);
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, {
+      new: true,
+    }).select('-password');
+    const bookingsCount = await Booking.countDocuments({
+      email: user.email.toLowerCase(),
+    });
+
+    const avatarUrl = updates.avatar
+      ? `${req.protocol}://${req.get('host')}${updates.avatar}`
+      : user.avatar;
+
+    res.json({ ...updatedUser._doc, bookingsCount, avatar: avatarUrl });
+  } catch (error) {
+    console.error('Update profile error:', error.message);
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
+  }
+});
+
 router.get('/profile', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
-    // Sử dụng email để đếm số lượng đặt phòng
     const bookingsCount = await Booking.countDocuments({ email: user.email.toLowerCase() });
     res.json({ ...user._doc, bookingsCount });
   } catch (error) {
@@ -198,54 +355,9 @@ router.get('/profile', protect, async (req, res) => {
   }
 });
 
-/**
- * @route   PUT /api/users/profile
- * @desc    Cập nhật hồ sơ người dùng hiện tại
- * @access  Riêng tư (yêu cầu token, tất cả vai trò: user, staff, admin)
- */
-router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
-  try {
-    console.log('Request body:', req.body);
-    console.log('Request file:', req.file);
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    const updates = {
-      name: req.body.name || user.name,
-      phone: req.body.phone || user.phone,
-    };
-    if (req.file) {
-      updates.avatar = `/uploads/${req.file.filename}`;
-    }
-
-    // Xử lý thay đổi mật khẩu
-    if (req.body.oldPassword && req.body.newPassword) {
-      // So sánh mật khẩu cũ trực tiếp
-      if (req.body.oldPassword !== user.password) {
-        return res.status(400).json({ message: 'Mật khẩu cũ không đúng' });
-      }
-      updates.password = req.body.newPassword; // Lưu mật khẩu mới dạng plain text
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select('-password');
-    const bookingsCount = await Booking.countDocuments({ email: user.email.toLowerCase() });
-    res.json({ ...updatedUser._doc, bookingsCount });
-  } catch (error) {
-    console.error('Update profile error:', error.message);
-    res.status(500).json({ message: 'Lỗi server: ' + error.message });
-  }
-});
-
-/**
- * @route   GET /api/users/allusers
- * @desc    Lấy danh sách tất cả người dùng có role 'user' (chưa bị xóa mềm)
- * @access  Riêng tư (yêu cầu token, chỉ admin hoặc staff)
- */
 router.get('/allusers', protect, adminOrStaff, async (req, res) => {
   try {
-    const users = await User.find({ role: 'user', isDelete: false }).select('-password');
+    const users = await User.find({ role: 'user', isDeleted: false }).select('-password');
     res.json(users);
   } catch (error) {
     console.error('Get all users error:', error.message);
@@ -253,18 +365,13 @@ router.get('/allusers', protect, adminOrStaff, async (req, res) => {
   }
 });
 
-/**
- * @route   PUT /api/users/:userId
- * @desc    Cập nhật thông tin người dùng
- * @access  Riêng tư (yêu cầu token, chỉ admin)
- */
 router.put('/:userId', protect, admin, async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
     if (user) {
       user.name = req.body.name || user.name;
       user.email = req.body.email ? req.body.email.toLowerCase() : user.email;
-      user.password = req.body.password || user.password;
+      user.password = req.body.password ? await bcrypt.hash(req.body.password, 10) : user.password;
       user.isAdmin = req.body.isAdmin !== undefined ? req.body.isAdmin : user.isAdmin;
       user.role = req.body.role || user.role;
       user.phone = req.body.phone || user.phone;
@@ -279,7 +386,7 @@ router.put('/:userId', protect, admin, async (req, res) => {
         phone: updatedUser.phone,
       });
     } else {
-      res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
   } catch (error) {
     console.error('Update user error:', error.message);
@@ -287,11 +394,6 @@ router.put('/:userId', protect, admin, async (req, res) => {
   }
 });
 
-/**
- * @route   POST /api/users/staff
- * @desc    Tạo nhân viên mới (role: 'staff')
- * @access  Riêng tư (yêu cầu token, chỉ admin)
- */
 router.post('/staff', protect, admin, async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -299,13 +401,15 @@ router.post('/staff', protect, admin, async (req, res) => {
     const normalizedEmail = email.toLowerCase();
     const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
-      return res.status(400).json({ message: 'Email already exists' });
+      return res.status(400).json({ message: 'Email đã tồn tại' });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       name,
       email: normalizedEmail,
-      password, // Lưu mật khẩu dạng plain text
+      password: hashedPassword,
       isAdmin: false,
       role: 'staff',
       phone,
@@ -324,14 +428,9 @@ router.post('/staff', protect, admin, async (req, res) => {
   }
 });
 
-/**
- * @route   GET /api/users/staff
- * @desc    Lấy danh sách nhân viên (role: 'staff', chưa bị xóa mềm)
- * @access  Riêng tư (yêu cầu token, chỉ admin)
- */
 router.get('/staff', protect, admin, async (req, res) => {
   try {
-    const staffMembers = await User.find({ role: 'staff', isDelete: false }).select('-password');
+    const staffMembers = await User.find({ role: 'staff', isDeleted: false }).select('-password');
     res.json(staffMembers);
   } catch (error) {
     console.error('Get staff error:', error.message);
@@ -339,18 +438,13 @@ router.get('/staff', protect, admin, async (req, res) => {
   }
 });
 
-/**
- * @route   PUT /api/users/staff/:id
- * @desc    Cập nhật thông tin nhân viên
- * @access  Riêng tư (yêu cầu token, chỉ admin)
- */
 router.put('/staff/:id', protect, admin, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (user && user.role === 'staff') {
       user.name = req.body.name || user.name;
       user.email = req.body.email ? req.body.email.toLowerCase() : user.email;
-      user.password = req.body.password || user.password;
+      user.password = req.body.password ? await bcrypt.hash(req.body.password, 10) : user.password;
       user.phone = req.body.phone || user.phone;
 
       const updatedUser = await user.save();
@@ -362,7 +456,7 @@ router.put('/staff/:id', protect, admin, async (req, res) => {
         phone: updatedUser.phone,
       });
     } else {
-      res.status(404).json({ message: 'Staff member not found' });
+      res.status(404).json({ message: 'Nhân viên không tồn tại' });
     }
   } catch (error) {
     console.error('Update staff error:', error.message);
@@ -370,81 +464,58 @@ router.put('/staff/:id', protect, admin, async (req, res) => {
   }
 });
 
-/**
- * @route   DELETE /api/users/staff/:id
- * @desc    Xóa mềm người dùng hoặc nhân viên (đặt isDelete = true)
- * @access  Riêng tư (yêu cầu token, chỉ admin hoặc staff, không xóa admin)
- */
 router.delete('/staff/:id', protect, adminOrStaff, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
     if (user.role === 'admin') {
-      return res.status(403).json({ message: 'Cannot delete admin user' });
+      return res.status(403).json({ message: 'Không thể xóa tài khoản admin' });
     }
-    user.isDelete = true;
+    user.isDeleted = true;
     await user.save();
-    res.json({ message: 'User marked as deleted' });
+    res.json({ message: 'Người dùng đã được đánh dấu là xóa' });
   } catch (error) {
     console.error('Delete user error:', error.message);
     res.status(400).json({ message: error.message });
   }
 });
 
-
-
-// ... (Các import và code hiện tại trong usersRoutes.js)
-
-const Notification = require('../models/notification'); // Giả định model Notification
-
-/**
- * @route   GET /api/users/:id/bookings
- * @desc    Lấy danh sách đặt phòng của một người dùng
- * @access  Riêng tư (yêu cầu token, chỉ admin/staff hoặc chính người dùng)
- */
 router.get('/:id/bookings', protect, async (req, res) => {
   try {
     const userId = req.params.id;
     const requestingUser = req.user;
 
-    // Kiểm tra quyền: chỉ admin/staff hoặc chính người dùng được truy cập
     if (requestingUser.id !== userId && !['admin', 'staff'].includes(requestingUser.role)) {
-      return res.status(403).json({ message: 'Not authorized' });
+      return res.status(403).json({ message: 'Không được phép' });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
 
     const bookings = await Booking.find({ email: user.email.toLowerCase() });
     res.json(bookings);
   } catch (error) {
     console.error('Get user bookings error:', error.message);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 
-/**
- * @route   PUT /api/users/:id/profile
- * @desc    Cập nhật thông tin cá nhân của một người dùng
- * @access  Riêng tư (yêu cầu token, chỉ admin hoặc chính người dùng)
- */
 router.put('/:id/profile', protect, async (req, res) => {
   try {
     const userId = req.params.id;
     const requestingUser = req.user;
 
-    // Kiểm tra quyền: chỉ admin hoặc chính người dùng được cập nhật
     if (requestingUser.id !== userId && requestingUser.role !== 'admin') {
-      return res.status(403).json({ message: 'Not authorized' });
+      return res.status(403).json({ message: 'Không được phép' });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
 
     const updates = {
@@ -456,85 +527,67 @@ router.put('/:id/profile', protect, async (req, res) => {
     res.json(updatedUser);
   } catch (error) {
     console.error('Update user profile error:', error.message);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 
-/**
- * @route   PUT /api/users/:id/password
- * @desc    Đổi mật khẩu của một người dùng
- * @access  Riêng tư (yêu cầu token, chỉ chính người dùng)
- */
 router.put('/:id/password', protect, async (req, res) => {
   try {
     const userId = req.params.id;
     const { oldPassword, newPassword } = req.body;
 
-    // Kiểm tra quyền: chỉ chính người dùng được đổi mật khẩu
     if (req.user.id !== userId) {
-      return res.status(403).json({ message: 'Not authorized' });
+      return res.status(403).json({ message: 'Không được phép' });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
 
-    // So sánh mật khẩu cũ
-    if (oldPassword !== user.password) {
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
       return res.status(400).json({ message: 'Mật khẩu cũ không đúng!' });
     }
 
-    user.password = newPassword;
+    user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 
     res.json({ message: 'Đổi mật khẩu thành công' });
   } catch (error) {
     console.error('Change password error:', error.message);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 
-/**
- * @route   GET /api/users/:id/reviews
- * @desc    Lấy danh sách đánh giá của một người dùng
- * @access  Riêng tư (yêu cầu token, chỉ admin/staff hoặc chính người dùng)
- */
 router.get('/:id/reviews', protect, async (req, res) => {
   try {
     const userId = req.params.id;
     const requestingUser = req.user;
 
-    // Kiểm tra quyền: chỉ admin/staff hoặc chính người dùng được truy cập
     if (requestingUser.id !== userId && !['admin', 'staff'].includes(requestingUser.role)) {
-      return res.status(403).json({ message: 'Not authorized' });
+      return res.status(403).json({ message: 'Không được phép' });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
 
     const reviews = await Review.find({ email: user.email.toLowerCase() });
     res.json(reviews);
   } catch (error) {
     console.error('Get user reviews error:', error.message);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 
-/**
- * @route   GET /api/users/stats
- * @desc    Thống kê người dùng theo khu vực hoặc thời gian
- * @access  Riêng tư (yêu cầu token, chỉ admin)
- */
 router.get('/stats', protect, admin, async (req, res) => {
   try {
     const { startDate, endDate, region } = req.query;
 
-    let query = { isDelete: false };
+    let query = { isDeleted: false };
 
-    // Lọc theo thời gian
     if (startDate && endDate) {
       query.createdAt = {
         $gte: new Date(startDate),
@@ -542,7 +595,6 @@ router.get('/stats', protect, admin, async (req, res) => {
       };
     }
 
-    // Lọc theo khu vực (giả định trường `region` trong User)
     if (region) {
       query.region = region;
     }
@@ -560,92 +612,72 @@ router.get('/stats', protect, admin, async (req, res) => {
     res.json(stats);
   } catch (error) {
     console.error('Get user stats error:', error.message);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 
-/**
- * @route   POST /api/users/ban
- * @desc    Khóa tài khoản người dùng vi phạm
- * @access  Riêng tư (yêu cầu token, chỉ admin)
- */
 router.post('/ban', protect, admin, async (req, res) => {
   try {
     const { userId, reason } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
 
     if (user.role === 'admin') {
-      return res.status(403).json({ message: 'Cannot ban admin user' });
+      return res.status(403).json({ message: 'Không thể khóa tài khoản admin' });
     }
 
-    user.isDelete = true; // Khóa tài khoản bằng soft delete
-    user.banReason = reason; // Giả định có trường banReason trong schema
+    user.isDeleted = true;
+    user.banReason = reason;
     await user.save();
 
-    res.json({ message: 'User banned successfully', banReason: reason });
+    res.json({ message: 'Khóa tài khoản thành công', banReason: reason });
   } catch (error) {
     console.error('Ban user error:', error.message);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 
-/**
- * @route   PATCH /api/users/:id/role
- * @desc    Cập nhật quyền của người dùng (user/admin/staff)
- * @access  Riêng tư (yêu cầu token, chỉ admin)
- */
 router.patch('/:id/role', protect, admin, async (req, res) => {
   try {
     const userId = req.params.id;
     const { role } = req.body;
 
     if (!['user', 'admin', 'staff'].includes(role)) {
-      return res.status(400).json({ message: 'Invalid role' });
+      return res.status(400).json({ message: 'Vai trò không hợp lệ' });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
 
     user.role = role;
     user.isAdmin = role === 'admin';
     await user.save();
 
-    res.json({ message: 'User role updated successfully', role });
+    res.json({ message: 'Cập nhật vai trò thành công', role });
   } catch (error) {
     console.error('Update user role error:', error.message);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 
-/**
- * @route   GET /api/users/recent
- * @desc    Lấy danh sách người dùng mới đăng ký
- * @access  Riêng tư (yêu cầu token, chỉ admin/staff)
- */
 router.get('/recent', protect, adminOrStaff, async (req, res) => {
   try {
-    const recentUsers = await User.find({ isDelete: false })
+    const recentUsers = await User.find({ isDeleted: false })
       .sort({ createdAt: -1 })
       .limit(10)
       .select('-password');
     res.json(recentUsers);
   } catch (error) {
     console.error('Get recent users error:', error.message);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 
-/**
- * @route   GET /api/users/frequent
- * @desc    Lấy danh sách người dùng đặt phòng thường xuyên
- * @access  Riêng tư (yêu cầu token, chỉ admin/staff)
- */
 router.get('/frequent', protect, adminOrStaff, async (req, res) => {
   try {
     const frequentUsers = await Booking.aggregate([
@@ -679,20 +711,15 @@ router.get('/frequent', protect, adminOrStaff, async (req, res) => {
     res.json(frequentUsers);
   } catch (error) {
     console.error('Get frequent users error:', error.message);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 
-/**
- * @route   GET /api/users/search?q=...
- * @desc    Tìm kiếm người dùng theo tên hoặc email
- * @access  Riêng tư (yêu cầu token, chỉ admin/staff)
- */
 router.get('/search', protect, adminOrStaff, async (req, res) => {
   try {
     const { q } = req.query;
     if (!q) {
-      return res.status(400).json({ message: 'Search query is required' });
+      return res.status(400).json({ message: 'Yêu cầu từ khóa tìm kiếm' });
     }
 
     const users = await User.find({
@@ -700,49 +727,40 @@ router.get('/search', protect, adminOrStaff, async (req, res) => {
         { name: { $regex: q, $options: 'i' } },
         { email: { $regex: q, $options: 'i' } },
       ],
-      isDelete: false,
+      isDeleted: false,
     }).select('-password');
 
     res.json(users);
   } catch (error) {
     console.error('Search users error:', error.message);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 
-/**
- * @route   GET /api/users/:id/notifications
- * @desc    Lấy danh sách thông báo của một người dùng
- * @access  Riêng tư (yêu cầu token, chỉ admin/staff hoặc chính người dùng)
- */
+const Notification = require('../models/notification');
+
 router.get('/:id/notifications', protect, async (req, res) => {
   try {
     const userId = req.params.id;
     const requestingUser = req.user;
 
-    // Kiểm tra quyền: chỉ admin/staff hoặc chính người dùng được truy cập
     if (requestingUser.id !== userId && !['admin', 'staff'].includes(requestingUser.role)) {
-      return res.status(403).json({ message: 'Not authorized' });
+      return res.status(403).json({ message: 'Không được phép' });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
 
     const notifications = await Notification.find({ userId });
     res.json(notifications);
   } catch (error) {
     console.error('Get notifications error:', error.message);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 
-/**
- * @route   POST /api/users/:id/notifications
- * @desc    Gửi thông báo cá nhân tới một người dùng
- * @access  Riêng tư (yêu cầu token, chỉ admin/staff)
- */
 router.post('/:id/notifications', protect, adminOrStaff, async (req, res) => {
   try {
     const userId = req.params.id;
@@ -750,20 +768,20 @@ router.post('/:id/notifications', protect, adminOrStaff, async (req, res) => {
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
 
     const notification = new Notification({
       userId,
       message,
-      type: type || 'info', // Loại thông báo: info, warning, error, ...
+      type: type || 'info',
     });
 
     await notification.save();
-    res.status(201).json({ message: 'Notification sent successfully', notification });
+    res.status(201).json({ message: 'Gửi thông báo thành công', notification });
   } catch (error) {
     console.error('Send notification error:', error.message);
-    res.status(500).json({ message: 'Server error: ' + error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 

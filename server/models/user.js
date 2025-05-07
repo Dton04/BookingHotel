@@ -5,14 +5,19 @@ const userSchema = mongoose.Schema({
       type: String,
       required: true
    },
-   email:{
+   email: {
       type: String,
       required: true,
       unique: true
    },
    password: {
       type: String,
-      required: true
+      required: false // Không bắt buộc cho người dùng Google
+   },
+   googleId: {
+      type: String,
+      unique: true,
+      sparse: true 
    },
    isAdmin: {
       type: Boolean,
@@ -23,24 +28,26 @@ const userSchema = mongoose.Schema({
       enum: ['user', 'admin', 'staff'],
       default: 'user'
    },
-   isDelete: { 
-      type: Boolean, 
-      default: false 
+   otp: {
+      type: String,
+      default: null
+    },
+   isDeleted: {
+      type: Boolean,
+      default: false
    },
-   phone: { 
-      type: String, 
-      maxlength: 10 
+   phone: {
+      type: String,
+      maxlength: 10
    },
    avatar: {
       type: String,
       default: ''
-   
    }
-},
-
-   {
+}, {
    timestamps: true,
-})
-const userModel = mongoose.model('users', userSchema)
+});
 
-module.exports = userModel
+const userModel = mongoose.model('users', userSchema);
+
+module.exports = userModel;

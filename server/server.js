@@ -46,7 +46,10 @@ const contactRoute = require('./routes/contactRoutes');
 const reviewRoute = require('./routes/reviewRoutes');
 const dashboardRoute = require('./routes/dashboardRoutes');
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000', // Cho phép client
+  credentials: true
+}));
 app.use(express.json());
 
 app.use('/api/rooms', roomsRoute);
