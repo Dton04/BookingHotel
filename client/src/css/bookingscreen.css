@@ -481,3 +481,33 @@
   font-weight: bold;
   color: #dc3545;
 }
+
+.momo-qr {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.momo-qr h4 {
+  margin-bottom: 15px;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.momo-qr canvas {
+  margin: 0 auto;
+  display: block;
+}
+
+.momo-qr p {
+  margin-top: 10px;
+  font-size: 1rem;
+  color: #555;
+}
+
+.momo-qr .text-warning {
+  color: #e67e22 !important;
+  font-weight: 500;
+}

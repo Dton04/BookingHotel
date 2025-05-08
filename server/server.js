@@ -1,11 +1,11 @@
 require('dotenv').config();
 
-// server.js
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-const mongoose = require('mongoose'); 
+const fs = require('fs');
+
 // Kiểm tra JWT_SECRET
 console.log('JWT_SECRET:', process.env.JWT_SECRET);
 if (!process.env.JWT_SECRET) {
@@ -17,7 +17,7 @@ const app = express();
 // Cấu hình multer để lưu ảnh
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, 'Uploads/');
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
@@ -26,7 +26,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Tạo thư mục uploads nếu chưa có
-const fs = require('fs');
 if (!fs.existsSync('Uploads')) {
   fs.mkdirSync('Uploads');
 }
@@ -34,7 +33,8 @@ if (!fs.existsSync('Uploads')) {
 // Phục vụ file tĩnh từ thư mục uploads
 app.use('/uploads', express.static('Uploads'));
 
-const dbConfig = require('./db');
+// Import routes
+const connectDB = require('./db');
 const roomsRoute = require('./routes/roomRoutes');
 const bookingRoute = require('./routes/bookingRoutes');
 const usersRoute = require('./routes/usersRoutes');
@@ -45,23 +45,42 @@ const revenueRoute = require('./routes/revenueRoutes');
 const voucherRoute = require('./routes/voucherRoutes');
 const regionsRoute = require('./routes/regionsRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
+const momoRoutes = require('./routes/momoRoutes');
+
+// Debug routes
+console.log('roomsRoute:', roomsRoute);
+console.log('bookingRoute:', bookingRoute);
+console.log('usersRoute:', usersRoute);
+console.log('contactRoute:', contactRoute);
+console.log('reviewRoute:', reviewRoute);
+console.log('dashboardRoute:', dashboardRoute);
+console.log('revenueRoute:', revenueRoute);
+console.log('voucherRoute:', voucherRoute);
+console.log('regionsRoute:', regionsRoute);
+console.log('transactionRoutes:', transactionRoutes);
+console.log('momoRoutes:', momoRoutes);
+
+// Connect to MongoDB Gay ra loi khong sai dong duoi
+//connectDB();
 
 app.use(cors({
-  origin: 'http://localhost:3000', // Cho phép client
-  credentials: true
+  origin: 'http://localhost:3000',
+  credentials: true,
 }));
 app.use(express.json());
 
+// Routes
 app.use('/api/rooms', roomsRoute);
 app.use('/api/bookings', bookingRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/reviews', reviewRoute);
-app.use('/api', contactRoute);
+app.use('/api/contacts', contactRoute);
 app.use('/api/dashboard', dashboardRoute);
 app.use('/api/revenue', revenueRoute);
 app.use('/api/vouchers', voucherRoute);
 app.use('/api/regions', regionsRoute);
 app.use('/api/transaction', transactionRoutes);
+app.use('/api/momo', momoRoutes);
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server is running on port ${port}`));

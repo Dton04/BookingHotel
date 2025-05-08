@@ -5,7 +5,7 @@ import "../css/bookingscreen.css";
 import Loader from "../components/Loader";
 import CancelConfirmationModal from "../components/CancelConfirmationModal";
 import SuggestionCard from "../components/SuggestionCard";
-import AlertMessage from "../components/AlertMessage"; // Thêm component AlertMessage
+import AlertMessage from "../components/AlertMessage";
 import { Carousel } from "react-bootstrap";
 
 function Bookingscreen() {
@@ -35,7 +35,7 @@ function Bookingscreen() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [newBookingId, setNewBookingId] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -44,7 +44,7 @@ function Bookingscreen() {
         const { data } = await axios.post("/api/rooms/getroombyid", { roomid });
         setRoom(data);
         setBookingData((prev) => ({ ...prev, roomType: data.type || "" }));
-        if (data.availabilityStatus !== 'available') {
+        if (data.availabilityStatus !== "available") {
           await fetchSuggestions(data._id, data.type);
         }
       } catch (error) {
@@ -112,42 +112,80 @@ function Bookingscreen() {
       setBankInfo(null);
       setTimeRemaining(null);
       setPaymentExpired(false);
-      const response = await axios.post("/api/bookings/bookroom", {
-        roomid,
-        ...bookingData,
-      });
-      setBookingId(response.data.booking._id);
-      setNewBookingId(response.data.booking._id);
-      setBookingStatus({
-        type: "success",
-        message: "Đặt phòng thành công! Vui lòng kiểm tra thông tin thanh toán.",
-      });
-      setPaymentStatus(response.data.booking.paymentStatus);
-      
-      if (bookingData.paymentMethod === "bank_transfer" && response.data.paymentResult?.bankInfo) {
-        setBankInfo(response.data.paymentResult.bankInfo);
-      }
 
-      localStorage.setItem("userEmail", bookingData.email);
-      localStorage.setItem("bookingId", response.data.booking._id);
-      localStorage.setItem("bookedRoomId", roomid);
+      if (bookingData.paymentMethod === "mobile_payment") {
+        const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
+        const orderInfo = `Thanh toán đặt phòng ${room.name}`;
+        const amount = room.rentperday || 50000;
 
-      if (bookingData.paymentMethod !== "bank_transfer") {
-        setTimeout(() => {
-          navigate(`/testimonial?roomId=${roomid}&showReviewForm=true`);
-        }, 5000);
+        const momoResponse = await axios.post("/api/momo/create-payment", {
+          amount: amount.toString(),
+          orderId: orderId,
+          orderInfo: orderInfo,
+        });
+
+        if (momoResponse.data.payUrl) {
+          // Chuyển hướng đến payUrl thay vì hiển thị QR
+          window.location.href = momoResponse.data.payUrl;
+          setBookingStatus({
+            type: "success",
+            message: "Đang chuyển hướng đến trang thanh toán MoMo. Vui lòng hoàn tất thanh toán.",
+          });
+          setPaymentStatus("pending");
+
+          // Lưu thông tin đặt phòng
+          const response = await axios.post("/api/bookings/bookroom", {
+            roomid,
+            ...bookingData,
+            orderId: orderId, // Lưu orderId
+            momoRequestId: momoResponse.data.requestId, // Lưu requestId từ MoMo
+          });
+
+          setBookingId(response.data.booking._id);
+          setNewBookingId(response.data.booking._id);
+          localStorage.setItem("userEmail", bookingData.email);
+          localStorage.setItem("bookingId", response.data.booking._id);
+          localStorage.setItem("bookedRoomId", roomid);
+        } else {
+          throw new Error(momoResponse.data.message || "Lỗi khi tạo hóa đơn MoMo");
+        }
+      } else {
+        const response = await axios.post("/api/bookings/bookroom", {
+          roomid,
+          ...bookingData,
+        });
+        setBookingId(response.data.booking._id);
+        setNewBookingId(response.data.booking._id);
+        setBookingStatus({
+          type: "success",
+          message: "Đặt phòng thành công! Vui lòng kiểm tra thông tin thanh toán.",
+        });
+        setPaymentStatus(response.data.booking.paymentStatus);
+
+        if (bookingData.paymentMethod === "bank_transfer" && response.data.paymentResult?.bankInfo) {
+          setBankInfo(response.data.paymentResult.bankInfo);
+        }
+
+        localStorage.setItem("userEmail", bookingData.email);
+        localStorage.setItem("bookingId", response.data.booking._id);
+        localStorage.setItem("bookedRoomId", roomid);
+
+        if (bookingData.paymentMethod !== "bank_transfer") {
+          setTimeout(() => {
+            navigate(`/testimonial?roomId=${roomid}&showReviewForm=true`);
+          }, 5000);
+        }
       }
     } catch (error) {
       setBookingStatus({
         type: "error",
-        message: error.response?.data?.message || "Lỗi khi đặt phòng. Vui lòng thử lại.",
+        message: error.response?.data?.message || "Lỗi khi đặt phòng hoặc tạo hóa đơn MoMo. Vui lòng thử lại.",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  // Hàm giả lập thanh toán thành công
   const handleSimulatePayment = async () => {
     if (!bookingId) return;
     try {
@@ -213,7 +251,6 @@ function Bookingscreen() {
           <p><strong>Thời gian còn lại:</strong> {Math.floor(timeRemaining / 60)} phút {timeRemaining % 60} giây</p>
         )}
         <p className="text-warning">Vui lòng chuyển khoản để hoàn tất thanh toán. Đặt phòng sẽ được xác nhận sau khi chúng tôi nhận được tiền.</p>
-        {/* Nút giả lập thanh toán */}
         {!paymentExpired && paymentStatus === "pending" && (
           <button
             className="btn btn-primary mt-3"
@@ -458,7 +495,7 @@ function Bookingscreen() {
                   <button
                     type="submit"
                     className="btn btn-book-now"
-                    disabled={loading || room.availabilityStatus !== 'available'}
+                    disabled={loading || room.availabilityStatus !== "available"}
                   >
                     {loading ? "Đang xử lý..." : "ĐẶT PHÒNG NGAY"}
                   </button>
@@ -473,7 +510,7 @@ function Bookingscreen() {
                   )}
                 </form>
               </div>
-              {room.availabilityStatus !== 'available' && (
+              {room.availabilityStatus !== "available" && (
                 <div className="suggestions-container">
                   <h5>Phòng tương tự</h5>
                   {loadingSuggestions ? (

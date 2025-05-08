@@ -8,26 +8,22 @@ const Voucher = require("../models/voucher");
 // Giả lập hàm xử lý thanh toán qua tài khoản ngân hàng
 const processBankPayment = async (bookingData) => {
   try {
-    // Lấy thông tin phòng để tính số tiền
     const room = await Room.findById(bookingData.roomid);
     if (!room) {
       throw new Error("Không tìm thấy phòng để tính toán thanh toán.");
     }
 
-    // Tính số ngày lưu trú
     const checkinDate = new Date(bookingData.checkin);
     const checkoutDate = new Date(bookingData.checkout);
     const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
     
-    // Tính số tiền cần thanh toán
     const amount = room.rentperday * days;
 
-    // Giả lập thông tin tài khoản ngân hàng để khách hàng chuyển khoản
     const bankInfo = {
       bankName: "Vietinbank",
       accountNumber: "104872827498",
       accountHolder: "Nguyen Tan Dat",
-      amount: amount, // Số tiền thực tế dựa trên giá phòng và số ngày
+      amount: amount,
       content: `Thanh toán đặt phòng ${bookingData._id}`,
     };
 
@@ -83,15 +79,15 @@ router.post("/apply-promotions", async (req, res) => {
     for (const voucher of vouchers) {
       const now = new Date();
       if (now < voucher.startDate || now > voucher.endDate) {
-        continue; // Bỏ qua nếu voucher không trong thời gian hiệu lực
+        continue;
       }
 
       if (!voucher.applicableHotels.some(id => id.equals(bookingData.roomid))) {
-        continue; // Bỏ qua nếu voucher không áp dụng cho phòng này
+        continue;
       }
 
       if (totalAmount < voucher.minBookingAmount) {
-        continue; // Bỏ qua nếu tổng số tiền không đủ điều kiện
+        continue;
       }
 
       let discount = 0;
@@ -105,7 +101,7 @@ router.post("/apply-promotions", async (req, res) => {
       }
 
       if (!voucher.isStackable && appliedVouchers.length > 0) {
-        continue; // Bỏ qua nếu không cho phép chồng khuyến mãi và đã có khuyến mãi được áp dụng
+        continue;
       }
 
       totalDiscount += discount;
@@ -128,7 +124,7 @@ router.post("/apply-promotions", async (req, res) => {
   }
 });
 
-//Đặt phòng
+// Đặt phòng
 router.post("/bookroom", async (req, res) => {
   const {
     roomid,
@@ -142,6 +138,8 @@ router.post("/bookroom", async (req, res) => {
     roomType,
     specialRequest,
     paymentMethod,
+    orderId, // MoMo orderId
+    momoRequestId, // MoMo requestId
   } = req.body;
 
   try {
@@ -203,12 +201,13 @@ router.post("/bookroom", async (req, res) => {
       specialRequest,
       paymentMethod,
       paymentStatus: 'pending',
-      paymentDeadline: paymentMethod === 'bank_transfer' ? new Date(Date.now() + 5 * 60 * 1000) : null, // 5 phút
+      paymentDeadline: paymentMethod === 'bank_transfer' ? new Date(Date.now() + 5 * 60 * 1000) : null,
+      momoOrderId: paymentMethod === 'mobile_payment' ? orderId : null,
+      momoRequestId: paymentMethod === 'mobile_payment' ? momoRequestId : null,
     });
 
     await newBooking.save();
 
-    // Xử lý thanh toán qua ngân hàng nếu được chọn
     let paymentResult;
     if (paymentMethod === 'bank_transfer') {
       paymentResult = await processBankPayment(newBooking);
@@ -255,10 +254,9 @@ router.get("/:id/payment-deadline", async (req, res) => {
     }
 
     const currentTime = new Date();
-    const timeRemaining = booking.paymentDeadline - currentTime; // Thời gian còn lại (ms)
+    const timeRemaining = booking.paymentDeadline - currentTime;
 
     if (timeRemaining <= 0 && booking.paymentStatus === 'pending') {
-      // Hủy đặt phòng nếu hết thời gian
       booking.status = 'canceled';
       booking.paymentStatus = 'canceled';
       await booking.save();
@@ -280,7 +278,7 @@ router.get("/:id/payment-deadline", async (req, res) => {
 
     res.status(200).json({
       message: "Thời gian thanh toán còn lại",
-      timeRemaining: Math.max(0, Math.floor(timeRemaining / 1000)), // Chuyển sang giây
+      timeRemaining: Math.max(0, Math.floor(timeRemaining / 1000)),
       expired: false,
     });
   } catch (error) {
@@ -289,24 +287,24 @@ router.get("/:id/payment-deadline", async (req, res) => {
   }
 });
 
-//GET /api/bookings/summary - Lấy số lượng booking theo trạng thái
+// GET /api/bookings/summary - Lấy số lượng booking theo trạng thái
 router.get("/summary", async (req, res) => {
   console.log("Xử lý yêu cầu /api/bookings/summary");
   try {
-      console.log("Trạng thái kết nối MongoDB:", mongoose.connection.readyState);
-      if (mongoose.connection.readyState !== 1) {
-          return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
-      }
-      const summary = await Booking.aggregate([
-          { $group: { _id: "$status", count: { $sum: 1 } } }
-      ]);
-      console.log("Kết quả aggregation:", summary);
-      const result = { pending: 0, confirmed: 0, canceled: 0 };
-      summary.forEach(item => { result[item._id] = item.count; });
-      res.status(200).json(result);
+    console.log("Trạng thái kết nối MongoDB:", mongoose.connection.readyState);
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
+    }
+    const summary = await Booking.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+    console.log("Kết quả aggregation:", summary);
+    const result = { pending: 0, confirmed: 0, canceled: 0 };
+    summary.forEach(item => { result[item._id] = item.count; });
+    res.status(200).json(result);
   } catch (error) {
-      console.error("Lỗi khi lấy thống kê trạng thái đặt phòng:", error.message, error.stack);
-      res.status(500).json({ message: "Lỗi khi lấy thống kê trạng thái đặt phòng", error: error.message });
+    console.error("Lỗi khi lấy thống kê trạng thái đặt phòng:", error.message, error.stack);
+    res.status(500).json({ message: "Lỗi khi lấy thống kê trạng thái đặt phòng", error: error.message });
   }
 });
 
