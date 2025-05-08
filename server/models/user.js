@@ -49,7 +49,6 @@ const userSchema = mongoose.Schema({
       type: Number,
       default: 0,
 
-      // Điểm tích lũy
     },
     region: {
       type: mongoose.Schema.Types.ObjectId,

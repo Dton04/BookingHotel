@@ -163,32 +163,39 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const normalizedEmail = email.toLowerCase();
-    const user = await User.findOne({ email: normalizedEmail, password }); // So sánh trực tiếp
-    if (!user) {
-      if(isDeleted = true){
-        return res.status(400).json({ message: 'Tài khoản không tồn tại nếu gặp vấn đề hãy liên hệ CSKH' });
-      }   
-      return res.status(400).json({ message: 'Email không tồn tại hoặc tài khoản đã bị xóa' });
+    // Kiểm tra dữ liệu đầu vào
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp email và mật khẩu' });
     }
 
-    // Kiểm tra nếu mật khẩu là plaintext (chưa băm)
-    if (!user.password.startsWith('$2b$')) { // Kiểm tra tiền tố của bcrypt hash
-      const isMatch = (user.password === password); // So sánh plaintext
+    const normalizedEmail = email.toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Email không tồn tại' });
+    }
+
+    if (user.isDeleted) {
+      return res.status(400).json({ message: 'Tài khoản đã bị xóa, vui lòng liên hệ CSKH' });
+    }
+
+    // Kiểm tra mật khẩu
+    let isMatch;
+    if (!user.password.startsWith('$2b$')) {
+      // Hỗ trợ mật khẩu văn bản thô (cho các tài khoản cũ)
+      isMatch = user.password === password;
       if (isMatch) {
         // Băm lại mật khẩu và cập nhật
-        const newHashedPassword = await bcrypt.hash(password, 10);
-        user.password = newHashedPassword;
+        user.password = await bcrypt.hash(password, 10);
         await user.save();
-      } else {
-        return res.status(400).json({ message: 'Mật khẩu không đúng' });
       }
     } else {
-      // Nếu đã băm bằng bcrypt, so sánh bình thường
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Mật khẩu không đúng' });
-      }
+      // So sánh mật khẩu đã băm
+      isMatch = await bcrypt.compare(password, user.password);
+    }
+
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Mật khẩu không đúng' });
     }
 
     if (!process.env.JWT_SECRET) {
@@ -210,7 +217,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error.message);
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: 'Lỗi server: ' + error.message });
   }
 });
 
@@ -281,6 +288,77 @@ router.post('/verify-otp', async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+
+/**
+ * @route   GET /api/users/points
+ * @desc    Lấy điểm tích lũy của người dùng hiện tại
+ * @access  Riêng tư (yêu cầu token, tất cả vai trò: user, staff, admin)
+ */
+router.get('/points', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('points');
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    // Lấy lịch sử giao dịch liên quan đến điểm
+    const transactions = await Transaction.find({ userId: req.user.id })
+      .select('pointsEarned amount bookingId createdAt')
+      .populate('bookingId', 'checkin checkout')
+      .sort({ createdAt: -1 })
+      .limit(10); // Giới hạn 10 giao dịch gần nhất
+
+    res.status(200).json({
+      points: user.points,
+      recentTransactions: transactions,
+    });
+  } catch (error) {
+    console.error('Lỗi lấy điểm tích lũy:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi lấy điểm tích lũy', error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/users/:id/points/history
+ * @desc    Lấy lịch sử điểm tích lũy của một người dùng
+ * @access  Riêng tư (yêu cầu token, chỉ admin/staff hoặc chính người dùng)
+ */
+router.get('/:id/points/history', protect, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const requestingUser = req.user;
+
+    // Kiểm tra quyền: chỉ admin/staff hoặc chính người dùng được truy cập
+    if (requestingUser.id !== userId && !['admin', 'staff'].includes(requestingUser.role)) {
+      return res.status(403).json({ message: 'Không có quyền truy cập' });
+    }
+
+    const user = await User.findById(userId).select('points name email');
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    // Lấy lịch sử giao dịch liên quan đến điểm
+    const transactions = await Transaction.find({ userId })
+      .select('pointsEarned amount bookingId paymentMethod status createdAt')
+      .populate('bookingId', 'checkin checkout roomid')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        points: user.points,
+      },
+      transactions,
+    });
+  } catch (error) {
+    console.error('Lỗi lấy lịch sử điểm:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi lấy lịch sử điểm', error: error.message });
+  }
+});
+
 
 // Các route hiện có khác (giữ nguyên)
 router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
@@ -471,11 +549,6 @@ router.delete('/staff/:id', protect, adminOrStaff, async (req, res) => {
   }
 });
 
-
-
-// ... (Các import và code hiện tại trong usersRoutes.js)
-
-const Notification = require('../models/notification'); // Giả định model Notification
 
 /**
  * @route   GET /api/users/:id/bookings
@@ -782,44 +855,6 @@ router.post('/:id/notifications', protect, adminOrStaff, async (req, res) => {
   } catch (error) {
     console.error('Send notification error:', error.message);
     res.status(500).json({ message: 'Lỗi server: ' + error.message });
-  }
-});
-
-router.post('/regions/assign-admin', protect, admin, async (req, res) => {
-  const { userId, regionId } = req.body;
-
-  try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(regionId)) {
-      return res.status(400).json({ message: 'ID người dùng hoặc khu vực không hợp lệ' });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
-    }
-
-    if (user.role !== 'admin') {
-      return res.status(400).json({ message: 'Người dùng phải có vai trò admin' });
-    }
-
-    const region = await Region.findById(regionId);
-    if (!region) {
-      return res.status(404).json({ message: 'Không tìm thấy khu vực' });
-    }
-
-    region.adminId = userId;
-    user.region = regionId;
-    await region.save();
-    await user.save();
-
-    res.status(200).json({ message: 'Phân quyền admin khu vực thành công', region, user });
-  } catch (error) {
-    console.error('Lỗi phân quyền admin khu vực:', error.message, error.stack);
-    res.status(500).json({ message: 'Lỗi khi phân quyền admin khu vực', error: error.message });
   }
 });
 
