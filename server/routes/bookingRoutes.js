@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const Booking = require("../models/booking");
 const Room = require("../models/room");
+const Voucher = require("../models/voucher");
 
 // Giả lập hàm xử lý thanh toán qua tài khoản ngân hàng
 const processBankPayment = async (bookingData) => {
@@ -40,6 +41,94 @@ const processBankPayment = async (bookingData) => {
   }
 };
 
+// POST /api/bookings/apply-promotions - Áp dụng khuyến mãi khi đặt phòng
+router.post("/apply-promotions", async (req, res) => {
+  const { bookingData, voucherCodes } = req.body;
+
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
+    }
+
+    if (!bookingData || !bookingData.roomid || !voucherCodes || !Array.isArray(voucherCodes)) {
+      return res.status(400).json({ message: "Dữ liệu đặt phòng hoặc mã khuyến mãi không hợp lệ" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(bookingData.roomid)) {
+      return res.status(400).json({ message: "ID phòng không hợp lệ" });
+    }
+
+    const checkinDate = new Date(bookingData.checkin);
+    const checkoutDate = new Date(bookingData.checkout);
+    if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime()) || checkinDate >= checkoutDate) {
+      return res.status(400).json({ message: "Ngày nhận phòng hoặc trả phòng không hợp lệ" });
+    }
+
+    const room = await Room.findById(bookingData.roomid);
+    if (!room) {
+      return res.status(404).json({ message: "Không tìm thấy phòng" });
+    }
+
+    const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
+    let totalAmount = room.rentperday * days;
+
+    const vouchers = await Voucher.find({ code: { $in: voucherCodes } });
+    if (!vouchers.length) {
+      return res.status(404).json({ message: "Không tìm thấy mã khuyến mãi hợp lệ" });
+    }
+
+    let totalDiscount = 0;
+    const appliedVouchers = [];
+
+    for (const voucher of vouchers) {
+      const now = new Date();
+      if (now < voucher.startDate || now > voucher.endDate) {
+        continue; // Bỏ qua nếu voucher không trong thời gian hiệu lực
+      }
+
+      if (!voucher.applicableHotels.some(id => id.equals(bookingData.roomid))) {
+        continue; // Bỏ qua nếu voucher không áp dụng cho phòng này
+      }
+
+      if (totalAmount < voucher.minBookingAmount) {
+        continue; // Bỏ qua nếu tổng số tiền không đủ điều kiện
+      }
+
+      let discount = 0;
+      if (voucher.discountType === "percentage") {
+        discount = (totalAmount * voucher.discountValue) / 100;
+        if (voucher.maxDiscount && discount > voucher.maxDiscount) {
+          discount = voucher.maxDiscount;
+        }
+      } else if (voucher.discountType === "fixed") {
+        discount = voucher.discountValue;
+      }
+
+      if (!voucher.isStackable && appliedVouchers.length > 0) {
+        continue; // Bỏ qua nếu không cho phép chồng khuyến mãi và đã có khuyến mãi được áp dụng
+      }
+
+      totalDiscount += discount;
+      appliedVouchers.push({
+        code: voucher.code,
+        discount,
+      });
+    }
+
+    totalAmount = Math.max(0, totalAmount - totalDiscount);
+
+    res.status(200).json({
+      message: "Áp dụng khuyến mãi thành công",
+      totalAmount,
+      appliedVouchers,
+    });
+  } catch (error) {
+    console.error("Lỗi khi áp dụng khuyến mãi:", error.message, error.stack);
+    res.status(500).json({ message: "Lỗi khi áp dụng khuyến mãi", error: error.message });
+  }
+});
+
+//Đặt phòng
 router.post("/bookroom", async (req, res) => {
   const {
     roomid,

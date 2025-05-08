@@ -35,9 +35,20 @@ const userSchema = mongoose.Schema({
       type: String,
       default: ''
    
+   },
+   points: {
+      type: Number,
+      default: 0,
+
+      // Điểm tích lũy
+    },
+    region: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Region',
+      default: null,
+      // Khu vực quản lý (cho admin)
    }
 },
-
    {
    timestamps: true,
 })
