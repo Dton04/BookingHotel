@@ -46,7 +46,10 @@ const voucherRoute = require('./routes/voucherRoutes');
 const regionsRoute = require('./routes/regionsRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000', // Cho phép client
+  credentials: true
+}));
 app.use(express.json());
 
 app.use('/api/rooms', roomsRoute);

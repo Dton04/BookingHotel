@@ -24,7 +24,7 @@ import CreateRoomForm from './components/CreateRoomForm';
 import RoomManagement from './components/RoomManagement';
 import EditRoomForm from './components/EditRoomForm';
 import ProfileManagement from './components/ProfileManagement'; 
-
+import GoogleCallBack from './screens/Auth/GoogleCallBack';
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -63,6 +63,7 @@ function App() {
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/register" element={<Registerscreen />} />
           <Route path="/bookings" element={<HistoryBookings />} />
+          <Route path="/auth/google/callback" element={<GoogleCallBack />} />
           <Route path="/stats" element={<UserStats/>} />
           <Route path="/bookings" element={<BookingList />} />
           <Route path="/rooms" element={<BookingForm />} />

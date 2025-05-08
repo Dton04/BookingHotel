@@ -32,9 +32,9 @@ function LoginScreen() {
 
       setTimeout(() => {
         if (userData.isAdmin) {
-          navigate('/admin/staffmanagement');
+          navigate('/home');
         } else if (userData.role === 'staff') {
-          navigate('/staff/dashboard');
+          navigate('/home');
         } else {
           navigate('/home');
         }

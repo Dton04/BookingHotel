@@ -8,7 +8,7 @@ function Registerscreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [phone, setPhone] = useState(''); // Thêm trạng thái cho phone
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -20,18 +20,17 @@ function Registerscreen() {
     setSuccess('');
 
     if (password !== confirmPassword) {
-      setError('Password and Confirm Password do not match!');
+      setError('Mật khẩu và xác nhận mật khẩu không khớp!');
       return;
     }
 
     if (!name || !email || !password) {
-      setError('Please fill in all required fields.');
+      setError('Vui lòng điền đầy đủ các trường bắt buộc.');
       return;
     }
 
-    // Kiểm tra phone (tùy chọn, nhưng nếu nhập thì phải hợp lệ)
     if (phone && (phone.length > 10 || !/^[0-9]*$/.test(phone))) {
-      setError('Phone number must be up to 10 digits and contain only numbers.');
+      setError('Số điện thoại phải tối đa 10 chữ số và chỉ chứa số.');
       return;
     }
 
@@ -41,41 +40,48 @@ function Registerscreen() {
         name, 
         email, 
         password, 
-        phone // Gửi phone trong payload
+        phone 
       });
-      setSuccess('Registration successful! Redirecting to login...');
+      setSuccess('Đăng ký thành công! Chuyển hướng đến đăng nhập...');
       setName('');
       setEmail('');
       setPassword('');
       setConfirmPassword('');
-      setPhone(''); // Reset phone
+      setPhone('');
 
       setTimeout(() => {
         navigate('/login');
       }, 2000);
     } catch (error) {
-      setError(error.response?.data?.message || 'Error registering. Please try again.');
+      setError(error.response?.data?.message || 'Lỗi khi đăng ký. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleGoogleRegister = () => {
+    // Gửi yêu cầu đến server để khởi động flow OAuth
+    window.location.href = `${process.env.REACT_APP_API_URL}/api/users/google`;
+    // Hoặc nếu dùng proxy trong package.json:
+    // window.location.href = '/api/users/google';
+  };
+
   return (
     <div className="register-container">
       <div className="register-card">
-        <h1 className="register-title">Create Your Account</h1>
+        <h1 className="register-title">Tạo Tài Khoản</h1>
         
         {error && <div className="alert alert-danger">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
 
         <form onSubmit={handleRegister}>
           <div className="form-group">
-            <label htmlFor="name">Full Name</label>
+            <label htmlFor="name">Họ Tên</label>
             <input
               type="text"
               className="form-control"
               id="name"
-              placeholder="Enter your full name"
+              placeholder="Nhập họ tên của bạn"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -89,7 +95,7 @@ function Registerscreen() {
               type="email"
               className="form-control"
               id="email"
-              placeholder="Enter your email"
+              placeholder="Nhập email của bạn"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -98,12 +104,12 @@ function Registerscreen() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="phone">Phone Number (Optional)</label>
+            <label htmlFor="phone">Số Điện Thoại (Tùy chọn)</label>
             <input
               type="text"
               className="form-control"
               id="phone"
-              placeholder="Enter your phone number"
+              placeholder="Nhập số điện thoại"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               disabled={loading}
@@ -111,12 +117,12 @@ function Registerscreen() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Mật Khẩu</label>
             <input
               type="password"
               className="form-control"
               id="password"
-              placeholder="Create password"
+              placeholder="Tạo mật khẩu"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -125,12 +131,12 @@ function Registerscreen() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirm-password">Confirm Password</label>
+            <label htmlFor="confirm-password">Xác Nhận Mật Khẩu</label>
             <input
               type="password"
               className="form-control"
               id="confirm-password"
-              placeholder="Confirm your password"
+              placeholder="Xác nhận mật khẩu"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -143,16 +149,24 @@ function Registerscreen() {
             className="btn btn-register"
             disabled={loading}
           >
-            {loading ? 'Registering...' : 'Register'}
+            {loading ? 'Đang đăng ký...' : 'Đăng Ký'}
           </button>
         </form>
 
+        <button
+          className="btn btn-google"
+          onClick={handleGoogleRegister}
+          disabled={loading}
+        >
+          Đăng Ký Bằng Google
+        </button>
+
         <div className="links">
           <p>
-            Already have an account? <Link to="/login">Login here</Link>
+            Đã có tài khoản? <Link to="/login">Đăng nhập tại đây</Link>
           </p>
           <p>
-            <Link to="/">Back to Home</Link>
+            <Link to="/">Quay lại Trang Chủ</Link>
           </p>
         </div>
       </div>
