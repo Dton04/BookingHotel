@@ -1,4 +1,3 @@
-// auth.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
@@ -6,20 +5,16 @@ const User = require('../models/user');
 const protect = async (req, res, next) => {
   let token;
 
-  // Kiểm tra header Authorization
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      // Xác thực token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      // Tìm user trong database
       req.user = await User.findById(decoded.id).select('-password');
       if (!req.user) {
         return res.status(401).json({ message: 'Không được phép, không tìm thấy người dùng' });
       }
       next();
     } catch (error) {
-      // Xử lý lỗi cụ thể
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ message: 'Không được phép, token đã hết hạn' });
       } else if (error.name === 'JsonWebTokenError') {
@@ -56,7 +51,16 @@ const staff = (req, res, next) => {
   }
 };
 
-// Middleware phân quyền cho API admin quản lý phòng (BE4.24)
+// Middleware kiểm tra admin hoặc staff
+const adminOrStaff = (req, res, next) => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'staff')) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Không được phép, yêu cầu vai trò admin hoặc staff' });
+  }
+};
+
+// Middleware phân quyền cho API admin quản lý phòng
 const restrictRoomManagement = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ message: 'Không được phép, không tìm thấy người dùng' });
@@ -68,4 +72,4 @@ const restrictRoomManagement = (req, res, next) => {
   }
 };
 
-module.exports = { protect, admin, staff, restrictRoomManagement };
+module.exports = { protect, admin, staff, adminOrStaff, restrictRoomManagement };

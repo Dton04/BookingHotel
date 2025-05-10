@@ -1,11 +1,12 @@
 require('dotenv').config();
 
-// server.js
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-const mongoose = require('mongoose'); 
+const mongoose = require('mongoose');
+const fs = require('fs');
+
 // Kiểm tra JWT_SECRET
 console.log('JWT_SECRET:', process.env.JWT_SECRET);
 if (!process.env.JWT_SECRET) {
@@ -17,7 +18,7 @@ const app = express();
 // Cấu hình multer để lưu ảnh
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, 'Uploads/');
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
@@ -26,7 +27,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Tạo thư mục uploads nếu chưa có
-const fs = require('fs');
 if (!fs.existsSync('Uploads')) {
   fs.mkdirSync('Uploads');
 }
@@ -34,6 +34,15 @@ if (!fs.existsSync('Uploads')) {
 // Phục vụ file tĩnh từ thư mục uploads
 app.use('/uploads', express.static('Uploads'));
 
+// Middleware
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
+app.use(express.json()); // Phân tích JSON body
+app.use(express.urlencoded({ extended: true })); // Phân tích URL-encoded body
+
+// Routes
 const dbConfig = require('./db');
 const roomsRoute = require('./routes/roomRoutes');
 const bookingRoute = require('./routes/bookingRoutes');
@@ -45,12 +54,11 @@ const revenueRoute = require('./routes/revenueRoutes');
 const voucherRoute = require('./routes/voucherRoutes');
 const regionsRoute = require('./routes/regionsRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
+const hotelRoutes = require('./routes/hotelRoutes');
+const rewardsRoutes = require('./routes/rewardsRoutes');
+const statsRoutes = require('./routes/statsRoutes');
+const promotionRoutes = require('./routes/promotionRoutes');
 
-app.use(cors({
-  origin: 'http://localhost:3000', // Cho phép client
-  credentials: true
-}));
-app.use(express.json());
 
 app.use('/api/rooms', roomsRoute);
 app.use('/api/bookings', bookingRoute);
@@ -62,6 +70,24 @@ app.use('/api/revenue', revenueRoute);
 app.use('/api/vouchers', voucherRoute);
 app.use('/api/regions', regionsRoute);
 app.use('/api/transaction', transactionRoutes);
+app.use('/api/hotels', hotelRoutes);
+app.use('/api/rewards', rewardsRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/promotions', promotionRoutes);
+
+// Xử lý lỗi không được bắt
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', {
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+  });
+  res.status(500).json({
+    message: 'Đã xảy ra lỗi server',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+  });
+});
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server is running on port ${port}`));

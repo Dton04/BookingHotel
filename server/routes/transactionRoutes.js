@@ -37,7 +37,8 @@ router.post('/checkout', protect, async (req, res) => {
     }
 
     const days = Math.ceil((new Date(booking.checkout) - new Date(booking.checkin)) / (1000 * 60 * 60 * 24));
-    const amount = booking.roomid.rentperday * days;
+    const originalAmount = booking.roomid.rentperday * days;
+    const amount = Math.max(0, originalAmount - (booking.voucherDiscount || 0));
 
     if (amount <= 0) {
       return res.status(400).json({ message: 'Số tiền giao dịch không hợp lệ' });

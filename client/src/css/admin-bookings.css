@@ -26,7 +26,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-left: 40px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
   gap: 15px;
 }
@@ -53,6 +54,7 @@
 .status-filter .dropdown-toggle {
   display: flex;
   align-items: center;
+  margin-right: 40px;
   gap: 8px;
   padding: 10px 20px;
   border-radius: 8px;
@@ -77,6 +79,9 @@
   overflow: hidden;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
+  max-width: 1400px;
+  margin: 0 auto;
+
 }
 
 .bookings-table th,

@@ -10,13 +10,13 @@ const roomSchema = mongoose.Schema({
     required: true,
   },
   beds: {
-   type: Number,
-   required: true,
- },
+    type: Number,
+    required: true,
+  },
   baths: {
-   type: Number,
-   required: true,
- },
+    type: Number,
+    required: true,
+  },
   phonenumber: {
     type: Number,
     required: true,
@@ -59,6 +59,6 @@ const roomSchema = mongoose.Schema({
   timestamps: true,
 });
 
-const roomModel = mongoose.model('rooms', roomSchema);
+const roomModel = mongoose.model('Room', roomSchema);
 
 module.exports = roomModel;

@@ -1,10 +1,9 @@
-// booking.js
 const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
   roomid: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'rooms',
+    ref: 'Room',
     required: true,
   },
   name: {
@@ -52,22 +51,29 @@ const bookingSchema = new mongoose.Schema({
     enum: ['cash', 'credit_card', 'bank_transfer', 'mobile_payment'],
     default: null,
   },
-  paymentStatus: { //lưu trạng thái thanh toán
+  paymentStatus: {
     type: String,
     enum: ['pending', 'paid', 'canceled'],
     default: 'pending',
   },
-
-  paymentDeadline: { //thời gian hết hạn thanh toán
+  paymentDeadline: {
     type: Date,
     default: null,
   },
-  
-  cancelReason: { 
+  cancelReason: {
     type: String,
     default: null,
   },
-
+  voucherDiscount: {
+    type: Number,
+    default: 0,
+    // Tổng số tiền giảm giá từ voucher
+  },
+  appliedVouchers: [{
+    code: String,
+    discount: Number,
+    // Danh sách voucher đã áp dụng
+  }],
   createdAt: {
     type: Date,
     default: Date.now,

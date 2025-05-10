@@ -111,7 +111,6 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-
 /**
  * @route   POST /api/users/register
  * @desc    Đăng ký người dùng mới
@@ -359,8 +358,207 @@ router.get('/:id/points/history', protect, async (req, res) => {
   }
 });
 
+// GET /api/users/membership/level/:userId - Lấy cấp độ thành viên
+router.get('/membership/level/:userId', async (req, res) => {
+  const { userId } = req.params;
 
-// Các route hiện có khác (giữ nguyên)
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: 'ID người dùng không hợp lệ' });
+    }
+
+    const user = await User.findById(userId).select('points');
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    let membershipLevel;
+    if (user.points >= 1000000) {
+      membershipLevel = 'Diamond';   
+    } else if (user.points >= 500000) {
+      membershipLevel = 'Platinum';
+    } else if (user.points >= 100000) {
+      membershipLevel = 'Gold';
+    } else if (user.points >= 50000) {
+      membershipLevel = 'Silver';
+    } else {
+      membershipLevel = 'Bronze';
+    }
+
+    res.status(200).json({
+      userId,
+      points: user.points,
+      membershipLevel,
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy cấp độ thành viên:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi lấy cấp độ thành viên', error: error.message });
+  }
+});
+
+// POST /api/users/points/accumulate - Tích điểm theo số điện thoại
+router.post('/points/accumulate', protect, async (req, res) => {
+  const { phone, bookingId, amount } = req.body;
+
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
+    }
+
+    if (!phone || !bookingId || !amount) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp số điện thoại, ID đặt phòng và số tiền' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return res.status(400).json({ message: 'ID đặt phòng không hợp lệ' });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: 'Không tìm thấy đặt phòng' });
+    }
+
+    if (booking.phone !== phone) {
+      return res.status(400).json({ message: 'Số điện thoại không khớp với đặt phòng' });
+    }
+
+    const user = await User.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng với số điện thoại này' });
+    }
+
+    const pointsEarned = Math.floor(amount / 1000); // 1000 VNĐ = 1 điểm
+    user.points += pointsEarned;
+    await user.save();
+
+    const transaction = new Transaction({
+      userId: user._id,
+      bookingId,
+      amount,
+      pointsEarned,
+      paymentMethod: booking.paymentMethod, // Get paymentMethod from booking
+      status: 'completed',
+    });
+    await transaction.save();
+
+    res.status(200).json({
+      message: 'Tích điểm thành công',
+      pointsEarned,
+      totalPoints: user.points,
+      transaction,
+    });
+  } catch (error) {
+    console.error('Lỗi khi tích điểm:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi tích điểm', error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/users/points/:phone
+ * @desc    Xem điểm tích lũy theo số điện thoại
+ * @access  Riêng tư (yêu cầu token, tất cả vai trò: user, staff, admin)
+ */
+router.get('/points/:phone', protect, async (req, res) => {
+  const { phone } = req.params;
+
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
+    }
+
+    const user = await User.findOne({ phone }).select('points name email');
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng với số điện thoại này' });
+    }
+
+    const transactions = await Transaction.find({ userId: user._id })
+      .select('pointsEarned amount bookingId createdAt')
+      .populate('bookingId', 'checkin checkout')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    res.status(200).json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        points: user.points,
+      },
+      recentTransactions: transactions,
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy điểm tích lũy:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi lấy điểm tích lũy', error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/users/spending-history/:userId
+ * @desc    Xem lịch sử chi tiêu của người dùng
+ * @access  Riêng tư (yêu cầu token, chỉ admin/staff hoặc chính người dùng)
+ */
+router.get('/spending-history/:userId', protect, async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: 'ID người dùng không hợp lệ' });
+    }
+
+    const requestingUser = req.user;
+    if (requestingUser.id !== userId && !['admin', 'staff'].includes(requestingUser.role)) {
+      return res.status(403).json({ message: 'Không có quyền truy cập' });
+    }
+
+    const user = await User.findById(userId).select('name email');
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    const transactions = await Transaction.find({ userId })
+      .select('amount bookingId paymentMethod status createdAt pointsEarned')
+      .populate('bookingId', 'checkin checkout roomid')
+      .sort({ createdAt: -1 });
+
+    const spendingHistory = transactions.map(transaction => ({
+      transactionId: transaction._id,
+      amount: transaction.amount,
+      pointsEarned: transaction.pointsEarned,
+      paymentMethod: transaction.paymentMethod,
+      status: transaction.status,
+      booking: transaction.bookingId ? {
+        bookingId: transaction.bookingId._id,
+        checkin: transaction.bookingId.checkin,
+        checkout: transaction.bookingId.checkout,
+        roomId: transaction.bookingId.roomid,
+      } : null,
+      createdAt: transaction.createdAt,
+    }));
+
+    res.status(200).json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+      spendingHistory,
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy lịch sử chi tiêu:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi lấy lịch sử chi tiêu', error: error.message });
+  }
+});
+
+
+//PUT cập nhật hồ sơ người dùng
 router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
   try {
     console.log('Request body:', req.body);
@@ -408,6 +606,7 @@ router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
   }
 });
 
+//GET lấy hồ sơ người dùng
 router.get('/profile', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
@@ -548,7 +747,6 @@ router.delete('/staff/:id', protect, adminOrStaff, async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
-
 
 /**
  * @route   GET /api/users/:id/bookings

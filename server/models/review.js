@@ -1,4 +1,3 @@
-// models/review.js
 const mongoose = require('mongoose');
 
 const reviewSchema = new mongoose.Schema({
@@ -9,8 +8,8 @@ const reviewSchema = new mongoose.Schema({
   },
   userName: {
     type: String,
-    required: false, // Cho phép tùy chọn
-    default: 'Ẩn danh', // Mặc định là "Ẩn danh"
+    required: false,
+    default: 'Ẩn danh',
   },
   rating: {
     type: Number,
@@ -22,9 +21,13 @@ const reviewSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  email: { // Thêm trường email để kiểm tra trùng lặp
+  email: {
     type: String,
     required: true,
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false,
   },
   createdAt: {
     type: Date,
