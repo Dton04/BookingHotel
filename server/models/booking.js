@@ -56,11 +56,13 @@ const bookingSchema = new mongoose.Schema({
     enum: ['pending', 'paid', 'canceled'],
     default: 'pending',
   },
-  paymentDeadline: {
+
+  paymentDeadline: { //thời gian hết hạn thanh toán
     type: Date,
     default: null,
   },
-  cancelReason: {
+  
+  cancelReason: { 
     type: String,
     default: null,
   },
@@ -77,6 +79,18 @@ const bookingSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
+  },
+  momoOrderId: { // Lưu orderId từ MoMo
+    type: String,
+    default: null,
+  },
+  momoRequestId: { // Lưu requestId từ MoMo
+    type: String,
+    default: null,
+  },
+  momoTransactionId: { // Lưu transactionId từ MoMo (sau khi thanh toán thành công)
+    type: String,
+    default: null,
   },
 });
 

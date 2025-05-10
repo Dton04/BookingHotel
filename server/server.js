@@ -44,6 +44,8 @@ app.use(express.urlencoded({ extended: true })); // Phân tích URL-encoded body
 
 // Routes
 const dbConfig = require('./db');
+// Import routes
+const connectDB = require('./db');
 const roomsRoute = require('./routes/roomRoutes');
 const bookingRoute = require('./routes/bookingRoutes');
 const usersRoute = require('./routes/usersRoutes');
@@ -54,17 +56,35 @@ const revenueRoute = require('./routes/revenueRoutes');
 const voucherRoute = require('./routes/voucherRoutes');
 const regionsRoute = require('./routes/regionsRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
+const momoRoutes = require('./routes/momoRoutes');
+
+// Debug routes
+console.log('roomsRoute:', roomsRoute);
+console.log('bookingRoute:', bookingRoute);
+console.log('usersRoute:', usersRoute);
+console.log('contactRoute:', contactRoute);
+console.log('reviewRoute:', reviewRoute);
+console.log('dashboardRoute:', dashboardRoute);
+console.log('revenueRoute:', revenueRoute);
+console.log('voucherRoute:', voucherRoute);
+console.log('regionsRoute:', regionsRoute);
+console.log('transactionRoutes:', transactionRoutes);
+console.log('momoRoutes:', momoRoutes);
+
+// Connect to MongoDB Gay ra loi khong sai dong duoi
+//connectDB();
 const hotelRoutes = require('./routes/hotelRoutes');
 const rewardsRoutes = require('./routes/rewardsRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const promotionRoutes = require('./routes/promotionRoutes');
 
 
+// Routes
 app.use('/api/rooms', roomsRoute);
 app.use('/api/bookings', bookingRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/reviews', reviewRoute);
-app.use('/api', contactRoute);
+app.use('/api/contacts', contactRoute);
 app.use('/api/dashboard', dashboardRoute);
 app.use('/api/revenue', revenueRoute);
 app.use('/api/vouchers', voucherRoute);
@@ -88,6 +108,7 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? err.message : undefined,
   });
 });
+app.use('/api/momo', momoRoutes);
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server is running on port ${port}`));

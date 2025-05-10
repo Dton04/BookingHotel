@@ -264,6 +264,8 @@ router.post("/bookroom", async (req, res) => {
     roomType,
     specialRequest,
     paymentMethod,
+    orderId, // MoMo orderId
+    momoRequestId, // MoMo requestId
   } = req.body;
 
   try {
@@ -326,6 +328,8 @@ router.post("/bookroom", async (req, res) => {
       paymentMethod,
       paymentStatus: 'pending',
       paymentDeadline: paymentMethod === 'bank_transfer' ? new Date(Date.now() + 5 * 60 * 1000) : null,
+      momoOrderId: paymentMethod === 'mobile_payment' ? orderId : null,
+      momoRequestId: paymentMethod === 'mobile_payment' ? momoRequestId : null,
     });
 
     await newBooking.save();
@@ -408,6 +412,7 @@ router.get("/:id/payment-deadline", async (req, res) => {
   }
 });
 
+// GET /api/bookings/summary - Lấy số lượng booking theo trạng thái
 router.get("/summary", async (req, res) => {
   console.log("Xử lý yêu cầu /api/bookings/summary");
   try {

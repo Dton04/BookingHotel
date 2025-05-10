@@ -6,10 +6,58 @@ function ReviewChart({ roomId }) {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [canViewChart, setCanViewChart] = useState(false);
+  const [userLoading, setUserLoading] = useState(true);
 
+  // Lấy thông tin người dùng để kiểm tra vai trò
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userInfo = localStorage.getItem("userInfo");
+        console.log("userInfo from localStorage:", userInfo); // Debug userInfo
+        if (!userInfo) {
+          console.log("No userInfo found, setting canViewChart to false");
+          setCanViewChart(false);
+          setUserLoading(false);
+          return;
+        }
+
+        const parsedUserInfo = JSON.parse(userInfo);
+        const token = parsedUserInfo.token;
+        console.log("Token from userInfo:", token); // Debug token
+        if (!token) {
+          console.log("No token found in userInfo, setting canViewChart to false");
+          setCanViewChart(false);
+          setUserLoading(false);
+          return;
+        }
+
+        const response = await axios.get("/api/users/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log("User data from API:", response.data); // Debug user data
+        const user = response.data;
+        // Kiểm tra vai trò: admin (isAdmin: true) hoặc staff (role: 'staff')
+        setCanViewChart(user.isAdmin === true || user.role === "staff");
+      } catch (error) {
+        console.error("Error fetching user profile:", error.response?.status, error.response?.data?.message || error.message);
+        if (error.response?.status === 401) {
+          localStorage.removeItem("userInfo"); // Xóa userInfo nếu token hết hạn
+          console.log("Token expired or invalid, removed userInfo");
+        }
+        setCanViewChart(false);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  // Lấy dữ liệu đánh giá nếu có quyền
   useEffect(() => {
     const fetchReviews = async () => {
-      if (!roomId) return;
+      if (!roomId || !canViewChart) return; // Không fetch nếu không có quyền
       try {
         setLoading(true);
         setError(null);
@@ -38,8 +86,20 @@ function ReviewChart({ roomId }) {
       }
     };
 
-    fetchReviews();
-  }, [roomId]);
+    if (!userLoading) {
+      fetchReviews();
+    }
+  }, [roomId, canViewChart, userLoading]);
+
+  // Nếu đang tải thông tin người dùng, hiển thị loader
+  if (userLoading) {
+    return <p>Đang tải...</p>;
+  }
+
+  // Nếu không phải admin hoặc staff, không hiển thị gì
+  if (!canViewChart) {
+    return <p>Bạn không có quyền xem biểu đồ này.</p>;
+  }
 
   return (
     <div className="review-chart">
@@ -64,4 +124,4 @@ function ReviewChart({ roomId }) {
   );
 }
 
-export default ReviewChart;   
+export default ReviewChart;
