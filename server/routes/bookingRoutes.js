@@ -5,19 +5,23 @@ const Booking = require("../models/booking");
 const Room = require("../models/room");
 const Voucher = require("../models/voucher");
 const User = require("../models/user");
+const axios = require("axios");
 
 // Giả lập hàm xử lý thanh toán qua tài khoản ngân hàng
-const processBankPayment = async (bookingData) => {
+const processBankPayment = async (bookingData, session) => {
   try {
-    const room = await Room.findById(bookingData.roomid);
+    const room = await Room.findById(bookingData.roomid).session(session);
     if (!room) {
       throw new Error("Không tìm thấy phòng để tính toán thanh toán.");
+    }
+    if (room.availabilityStatus !== "available") {
+      throw new Error("Phòng không còn khả dụng để thanh toán.");
     }
 
     const checkinDate = new Date(bookingData.checkin);
     const checkoutDate = new Date(bookingData.checkout);
     const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
-    
+
     const amount = room.rentperday * days;
 
     const bankInfo = {
@@ -55,20 +59,29 @@ router.post("/apply-promotions", async (req, res) => {
       return res.status(400).json({ message: "ID phòng hoặc ID đặt phòng không hợp lệ" });
     }
 
+    const booking = await Booking.findById(bookingData.bookingId).lean();
+    if (!booking) {
+      return res.status(404).json({ message: "Không tìm thấy đặt phòng" });
+    }
+
+    if (booking.status !== "pending" && booking.status !== "confirmed") {
+      return res.status(400).json({ message: "Không thể áp dụng khuyến mãi cho đặt phòng đã hủy" });
+    }
+
+    const user = await User.findOne({ email: booking.email.toLowerCase() }).lean();
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng liên quan đến đặt phòng" });
+    }
+
     const checkinDate = new Date(bookingData.checkin);
     const checkoutDate = new Date(bookingData.checkout);
     if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime()) || checkinDate >= checkoutDate) {
       return res.status(400).json({ message: "Ngày nhận phòng hoặc trả phòng không hợp lệ" });
     }
 
-    const room = await Room.findById(bookingData.roomid);
+    const room = await Room.findById(bookingData.roomid).lean();
     if (!room) {
       return res.status(404).json({ message: "Không tìm thấy phòng" });
-    }
-
-    const booking = await Booking.findById(bookingData.bookingId);
-    if (!booking) {
-      return res.status(404).json({ message: "Không tìm thấy đặt phòng" });
     }
 
     const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
@@ -81,54 +94,78 @@ router.post("/apply-promotions", async (req, res) => {
 
     let totalDiscount = 0;
     const appliedVouchers = [];
+    const session = await mongoose.startSession();
 
-    for (const voucher of vouchers) {
-      const now = new Date();
-      if (now < voucher.startDate || now > voucher.endDate) {
-        continue;
-      }
+    try {
+      session.startTransaction();
 
-      if (!voucher.applicableHotels.some(id => id.equals(bookingData.roomid))) {
-        continue;
-      }
-
-      if (totalAmount < voucher.minBookingAmount) {
-        continue;
-      }
-
-      let discount = 0;
-      if (voucher.discountType === "percentage") {
-        discount = (totalAmount * voucher.discountValue) / 100;
-        if (voucher.maxDiscount && discount > voucher.maxDiscount) {
-          discount = voucher.maxDiscount;
+      for (const voucher of vouchers) {
+        const now = new Date();
+        if (now < voucher.startDate || now > voucher.endDate) {
+          continue;
         }
-      } else if (voucher.discountType === "fixed") {
-        discount = voucher.discountValue;
+
+        if (!voucher.applicableHotels.some((id) => id.equals(bookingData.roomid))) {
+          continue;
+        }
+
+        if (totalAmount < voucher.minBookingAmount) {
+          continue;
+        }
+
+        const userUsage = voucher.usedBy.find((u) => u.userId.equals(user._id));
+        if (userUsage && userUsage.count >= 1) {
+          continue;
+        }
+
+        let discount = 0;
+        if (voucher.discountType === "percentage") {
+          discount = (totalAmount * voucher.discountValue) / 100;
+          if (voucher.maxDiscount && discount > voucher.maxDiscount) {
+            discount = voucher.maxDiscount;
+          }
+        } else if (voucher.discountType === "fixed") {
+          discount = voucher.discountValue;
+        }
+
+        if (!voucher.isStackable && appliedVouchers.length > 0) {
+          continue;
+        }
+
+        totalDiscount += discount;
+        appliedVouchers.push({
+          code: voucher.code,
+          discount,
+        });
+
+        if (userUsage) {
+          userUsage.count += 1;
+        } else {
+          voucher.usedBy.push({ userId: user._id, count: 1 });
+        }
+        await voucher.save({ session });
       }
 
-      if (!voucher.isStackable && appliedVouchers.length > 0) {
-        continue;
-      }
+      totalAmount = Math.max(0, totalAmount - totalDiscount);
 
-      totalDiscount += discount;
-      appliedVouchers.push({
-        code: voucher.code,
-        discount,
+      await Booking.updateOne(
+        { _id: bookingData.bookingId },
+        { voucherDiscount: totalDiscount, appliedVouchers },
+        { session }
+      );
+
+      await session.commitTransaction();
+      res.status(200).json({
+        message: "Áp dụng khuyến mãi thành công",
+        totalAmount,
+        appliedVouchers,
       });
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
     }
-
-    totalAmount = Math.max(0, totalAmount - totalDiscount);
-
-    // Lưu thông tin giảm giá vào booking
-    booking.voucherDiscount = totalDiscount;
-    booking.appliedVouchers = appliedVouchers;
-    await booking.save();
-
-    res.status(200).json({
-      message: "Áp dụng khuyến mãi thành công",
-      totalAmount,
-      appliedVouchers,
-    });
   } catch (error) {
     console.error("Lỗi khi áp dụng khuyến mãi:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi áp dụng khuyến mãi", error: error.message });
@@ -138,40 +175,43 @@ router.post("/apply-promotions", async (req, res) => {
 // POST /api/bookings - Đặt phòng
 router.post("/", async (req, res) => {
   const { roomid, name, email, phone, checkin, checkout, adults, children, roomType, paymentMethod } = req.body;
+  const session = await mongoose.startSession();
 
   try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
-    }
+    session.startTransaction();
 
     if (!mongoose.Types.ObjectId.isValid(roomid)) {
-      return res.status(400).json({ message: "ID phòng không hợp lệ" });
+      throw new Error("ID phòng không hợp lệ");
     }
 
     if (!name || !email || !phone || !checkin || !checkout || !adults || !roomType || !paymentMethod) {
-      return res.status(400).json({ message: "Thiếu các trường bắt buộc" });
+      throw new Error("Thiếu các trường bắt buộc");
     }
 
-    if (!['cash', 'credit_card', 'bank_transfer', 'mobile_payment'].includes(paymentMethod)) {
-      return res.status(400).json({ message: "Phương thức thanh toán không hợp lệ" });
+    if (!["cash", "credit_card", "bank_transfer", "mobile_payment"].includes(paymentMethod)) {
+      throw new Error("Phương thức thanh toán không hợp lệ");
     }
 
     const checkinDate = new Date(checkin);
     const checkoutDate = new Date(checkout);
     if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime()) || checkinDate >= checkoutDate) {
-      return res.status(400).json({ message: "Ngày nhận phòng hoặc trả phòng không hợp lệ" });
+      throw new Error("Ngày nhận phòng hoặc trả phòng không hợp lệ");
     }
 
-    const room = await Room.findById(roomid);
+    const room = await Room.findById(roomid).session(session);
     if (!room) {
-      return res.status(404).json({ message: "Không tìm thấy phòng" });
+      throw new Error("Không tìm thấy phòng");
     }
 
-    if (room.availabilityStatus !== 'available') {
-      return res.status(400).json({ message: `Phòng đang ở trạng thái ${room.availabilityStatus}, không thể đặt` });
+    if (room.availabilityStatus !== "available") {
+      throw new Error(`Phòng đang ở trạng thái ${room.availabilityStatus}, không thể đặt`);
     }
 
-    const isRoomBooked = room.currentbookings.some(booking => {
+    if (room.maxcount < Number(adults) + Number(children)) {
+      throw new Error("Số lượng người vượt quá sức chứa của phòng");
+    }
+
+    const isRoomBooked = room.currentbookings.some((booking) => {
       const existingCheckin = new Date(booking.checkin);
       const existingCheckout = new Date(booking.checkout);
       return (
@@ -182,13 +222,13 @@ router.post("/", async (req, res) => {
     });
 
     if (isRoomBooked) {
-      return res.status(400).json({ message: "Phòng đã được đặt trong khoảng thời gian này" });
+      throw new Error("Phòng đã được đặt trong khoảng thời gian này");
     }
 
     const newBooking = new Booking({
       roomid,
       name,
-      email,
+      email: email.toLowerCase(),
       phone,
       checkin: checkinDate,
       checkout: checkoutDate,
@@ -196,15 +236,15 @@ router.post("/", async (req, res) => {
       children: Number(children) || 0,
       roomType,
       paymentMethod,
-      paymentStatus: 'pending',
-      paymentDeadline: paymentMethod === 'bank_transfer' ? new Date(Date.now() + 5 * 60 * 1000) : null,
+      paymentStatus: "pending",
+      paymentDeadline: paymentMethod === "bank_transfer" ? new Date(Date.now() + 5 * 60 * 1000) : null,
     });
 
-    await newBooking.save();
+    await newBooking.save({ session });
 
     let paymentResult;
-    if (paymentMethod === 'bank_transfer') {
-      paymentResult = await processBankPayment(newBooking);
+    if (paymentMethod === "bank_transfer") {
+      paymentResult = await processBankPayment(newBooking, session);
     }
 
     room.currentbookings.push({
@@ -212,12 +252,166 @@ router.post("/", async (req, res) => {
       checkin: checkinDate,
       checkout: checkoutDate,
     });
-    await room.save();
+    await room.save({ session });
 
+    await session.commitTransaction();
     res.status(201).json({ message: "Đặt phòng thành công", booking: newBooking, paymentResult });
   } catch (error) {
+    await session.abortTransaction();
     console.error("Lỗi khi đặt phòng:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi đặt phòng", error: error.message });
+  } finally {
+    session.endSession();
+  }
+});
+
+// POST /api/bookings/bookroom - Đặt phòng
+router.post("/bookroom", async (req, res) => {
+  const {
+    roomid,
+    name,
+    email,
+    phone,
+    checkin,
+    checkout,
+    adults,
+    children,
+    roomType,
+    specialRequest,
+    paymentMethod,
+    orderId,
+    momoRequestId,
+  } = req.body;
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    if (!mongoose.Types.ObjectId.isValid(roomid)) {
+      throw new Error("ID phòng không hợp lệ");
+    }
+
+    if (!name || !email || !phone || !checkin || !checkout || !adults || children == null || !roomType || !paymentMethod) {
+      throw new Error("Thiếu các trường bắt buộc");
+    }
+
+    if (!["cash", "credit_card", "bank_transfer", "mobile_payment"].includes(paymentMethod)) {
+      throw new Error("Phương thức thanh toán không hợp lệ");
+    }
+
+    const checkinDate = new Date(checkin);
+    const checkoutDate = new Date(checkout);
+    if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime()) || checkinDate >= checkoutDate) {
+      throw new Error("Ngày nhận phòng hoặc trả phòng không hợp lệ");
+    }
+
+    const room = await Room.findById(roomid).session(session);
+    if (!room) {
+      throw new Error("Không tìm thấy phòng");
+    }
+
+    if (room.availabilityStatus !== "available") {
+      throw new Error(`Phòng đang ở trạng thái ${room.availabilityStatus}, không thể đặt`);
+    }
+
+    if (room.maxcount < Number(adults) + Number(children)) {
+      throw new Error("Số lượng người vượt quá sức chứa của phòng");
+    }
+
+    const isRoomBooked = room.currentbookings.some((booking) => {
+      const existingCheckin = new Date(booking.checkin);
+      const existingCheckout = new Date(booking.checkout);
+      return (
+        (checkinDate >= existingCheckin && checkinDate < existingCheckout) ||
+        (checkoutDate > existingCheckin && checkoutDate <= existingCheckout) ||
+        (checkinDate <= existingCheckin && checkoutDate >= existingCheckout)
+      );
+    });
+
+    if (isRoomBooked) {
+      throw new Error("Phòng đã được đặt trong khoảng thời gian này");
+    }
+
+    const newBooking = new Booking({
+      roomid,
+      name,
+      email: email.toLowerCase(),
+      phone,
+      checkin: checkinDate,
+      checkout: checkoutDate,
+      adults: Number(adults),
+      children: Number(children),
+      roomType,
+      specialRequest,
+      paymentMethod,
+      paymentStatus: "pending",
+      paymentDeadline: paymentMethod === "bank_transfer" ? new Date(Date.now() + 5 * 60 * 1000) : null,
+      momoOrderId: paymentMethod === "mobile_payment" ? orderId : null,
+      momoRequestId: paymentMethod === "mobile_payment" ? momoRequestId : null,
+    });
+
+    await newBooking.save({ session });
+
+    let paymentResult;
+    if (paymentMethod === "bank_transfer") {
+      paymentResult = await processBankPayment(newBooking, session);
+    }
+
+    room.currentbookings.push({
+      bookingId: newBooking._id,
+      checkin: checkinDate,
+      checkout: checkoutDate,
+    });
+    await room.save({ session });
+
+    await session.commitTransaction();
+    res.status(201).json({ message: "Đặt phòng thành công", booking: newBooking, paymentResult });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Lỗi trong API đặt phòng:", error.message, error.stack);
+    res.status(500).json({ message: "Lỗi khi đặt phòng", error: error.message });
+  } finally {
+    session.endSession();
+  }
+});
+
+// POST /api/bookings/momo/verify-payment - Kiểm tra trạng thái thanh toán MoMo
+router.post("/momo/verify-payment", async (req, res) => {
+  const { bookingId, momoOrderId } = req.body;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return res.status(400).json({ message: "ID đặt phòng không hợp lệ" });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: "Không tìm thấy đặt phòng" });
+    }
+
+    if (booking.momoOrderId !== momoOrderId) {
+      return res.status(400).json({ message: "Order ID không khớp" });
+    }
+
+    // Giả lập kiểm tra trạng thái thanh toán với MoMo API
+    const momoVerifyResponse = await axios.post("https://api.momo.vn/verify-payment", {
+      orderId: momoOrderId,
+      requestId: booking.momoRequestId,
+    });
+
+    if (momoVerifyResponse.data.status === "success") {
+      booking.paymentStatus = "paid";
+      booking.status = "confirmed";
+      booking.momoTransactionId = momoVerifyResponse.data.transactionId;
+      await booking.save();
+
+      res.status(200).json({ message: "Thanh toán MoMo thành công", booking });
+    } else {
+      res.status(400).json({ message: "Thanh toán MoMo thất bại hoặc đang chờ xử lý" });
+    }
+  } catch (error) {
+    console.error("Lỗi khi kiểm tra thanh toán MoMo:", error.message, error.stack);
+    res.status(500).json({ message: "Lỗi khi kiểm tra thanh toán MoMo", error: error.message });
   }
 });
 
@@ -234,14 +428,15 @@ router.get("/history/:userId", async (req, res) => {
       return res.status(400).json({ message: "ID người dùng không hợp lệ" });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).lean();
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
     const bookings = await Booking.find({ email: user.email.toLowerCase() })
       .populate("roomid")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json(bookings);
   } catch (error) {
@@ -250,109 +445,7 @@ router.get("/history/:userId", async (req, res) => {
   }
 });
 
-// Các endpoint khác giữ nguyên
-router.post("/bookroom", async (req, res) => {
-  const {
-    roomid,
-    name,
-    email,
-    phone,
-    checkin,
-    checkout,
-    adults,
-    children,
-    roomType,
-    specialRequest,
-    paymentMethod,
-    orderId, // MoMo orderId
-    momoRequestId, // MoMo requestId
-  } = req.body;
-
-  try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(roomid)) {
-      return res.status(400).json({ message: "ID phòng không hợp lệ" });
-    }
-
-    if (!name || !email || !phone || !checkin || !checkout || !adults || children == null || !roomType || !paymentMethod) {
-      return res.status(400).json({ message: "Thiếu các trường bắt buộc" });
-    }
-
-    if (!['cash', 'credit_card', 'bank_transfer', 'mobile_payment'].includes(paymentMethod)) {
-      return res.status(400).json({ message: "Phương thức thanh toán không hợp lệ" });
-    }
-
-    const checkinDate = new Date(checkin);
-    const checkoutDate = new Date(checkout);
-    if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime())) {
-      return res.status(400).json({ message: "Ngày nhận phòng hoặc trả phòng không hợp lệ" });
-    }
-
-    const room = await Room.findById(roomid);
-    if (!room) {
-      return res.status(404).json({ message: "Không tìm thấy phòng" });
-    }
-
-    if (room.availabilityStatus !== 'available') {
-      return res.status(400).json({ message: `Phòng đang ở trạng thái ${room.availabilityStatus}, không thể đặt` });
-    }
-
-    const isRoomBooked = room.currentbookings.some(booking => {
-      const existingCheckin = new Date(booking.checkin);
-      const existingCheckout = new Date(booking.checkout);
-      return (
-        (checkinDate >= existingCheckin && checkinDate < existingCheckout) ||
-        (checkoutDate > existingCheckin && checkoutDate <= existingCheckout) ||
-        (checkinDate <= existingCheckin && checkoutDate >= existingCheckout)
-      );
-    });
-
-    if (isRoomBooked) {
-      return res.status(400).json({ message: "Phòng đã được đặt trong khoảng thời gian này" });
-    }
-
-    const newBooking = new Booking({
-      roomid,
-      name,
-      email,
-      phone,
-      checkin: checkinDate,
-      checkout: checkoutDate,
-      adults: Number(adults),
-      children: Number(children),
-      roomType,
-      specialRequest,
-      paymentMethod,
-      paymentStatus: 'pending',
-      paymentDeadline: paymentMethod === 'bank_transfer' ? new Date(Date.now() + 5 * 60 * 1000) : null,
-      momoOrderId: paymentMethod === 'mobile_payment' ? orderId : null,
-      momoRequestId: paymentMethod === 'mobile_payment' ? momoRequestId : null,
-    });
-
-    await newBooking.save();
-
-    let paymentResult;
-    if (paymentMethod === 'bank_transfer') {
-      paymentResult = await processBankPayment(newBooking);
-    }
-
-    room.currentbookings.push({
-      bookingId: newBooking._id,
-      checkin: checkinDate,
-      checkout: checkoutDate,
-    });
-    await room.save();
-
-    res.status(201).json({ message: "Đặt phòng thành công", booking: newBooking, paymentResult });
-  } catch (error) {
-    console.error("Lỗi trong API đặt phòng:", error.message, error.stack);
-    res.status(500).json({ message: "Lỗi khi đặt phòng", error: error.message });
-  }
-});
-
+// GET /api/bookings/:id/payment-deadline - Kiểm tra thời hạn thanh toán
 router.get("/:id/payment-deadline", async (req, res) => {
   const { id } = req.params;
 
@@ -365,12 +458,12 @@ router.get("/:id/payment-deadline", async (req, res) => {
       return res.status(400).json({ message: "ID đặt phòng không hợp lệ" });
     }
 
-    const booking = await Booking.findById(id).populate("roomid");
+    const booking = await Booking.findById(id).populate("roomid").lean();
     if (!booking) {
       return res.status(404).json({ message: "Không tìm thấy đặt phòng với ID này" });
     }
 
-    if (booking.paymentMethod !== 'bank_transfer') {
+    if (booking.paymentMethod !== "bank_transfer") {
       return res.status(400).json({ message: "Đặt phòng này không sử dụng thanh toán qua ngân hàng" });
     }
 
@@ -381,24 +474,32 @@ router.get("/:id/payment-deadline", async (req, res) => {
     const currentTime = new Date();
     const timeRemaining = booking.paymentDeadline - currentTime;
 
-    if (timeRemaining <= 0 && booking.paymentStatus === 'pending') {
-      booking.status = 'canceled';
-      booking.paymentStatus = 'canceled';
-      await booking.save();
+    if (timeRemaining <= 0 && booking.paymentStatus === "pending") {
+      const session = await mongoose.startSession();
+      try {
+        session.startTransaction();
+        booking.status = "canceled";
+        booking.paymentStatus = "canceled";
+        await Booking.updateOne({ _id: id }, booking, { session });
 
-      const room = await Room.findById(booking.roomid);
-      if (room) {
-        room.currentbookings = room.currentbookings.filter(
-          (b) => b.bookingId.toString() !== id
-        );
-        await room.save();
+        const room = await Room.findById(booking.roomid).session(session);
+        if (room) {
+          room.currentbookings = room.currentbookings.filter((b) => b.bookingId.toString() !== id);
+          await room.save({ session });
+        }
+
+        await session.commitTransaction();
+        return res.status(200).json({
+          message: "Thời gian thanh toán đã hết. Đặt phòng đã bị hủy.",
+          timeRemaining: 0,
+          expired: true,
+        });
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
       }
-
-      return res.status(200).json({
-        message: "Thời gian thanh toán đã hết. Đặt phòng đã bị hủy.",
-        timeRemaining: 0,
-        expired: true,
-      });
     }
 
     res.status(200).json({
@@ -414,18 +515,15 @@ router.get("/:id/payment-deadline", async (req, res) => {
 
 // GET /api/bookings/summary - Lấy số lượng booking theo trạng thái
 router.get("/summary", async (req, res) => {
-  console.log("Xử lý yêu cầu /api/bookings/summary");
   try {
-    console.log("Trạng thái kết nối MongoDB:", mongoose.connection.readyState);
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
     }
-    const summary = await Booking.aggregate([
-      { $group: { _id: "$status", count: { $sum: 1 } } }
-    ]);
-    console.log("Kết quả aggregation:", summary);
+    const summary = await Booking.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]).exec();
     const result = { pending: 0, confirmed: 0, canceled: 0 };
-    summary.forEach(item => { result[item._id] = item.count; });
+    summary.forEach((item) => {
+      result[item._id] = item.count;
+    });
     res.status(200).json(result);
   } catch (error) {
     console.error("Lỗi khi lấy thống kê trạng thái đặt phòng:", error.message, error.stack);
@@ -433,6 +531,7 @@ router.get("/summary", async (req, res) => {
   }
 });
 
+// GET /api/bookings/recent - Lấy danh sách đặt phòng mới nhất
 router.get("/recent", async (req, res) => {
   const { limit = 10 } = req.query;
 
@@ -449,7 +548,8 @@ router.get("/recent", async (req, res) => {
     const bookings = await Booking.find()
       .sort({ createdAt: -1 })
       .limit(parsedLimit)
-      .populate("roomid");
+      .populate("roomid")
+      .lean();
 
     res.status(200).json(bookings);
   } catch (error) {
@@ -458,15 +558,9 @@ router.get("/recent", async (req, res) => {
   }
 });
 
+// POST /api/bookings/validate - Kiểm tra dữ liệu đặt phòng
 router.post("/validate", async (req, res) => {
-  const {
-    roomid,
-    checkin,
-    checkout,
-    adults,
-    children,
-    roomType,
-  } = req.body;
+  const { roomid, checkin, checkout, adults, children, roomType } = req.body;
 
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -477,7 +571,7 @@ router.post("/validate", async (req, res) => {
       return res.status(400).json({ message: "ID phòng không hợp lệ" });
     }
 
-    if (!checkin || !checkout || !adults || !children || !roomType) {
+    if (!checkin || !checkout || !adults || children == null || !roomType) {
       return res.status(400).json({ message: "Thiếu các trường bắt buộc" });
     }
 
@@ -491,12 +585,12 @@ router.post("/validate", async (req, res) => {
       return res.status(400).json({ message: "Ngày nhận phòng phải trước ngày trả phòng" });
     }
 
-    const room = await Room.findById(roomid);
+    const room = await Room.findById(roomid).lean();
     if (!room) {
       return res.status(404).json({ message: "Không tìm thấy phòng" });
     }
 
-    if (room.availabilityStatus !== 'available') {
+    if (room.availabilityStatus !== "available") {
       return res.status(400).json({ message: `Phòng đang ở trạng thái ${room.availabilityStatus}, không thể đặt` });
     }
 
@@ -504,11 +598,11 @@ router.post("/validate", async (req, res) => {
       return res.status(400).json({ message: "Loại phòng không khớp với phòng được chọn" });
     }
 
-    if (room.maxcount < (Number(adults) + Number(children))) {
+    if (room.maxcount < Number(adults) + Number(children)) {
       return res.status(400).json({ message: "Số lượng người vượt quá sức chứa của phòng" });
     }
 
-    const isRoomBooked = room.currentbookings.some(booking => {
+    const isRoomBooked = room.currentbookings.some((booking) => {
       const existingCheckin = new Date(booking.checkin);
       const existingCheckout = new Date(booking.checkout);
       return (
@@ -529,6 +623,7 @@ router.post("/validate", async (req, res) => {
   }
 });
 
+// GET /api/bookings/cancel-reason - Lấy lý do hủy
 router.get("/cancel-reason", async (req, res) => {
   const { bookingId } = req.query;
 
@@ -541,7 +636,7 @@ router.get("/cancel-reason", async (req, res) => {
       return res.status(400).json({ message: "ID đặt phòng không hợp lệ hoặc thiếu" });
     }
 
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findById(bookingId).lean();
     if (!booking) {
       return res.status(404).json({ message: "Không tìm thấy đặt phòng với ID này" });
     }
@@ -561,6 +656,7 @@ router.get("/cancel-reason", async (req, res) => {
   }
 });
 
+// GET /api/bookings/check - Kiểm tra đặt phòng
 router.get("/check", async (req, res) => {
   const { email, roomId } = req.query;
 
@@ -577,7 +673,7 @@ router.get("/check", async (req, res) => {
       return res.status(400).json({ message: "roomId không hợp lệ" });
     }
 
-    const booking = await Booking.findOne({ email, roomid: roomId });
+    const booking = await Booking.findOne({ email, roomid: roomId }).lean();
     if (!booking) {
       return res.status(404).json({ hasBooked: false, message: "Không tìm thấy đặt phòng với email và roomId này" });
     }
@@ -589,6 +685,7 @@ router.get("/check", async (req, res) => {
   }
 });
 
+// GET /api/bookings/:id - Lấy chi tiết đặt phòng
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -601,7 +698,7 @@ router.get("/:id", async (req, res) => {
       return res.status(400).json({ message: "ID đặt phòng không hợp lệ" });
     }
 
-    const booking = await Booking.findById(id).populate("roomid");
+    const booking = await Booking.findById(id).populate("roomid").lean();
     if (!booking) {
       return res.status(404).json({ message: "Không tìm thấy đặt phòng với ID này" });
     }
@@ -613,82 +710,99 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// PUT /api/bookings/:id/cancel - Hủy đặt phòng
 router.put("/:id/cancel", async (req, res) => {
   const { id } = req.params;
+  const { cancelReason } = req.body;
+  const session = await mongoose.startSession();
 
   try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
-    }
+    session.startTransaction();
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "ID đặt phòng không hợp lệ" });
+      throw new Error("ID đặt phòng không hợp lệ");
     }
 
-    const booking = await Booking.findById(id);
+    if (!cancelReason || cancelReason.trim() === "") {
+      throw new Error("Lý do hủy không được để trống");
+    }
+
+    const booking = await Booking.findById(id).session(session);
     if (!booking) {
-      return res.status(404).json({ message: "Không tìm thấy đặt phòng với ID này" });
+      throw new Error("Không tìm thấy đặt phòng với ID này");
     }
 
     if (booking.status === "canceled") {
-      return res.status(400).json({ message: "Đặt phòng này đã bị hủy trước đó" });
+      throw new Error("Đặt phòng này đã bị hủy trước đó");
+    }
+
+    if (booking.status === "confirmed") {
+      throw new Error("Không thể hủy đặt phòng đã được xác nhận");
     }
 
     booking.status = "canceled";
     booking.paymentStatus = "canceled";
-    await booking.save();
+    booking.cancelReason = cancelReason;
+    await booking.save({ session });
 
-    const room = await Room.findById(booking.roomid);
+    const room = await Room.findById(booking.roomid).session(session);
     if (room) {
-      room.currentbookings = room.currentbookings.filter(
-        (b) => b.bookingId.toString() !== id
-      );
-      await room.save();
+      room.currentbookings = room.currentbookings.filter((b) => b.bookingId.toString() !== id);
+      await room.save({ session });
     }
 
+    await session.commitTransaction();
     res.status(200).json({ message: "Hủy đặt phòng thành công", booking });
   } catch (error) {
+    await session.abortTransaction();
     console.error("Lỗi khi hủy đặt phòng:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi hủy đặt phòng", error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
+// PUT /api/bookings/:id/confirm - Xác nhận đặt phòng
 router.put("/:id/confirm", async (req, res) => {
   const { id } = req.params;
+  const session = await mongoose.startSession();
 
   try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
-    }
+    session.startTransaction();
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "ID đặt phòng không hợp lệ" });
+      throw new Error("ID đặt phòng không hợp lệ");
     }
 
-    const booking = await Booking.findById(id);
+    const booking = await Booking.findById(id).session(session);
     if (!booking) {
-      return res.status(404).json({ message: "Không tìm thấy đặt phòng với ID này" });
+      throw new Error("Không tìm thấy đặt phòng với ID này");
     }
 
     if (booking.status === "confirmed") {
-      return res.status(400).json({ message: "Đặt phòng này đã được xác nhận trước đó" });
+      throw new Error("Đặt phòng này đã được xác nhận trước đó");
     }
 
     if (booking.status === "canceled") {
-      return res.status(400).json({ message: "Không thể xác nhận một đặt phòng đã bị hủy" });
+      throw new Error("Không thể xác nhận một đặt phòng đã bị hủy");
     }
 
     booking.status = "confirmed";
     booking.paymentStatus = "paid";
-    await booking.save();
+    await booking.save({ session });
 
+    await session.commitTransaction();
     res.status(200).json({ message: "Xác nhận đặt phòng thành công", booking });
   } catch (error) {
+    await session.abortTransaction();
     console.error("Lỗi khi xác nhận đặt phòng:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi xác nhận đặt phòng", error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
+// GET /api/bookings - Lấy danh sách đặt phòng
 router.get("/", async (req, res) => {
   const { status, email } = req.query;
 
@@ -702,11 +816,10 @@ router.get("/", async (req, res) => {
       query.status = status;
     }
     if (email) {
-      query.email = email;
+      query.email = email.toLowerCase();
     }
 
-    const bookings = await Booking.find(query).populate("roomid");
-
+    const bookings = await Booking.find(query).populate("roomid").lean();
     res.status(200).json(bookings);
   } catch (error) {
     console.error("Lỗi khi lấy danh sách đặt phòng:", error.message, error.stack);
@@ -714,6 +827,7 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET /api/bookings/room/:roomId - Lấy danh sách đặt phòng theo phòng
 router.get("/room/:roomId", async (req, res) => {
   const { roomId } = req.params;
 
@@ -726,7 +840,7 @@ router.get("/room/:roomId", async (req, res) => {
       return res.status(400).json({ message: "ID phòng không hợp lệ" });
     }
 
-    const bookings = await Booking.find({ roomid: roomId }).populate("roomid");
+    const bookings = await Booking.find({ roomid: roomId }).populate("roomid").lean();
     if (!bookings.length) {
       return res.status(404).json({ message: "Không tìm thấy đặt phòng nào cho phòng này" });
     }
@@ -738,24 +852,25 @@ router.get("/room/:roomId", async (req, res) => {
   }
 });
 
+// GET /api/bookings/stats/daily - Thống kê doanh thu theo ngày
 router.get("/stats/daily", async (req, res) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
     }
 
-    const bookings = await Booking.find({ status: "confirmed" }).populate("roomid");
-    
+    const bookings = await Booking.find({ status: "confirmed" }).populate("roomid").lean();
+
     const dailyRevenue = bookings.reduce((acc, booking) => {
       if (!booking.roomid || !booking.roomid.rentperday) return acc;
 
       const checkinDate = new Date(booking.checkin);
       const checkoutDate = new Date(booking.checkout);
       const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
-      
-      const dateKey = checkinDate.toISOString().split('T')[0];
-      
-      acc[dateKey] = (acc[dateKey] || 0) + (booking.roomid.rentperday * days);
+
+      const dateKey = checkinDate.toISOString().split("T")[0];
+
+      acc[dateKey] = (acc[dateKey] || 0) + booking.roomid.rentperday * days;
       return acc;
     }, {});
 
@@ -766,24 +881,25 @@ router.get("/stats/daily", async (req, res) => {
   }
 });
 
+// GET /api/bookings/stats/monthly - Thống kê doanh thu theo tháng
 router.get("/stats/monthly", async (req, res) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
     }
 
-    const bookings = await Booking.find({ status: "confirmed" }).populate("roomid");
-    
+    const bookings = await Booking.find({ status: "confirmed" }).populate("roomid").lean();
+
     const monthlyRevenue = bookings.reduce((acc, booking) => {
       if (!booking.roomid || !booking.roomid.rentperday) return acc;
 
       const checkinDate = new Date(booking.checkin);
       const checkoutDate = new Date(booking.checkout);
       const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
-      
-      const monthKey = `${checkinDate.getFullYear()}-${String(checkinDate.getMonth() + 1).padStart(2, '0')}`;
-      
-      acc[monthKey] = (acc[monthKey] || 0) + (booking.roomid.rentperday * days);
+
+      const monthKey = `${checkinDate.getFullYear()}-${String(checkinDate.getMonth() + 1).padStart(2, "0")}`;
+
+      acc[monthKey] = (acc[monthKey] || 0) + booking.roomid.rentperday * days;
       return acc;
     }, {});
 
@@ -794,6 +910,7 @@ router.get("/stats/monthly", async (req, res) => {
   }
 });
 
+// PATCH /api/bookings/:id/note - Cập nhật ghi chú
 router.patch("/:id/note", async (req, res) => {
   const { id } = req.params;
   const { note } = req.body;
@@ -830,48 +947,48 @@ router.patch("/:id/note", async (req, res) => {
   }
 });
 
+// POST /api/bookings/:id/assign-room - Gán phòng mới
 router.post("/:id/assign-room", async (req, res) => {
   const { id } = req.params;
   const { newRoomId } = req.body;
+  const session = await mongoose.startSession();
 
   try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
-    }
+    session.startTransaction();
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "ID đặt phòng không hợp lệ" });
+      throw new Error("ID đặt phòng không hợp lệ");
     }
 
     if (!mongoose.Types.ObjectId.isValid(newRoomId)) {
-      return res.status(400).json({ message: "ID phòng mới không hợp lệ" });
+      throw new Error("ID phòng mới không hợp lệ");
     }
 
-    const booking = await Booking.findById(id);
+    const booking = await Booking.findById(id).session(session);
     if (!booking) {
-      return res.status(404).json({ message: "Không tìm thấy đặt phòng với ID này" });
+      throw new Error("Không tìm thấy đặt phòng với ID này");
     }
 
     if (booking.status === "canceled") {
-      return res.status(400).json({ message: "Không thể gán phòng cho đặt phòng đã hủy" });
+      throw new Error("Không thể gán phòng cho đặt phòng đã hủy");
     }
 
-    const oldRoom = await Room.findById(booking.roomid);
-    const newRoom = await Room.findById(newRoomId);
+    const oldRoom = await Room.findById(booking.roomid).session(session);
+    const newRoom = await Room.findById(newRoomId).session(session);
 
     if (!newRoom) {
-      return res.status(404).json({ message: "Không tìm thấy phòng mới" });
+      throw new Error("Không tìm thấy phòng mới");
     }
 
     if (newRoom.availabilityStatus !== "available") {
-      return res.status(400).json({ message: `Phòng mới đang ở trạng thái ${newRoom.availabilityStatus}, không thể gán` });
+      throw new Error(`Phòng mới đang ở trạng thái ${newRoom.availabilityStatus}, không thể gán`);
     }
 
     if (newRoom.type !== booking.roomType) {
-      return res.status(400).json({ message: "Loại phòng mới không khớp với loại phòng đã đặt" });
+      throw new Error("Loại phòng mới không khớp với loại phòng đã đặt");
     }
 
-    const isNewRoomBooked = newRoom.currentbookings.some(b => {
+    const isNewRoomBooked = newRoom.currentbookings.some((b) => {
       const existingCheckin = new Date(b.checkin);
       const existingCheckout = new Date(b.checkout);
       return (
@@ -882,75 +999,77 @@ router.post("/:id/assign-room", async (req, res) => {
     });
 
     if (isNewRoomBooked) {
-      return res.status(400).json({ message: "Phòng mới đã được đặt trong khoảng thời gian này" });
+      throw new Error("Phòng mới đã được đặt trong khoảng thời gian này");
     }
 
     if (oldRoom) {
-      oldRoom.currentbookings = oldRoom.currentbookings.filter(
-        b => b.bookingId.toString() !== id
-      );
-      await oldRoom.save();
+      oldRoom.currentbookings = oldRoom.currentbookings.filter((b) => b.bookingId.toString() !== id);
+      await oldRoom.save({ session });
     }
 
     booking.roomid = newRoomId;
-    await booking.save();
+    await booking.save({ session });
 
     newRoom.currentbookings.push({
       bookingId: booking._id,
       checkin: booking.checkin,
       checkout: booking.checkout,
     });
-    await newRoom.save();
+    await newRoom.save({ session });
 
+    await session.commitTransaction();
     res.status(200).json({ message: "Gán phòng mới thành công", booking });
   } catch (error) {
+    await session.abortTransaction();
     console.error("Lỗi khi gán phòng:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi gán phòng", error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
+// PATCH /api/bookings/:id/extend - Gia hạn thời gian lưu trú
 router.patch("/:id/extend", async (req, res) => {
   const { id } = req.params;
   const { newCheckout } = req.body;
+  const session = await mongoose.startSession();
 
   try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
-    }
+    session.startTransaction();
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "ID đặt phòng không hợp lệ" });
+      throw new Error("ID đặt phòng không hợp lệ");
     }
 
     if (!newCheckout) {
-      return res.status(400).json({ message: "Ngày trả phòng mới là bắt buộc" });
+      throw new Error("Ngày trả phòng mới là bắt buộc");
     }
 
     const newCheckoutDate = new Date(newCheckout);
     if (isNaN(newCheckoutDate.getTime())) {
-      return res.status(400).json({ message: "Ngày trả phòng mới không hợp lệ" });
+      throw new Error("Ngày trả phòng mới không hợp lệ");
     }
 
-    const booking = await Booking.findById(id);
+    const booking = await Booking.findById(id).session(session);
     if (!booking) {
-      return res.status(404).json({ message: "Không tìm thấy đặt phòng với ID này" });
+      throw new Error("Không tìm thấy đặt phòng với ID này");
     }
 
     if (booking.status === "canceled") {
-      return res.status(400).json({ message: "Không thể gia hạn cho đặt phòng đã hủy" });
+      throw new Error("Không thể gia hạn cho đặt phòng đã hủy");
     }
 
     const oldCheckoutDate = new Date(booking.checkout);
     if (newCheckoutDate <= oldCheckoutDate) {
-      return res.status(400).json({ message: "Ngày trả phòng mới phải sau ngày trả phòng hiện tại" });
+      throw new Error("Ngày trả phòng mới phải sau ngày trả phòng hiện tại");
     }
 
-    const room = await Room.findById(booking.roomid);
+    const room = await Room.findById(booking.roomid).session(session);
     if (!room) {
-      return res.status(404).json({ message: "Không tìm thấy phòng liên quan đến đặt phòng này" });
+      throw new Error("Không tìm thấy phòng liên quan đến đặt phòng này");
     }
 
-    const isRoomBooked = room.currentbookings.some(b => {
+    const isRoomBooked = room.currentbookings.some((b) => {
       if (b.bookingId.toString() === id) return false;
       const existingCheckin = new Date(b.checkin);
       const existingCheckout = new Date(b.checkout);
@@ -961,25 +1080,30 @@ router.patch("/:id/extend", async (req, res) => {
     });
 
     if (isRoomBooked) {
-      return res.status(400).json({ message: "Phòng không khả dụng trong khoảng thời gian gia hạn" });
+      throw new Error("Phòng không khả dụng trong khoảng thời gian gia hạn");
     }
 
     booking.checkout = newCheckoutDate;
-    await booking.save();
+    await booking.save({ session });
 
-    const bookingInRoom = room.currentbookings.find(b => b.bookingId.toString() === id);
+    const bookingInRoom = room.currentbookings.find((b) => b.bookingId.toString() === id);
     if (bookingInRoom) {
       bookingInRoom.checkout = newCheckoutDate;
-      await room.save();
+      await room.save({ session });
     }
 
+    await session.commitTransaction();
     res.status(200).json({ message: "Gia hạn thời gian lưu trú thành công", booking });
   } catch (error) {
+    await session.abortTransaction();
     console.error("Lỗi khi gia hạn thời gian lưu trú:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi gia hạn thời gian lưu trú", error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
+// POST /api/bookings/cancel-reason - Gửi lý do hủy
 router.post("/cancel-reason", async (req, res) => {
   const { bookingId, reason } = req.body;
 
@@ -1015,6 +1139,7 @@ router.post("/cancel-reason", async (req, res) => {
   }
 });
 
+// PATCH /api/bookings/:id/payment-method - Cập nhật phương thức thanh toán
 router.patch("/:id/payment-method", async (req, res) => {
   const { id } = req.params;
   const { paymentMethod } = req.body;
@@ -1028,7 +1153,7 @@ router.patch("/:id/payment-method", async (req, res) => {
       return res.status(400).json({ message: "ID đặt phòng không hợp lệ" });
     }
 
-    if (!['cash', 'credit_card', 'bank_transfer', 'mobile_payment'].includes(paymentMethod)) {
+    if (!["cash", "credit_card", "bank_transfer", "mobile_payment"].includes(paymentMethod)) {
       return res.status(400).json({ message: "Phương thức thanh toán không hợp lệ" });
     }
 

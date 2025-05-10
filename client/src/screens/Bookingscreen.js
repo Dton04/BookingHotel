@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useForm } from "react-hook-form";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
 import "../css/bookingscreen.css";
 import Loader from "../components/Loader";
 import CancelConfirmationModal from "../components/CancelConfirmationModal";
@@ -8,24 +11,55 @@ import SuggestionCard from "../components/SuggestionCard";
 import AlertMessage from "../components/AlertMessage";
 import { Carousel } from "react-bootstrap";
 
+// Định nghĩa schema xác thực
+const bookingSchema = yup.object().shape({
+  name: yup.string().required("Vui lòng nhập họ và tên").min(2, "Tên phải có ít nhất 2 ký tự"),
+  email: yup.string().email("Email không hợp lệ").required("Vui lòng nhập email"),
+  phone: yup
+    .string()
+    .required("Vui lòng nhập số điện thoại"),
+  checkin: yup.date().required("Vui lòng chọn ngày nhận phòng"),
+  checkout: yup
+    .date()
+    .required("Vui lòng chọn ngày trả phòng")
+    .min(yup.ref("checkin"), "Ngày trả phòng phải sau ngày nhận phòng"),
+  adults: yup.number().required("Vui lòng chọn số người lớn").min(1, "Phải có ít nhất 1 người lớn"),
+  children: yup.number().default(0),
+  roomType: yup.string().required("Vui lòng chọn loại phòng"),
+  specialRequest: yup.string().nullable(),
+  paymentMethod: yup
+    .string()
+    .required("Vui lòng chọn phương thức thanh toán")
+    .oneOf(["cash", "credit_card", "bank_transfer", "mobile_payment"], "Phương thức thanh toán không hợp lệ"),
+});
+
 function Bookingscreen() {
   const { roomid } = useParams();
   const navigate = useNavigate();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useForm({
+    resolver: yupResolver(bookingSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      checkin: "",
+      checkout: "",
+      adults: 1,
+      children: 0,
+      roomType: "",
+      specialRequest: "",
+      paymentMethod: "cash",
+    },
+  });
+
   const [loading, setLoading] = useState(true);
   const [room, setRoom] = useState(null);
   const [error, setError] = useState(false);
-  const [bookingData, setBookingData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    checkin: "",
-    checkout: "",
-    adults: 1,
-    children: 0,
-    roomType: "",
-    specialRequest: "",
-    paymentMethod: "cash",
-  });
   const [bookingStatus, setBookingStatus] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [bankInfo, setBankInfo] = useState(null);
@@ -36,6 +70,8 @@ function Bookingscreen() {
   const [newBookingId, setNewBookingId] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  // Thêm state để lưu bookingDetails
+  const [bookingDetails, setBookingDetails] = useState(null);
 
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -43,7 +79,7 @@ function Bookingscreen() {
         setLoading(true);
         const { data } = await axios.post("/api/rooms/getroombyid", { roomid });
         setRoom(data);
-        setBookingData((prev) => ({ ...prev, roomType: data.type || "" }));
+        setValue("roomType", data.type || "");
         if (data.availabilityStatus !== "available") {
           await fetchSuggestions(data._id, data.type);
         }
@@ -55,11 +91,11 @@ function Bookingscreen() {
     };
 
     fetchRoomData();
-  }, [roomid]);
+  }, [roomid, setValue]);
 
   useEffect(() => {
     let interval;
-    if (bookingId && bookingData.paymentMethod === "bank_transfer") {
+    if (bookingId && paymentStatus === "pending" && bankInfo) {
       interval = setInterval(async () => {
         try {
           const response = await axios.get(`/api/bookings/${bookingId}/payment-deadline`);
@@ -77,12 +113,16 @@ function Bookingscreen() {
           }
         } catch (error) {
           console.error("Lỗi khi kiểm tra thời gian thanh toán:", error);
+          setBookingStatus({
+            type: "error",
+            message: "Không thể kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.",
+          });
           clearInterval(interval);
         }
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [bookingId, bookingData.paymentMethod]);
+  }, [bookingId, paymentStatus, bankInfo]);
 
   const fetchSuggestions = async (roomId, roomType) => {
     try {
@@ -98,13 +138,7 @@ function Bookingscreen() {
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setBookingData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleBooking = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     try {
       setLoading(true);
       setBookingStatus(null);
@@ -113,74 +147,90 @@ function Bookingscreen() {
       setTimeRemaining(null);
       setPaymentExpired(false);
 
-      if (bookingData.paymentMethod === "mobile_payment") {
+      // Lưu đặt phòng trước
+      const bookingResponse = await axios.post("/api/bookings/bookroom", {
+        roomid,
+        ...data,
+      });
+
+      setBookingId(bookingResponse.data.booking._id);
+      setNewBookingId(bookingResponse.data.booking._id);
+      // Lưu bookingDetails để sử dụng trong CancelConfirmationModal
+      setBookingDetails({
+        roomName: room.name,
+        checkin: data.checkin,
+        checkout: data.checkout,
+      });
+
+      localStorage.setItem("userEmail", data.email);
+      localStorage.setItem("bookingId", bookingResponse.data.booking._id);
+      localStorage.setItem("bookedRoomId", roomid);
+
+      if (data.paymentMethod === "mobile_payment") {
+        setBookingStatus({
+          type: "info",
+          message: "Đang tạo hóa đơn thanh toán MoMo...",
+        });
+
         const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
         const orderInfo = `Thanh toán đặt phòng ${room.name}`;
         const amount = room.rentperday || 50000;
 
         const momoResponse = await axios.post("/api/momo/create-payment", {
           amount: amount.toString(),
-          orderId: orderId,
-          orderInfo: orderInfo,
+          orderId,
+          orderInfo,
+          bookingId: bookingResponse.data.booking._id,
         });
 
         if (momoResponse.data.payUrl) {
-          // Chuyển hướng đến payUrl thay vì hiển thị QR
-          window.location.href = momoResponse.data.payUrl;
+          await axios.put(`/api/bookings/${bookingResponse.data.booking._id}`, {
+            momoOrderId: orderId,
+            momoRequestId: momoResponse.data.requestId,
+          });
+
           setBookingStatus({
             type: "success",
             message: "Đang chuyển hướng đến trang thanh toán MoMo. Vui lòng hoàn tất thanh toán.",
           });
           setPaymentStatus("pending");
 
-          // Lưu thông tin đặt phòng
-          const response = await axios.post("/api/bookings/bookroom", {
-            roomid,
-            ...bookingData,
-            orderId: orderId, // Lưu orderId
-            momoRequestId: momoResponse.data.requestId, // Lưu requestId từ MoMo
-          });
-
-          setBookingId(response.data.booking._id);
-          setNewBookingId(response.data.booking._id);
-          localStorage.setItem("userEmail", bookingData.email);
-          localStorage.setItem("bookingId", response.data.booking._id);
-          localStorage.setItem("bookedRoomId", roomid);
+          window.location.href = momoResponse.data.payUrl;
         } else {
           throw new Error(momoResponse.data.message || "Lỗi khi tạo hóa đơn MoMo");
         }
       } else {
-        const response = await axios.post("/api/bookings/bookroom", {
-          roomid,
-          ...bookingData,
-        });
-        setBookingId(response.data.booking._id);
-        setNewBookingId(response.data.booking._id);
         setBookingStatus({
           type: "success",
           message: "Đặt phòng thành công! Vui lòng kiểm tra thông tin thanh toán.",
         });
-        setPaymentStatus(response.data.booking.paymentStatus);
+        setPaymentStatus(bookingResponse.data.booking.paymentStatus);
 
-        if (bookingData.paymentMethod === "bank_transfer" && response.data.paymentResult?.bankInfo) {
-          setBankInfo(response.data.paymentResult.bankInfo);
+        if (data.paymentMethod === "bank_transfer" && bookingResponse.data.paymentResult?.bankInfo) {
+          setBankInfo(bookingResponse.data.paymentResult.bankInfo);
         }
 
-        localStorage.setItem("userEmail", bookingData.email);
-        localStorage.setItem("bookingId", response.data.booking._id);
-        localStorage.setItem("bookedRoomId", roomid);
-
-        if (bookingData.paymentMethod !== "bank_transfer") {
-          setTimeout(() => {
-            navigate(`/testimonial?roomId=${roomid}&showReviewForm=true`);
-          }, 5000);
+        if (data.paymentMethod !== "bank_transfer") {
+          const bookingCheck = await axios.get(`/api/bookings/${bookingResponse.data.booking._id}`);
+          if (bookingCheck.data.status === "confirmed" && bookingCheck.data.paymentStatus === "paid") {
+            setTimeout(() => {
+              navigate(`/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingResponse.data.booking._id}`);
+            }, 5000);
+          } else {
+            setBookingStatus({
+              type: "warning",
+              message: "Đặt phòng đang chờ xác nhận. Bạn sẽ có thể gửi đánh giá sau khi thanh toán hoàn tất.",
+            });
+          }
         }
       }
     } catch (error) {
+      const errorMessage = error.response?.data?.message || "Lỗi khi đặt phòng hoặc tạo hóa đơn MoMo. Vui lòng thử lại.";
       setBookingStatus({
         type: "error",
-        message: error.response?.data?.message || "Lỗi khi đặt phòng hoặc tạo hóa đơn MoMo. Vui lòng thử lại.",
+        message: errorMessage,
       });
+      console.error("Lỗi đặt phòng:", error);
     } finally {
       setLoading(false);
     }
@@ -204,6 +254,35 @@ function Bookingscreen() {
       setBookingStatus({
         type: "error",
         message: "Lỗi khi giả lập thanh toán. Vui lòng thử lại.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckPaymentStatus = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`/api/bookings/${bookingId}`);
+      if (response.data.paymentStatus === "paid") {
+        setPaymentStatus("paid");
+        setBookingStatus({
+          type: "success",
+          message: "Thanh toán đã được xác nhận! Đang chuyển hướng đến trang đánh giá...",
+        });
+        setTimeout(() => {
+          navigate(`/testimonial?roomId=${roomid}&showReviewForm=true`);
+        }, 2000);
+      } else {
+        setBookingStatus({
+          type: "info",
+          message: "Thanh toán chưa được xác nhận. Vui lòng kiểm tra lại sau.",
+        });
+      }
+    } catch (error) {
+      setBookingStatus({
+        type: "error",
+        message: "Lỗi khi kiểm tra trạng thái thanh toán. Vui lòng thử lại.",
       });
     } finally {
       setLoading(false);
@@ -248,17 +327,30 @@ function Bookingscreen() {
         <p><strong>Số tiền:</strong> {bankInfo.amount.toLocaleString()} VND</p>
         <p><strong>Nội dung chuyển khoản:</strong> {bankInfo.content}</p>
         {timeRemaining !== null && !paymentExpired && (
-          <p><strong>Thời gian còn lại:</strong> {Math.floor(timeRemaining / 60)} phút {timeRemaining % 60} giây</p>
+          <p>
+            <strong>Thời gian còn lại:</strong> {Math.floor(timeRemaining / 60)} phút {timeRemaining % 60} giây
+          </p>
         )}
-        <p className="text-warning">Vui lòng chuyển khoản để hoàn tất thanh toán. Đặt phòng sẽ được xác nhận sau khi chúng tôi nhận được tiền.</p>
+        <p className="text-warning">
+          Vui lòng chuyển khoản để hoàn tất thanh toán. Đặt phòng sẽ được xác nhận sau khi chúng tôi nhận được tiền.
+        </p>
         {!paymentExpired && paymentStatus === "pending" && (
-          <button
-            className="btn btn-primary mt-3"
-            onClick={handleSimulatePayment}
-            disabled={loading}
-          >
-            {loading ? "Đang xử lý..." : "Giả lập thanh toán thành công"}
-          </button>
+          <>
+            <button
+              className="btn btn-primary mt-3 me-2"
+              onClick={handleSimulatePayment}
+              disabled={loading}
+            >
+              {loading ? "Đang xử lý..." : "Giả lập thanh toán thành công"}
+            </button>
+            <button
+              className="btn btn-secondary mt-3"
+              onClick={handleCheckPaymentStatus}
+              disabled={loading}
+            >
+              {loading ? "Đang kiểm tra..." : "Kiểm tra trạng thái thanh toán"}
+            </button>
+          </>
         )}
       </div>
     );
@@ -275,6 +367,7 @@ function Bookingscreen() {
       message: "Đã hủy đặt phòng thành công.",
     });
     setNewBookingId(null);
+    setBookingDetails(null); // Reset bookingDetails sau khi hủy
   };
 
   const handleCloseAlert = () => {
@@ -330,39 +423,40 @@ function Bookingscreen() {
 
             <div className="col-md-6">
               {bookingStatus && (
-                <div className={`alert ${bookingStatus.type === "success" ? "alert-success" : "alert-danger"}`}>
+                <div className={`alert ${bookingStatus.type === "success" ? "alert-success" : bookingStatus.type === "info" ? "alert-info" : "alert-danger"}`}>
                   {bookingStatus.message}
+                  {bookingStatus.type === "info" && (
+                    <div className="spinner-border spinner-border-sm ms-2" role="status">
+                      <span className="visually-hidden">Đang xử lý...</span>
+                    </div>
+                  )}
                 </div>
               )}
               {renderPaymentStatus()}
               {renderBankInfo()}
               <div className="booking-screen-wrapper">
-                <form className="booking-screen" onSubmit={handleBooking}>
+                <form className="booking-screen" onSubmit={handleSubmit(onSubmit)}>
                   <div className="row">
                     <div className="col-md-6">
                       <div className="form-group">
                         <input
                           type="text"
-                          className="form-control"
-                          name="name"
-                          value={bookingData.name}
-                          onChange={handleInputChange}
+                          className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                          {...register("name")}
                           placeholder="Họ và tên"
-                          required
                         />
+                        {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
                       </div>
                     </div>
                     <div className="col-md-6">
                       <div className="form-group">
                         <input
                           type="email"
-                          className="form-control"
-                          name="email"
-                          value={bookingData.email}
-                          onChange={handleInputChange}
+                          className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                          {...register("email")}
                           placeholder="Email của bạn"
-                          required
                         />
+                        {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
                       </div>
                     </div>
                   </div>
@@ -371,27 +465,23 @@ function Bookingscreen() {
                       <div className="form-group">
                         <input
                           type="tel"
-                          className="form-control"
-                          name="phone"
-                          value={bookingData.phone}
-                          onChange={handleInputChange}
+                          className={`form-control ${errors.phone ? "is-invalid" : ""}`}
+                          {...register("phone")}
                           placeholder="Số điện thoại"
-                          required
                         />
+                        {errors.phone && <div className="invalid-feedback">{errors.phone.message}</div>}
                       </div>
                     </div>
                     <div className="col-md-6">
                       <div className="form-group">
                         <input
                           type="date"
-                          className="form-control"
-                          name="checkin"
-                          value={bookingData.checkin}
-                          onChange={handleInputChange}
+                          className={`form-control ${errors.checkin ? "is-invalid" : ""}`}
+                          {...register("checkin")}
                           placeholder="Ngày nhận phòng"
                           min={new Date().toISOString().split("T")[0]}
-                          required
                         />
+                        {errors.checkin && <div className="invalid-feedback">{errors.checkin.message}</div>}
                       </div>
                     </div>
                   </div>
@@ -400,24 +490,18 @@ function Bookingscreen() {
                       <div className="form-group">
                         <input
                           type="date"
-                          className="form-control"
-                          name="checkout"
-                          value={bookingData.checkout}
-                          onChange={handleInputChange}
+                          className={`form-control ${errors.checkout ? "is-invalid" : ""}`}
+                          {...register("checkout")}
                           placeholder="Ngày trả phòng"
-                          min={bookingData.checkin ? new Date(new Date(bookingData.checkin).setDate(new Date(bookingData.checkin).getDate() + 1)).toISOString().split("T")[0] : ""}
-                          required
                         />
+                        {errors.checkout && <div className="invalid-feedback">{errors.checkout.message}</div>}
                       </div>
                     </div>
                     <div className="col-md-6">
                       <div className="form-group">
                         <select
-                          className="form-control"
-                          name="adults"
-                          value={bookingData.adults}
-                          onChange={handleInputChange}
-                          required
+                          className={`form-control ${errors.adults ? "is-invalid" : ""}`}
+                          {...register("adults")}
                         >
                           <option value="" disabled>
                             Chọn số người lớn
@@ -428,6 +512,7 @@ function Bookingscreen() {
                             </option>
                           ))}
                         </select>
+                        {errors.adults && <div className="invalid-feedback">{errors.adults.message}</div>}
                       </div>
                     </div>
                   </div>
@@ -435,10 +520,8 @@ function Bookingscreen() {
                     <div className="col-md-6">
                       <div className="form-group">
                         <select
-                          className="form-control"
-                          name="children"
-                          value={bookingData.children}
-                          onChange={handleInputChange}
+                          className={`form-control ${errors.children ? "is-invalid" : ""}`}
+                          {...register("children")}
                         >
                           <option value="" disabled>
                             Chọn số trẻ em
@@ -449,48 +532,45 @@ function Bookingscreen() {
                             </option>
                           ))}
                         </select>
+                        {errors.children && <div className="invalid-feedback">{errors.children.message}</div>}
                       </div>
                     </div>
                     <div className="col-md-6">
                       <div className="form-group">
                         <select
-                          className="form-control"
-                          name="roomType"
-                          value={bookingData.roomType}
-                          onChange={handleInputChange}
+                          className={`form-control ${errors.roomType ? "is-invalid" : ""}`}
+                          {...register("roomType")}
                         >
                           <option value="" disabled>
                             Chọn loại phòng
                           </option>
                           <option value={room.type}>{room.type}</option>
                         </select>
+                        {errors.roomType && <div className="invalid-feedback">{errors.roomType.message}</div>}
                       </div>
                     </div>
                   </div>
                   <div className="form-group">
                     <label htmlFor="paymentMethod">Phương thức thanh toán</label>
                     <select
-                      className="form-control"
-                      name="paymentMethod"
-                      value={bookingData.paymentMethod}
-                      onChange={handleInputChange}
-                      required
+                      className={`form-control ${errors.paymentMethod ? "is-invalid" : ""}`}
+                      {...register("paymentMethod")}
                     >
                       <option value="cash">Tiền mặt</option>
                       <option value="credit_card">Thẻ tín dụng</option>
                       <option value="bank_transfer">Tài khoản ngân hàng</option>
                       <option value="mobile_payment">MoMo</option>
                     </select>
+                    {errors.paymentMethod && <div className="invalid-feedback">{errors.paymentMethod.message}</div>}
                   </div>
                   <div className="form-group">
                     <textarea
-                      className="form-control"
-                      name="specialRequest"
-                      value={bookingData.specialRequest}
-                      onChange={handleInputChange}
+                      className={`form-control ${errors.specialRequest ? "is-invalid" : ""}`}
+                      {...register("specialRequest")}
                       placeholder="Yêu cầu đặc biệt"
                       rows="3"
                     />
+                    {errors.specialRequest && <div className="invalid-feedback">{errors.specialRequest.message}</div>}
                   </div>
                   <button
                     type="submit"
@@ -549,11 +629,7 @@ function Bookingscreen() {
         onClose={() => setShowCancelModal(false)}
         onConfirmSuccess={handleConfirmSuccess}
         bookingId={newBookingId}
-        bookingDetails={{
-          roomName: room?.name,
-          checkin: bookingData.checkin,
-          checkout: bookingData.checkout,
-        }}
+        bookingDetails={bookingDetails} // Sử dụng bookingDetails thay vì bookingData
       />
     </div>
   );

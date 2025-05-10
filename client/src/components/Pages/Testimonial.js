@@ -47,7 +47,10 @@ function Testimonial() {
         }
       } catch (error) {
         setError("Không thể tải danh sách phòng. Vui lòng thử lại.");
-        console.error("Error fetching rooms:", error);
+        console.error("Lỗi khi lấy danh sách phòng:", {
+          message: error.message,
+          response: error.response?.data,
+        });
       } finally {
         setLoading(false);
       }
@@ -67,18 +70,35 @@ function Testimonial() {
         return;
       }
 
+      // Kiểm tra định dạng email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(userEmail)) {
+        setError("Email không hợp lệ trong localStorage.");
+        setHasBooked(false);
+        setPaymentStatus(null);
+        setCheckoutDate(null);
+        setCanReview(false);
+        return;
+      }
+
       const response = await axios.get(`/api/bookings/check`, {
         params: { email: userEmail, roomId: selectedRoom },
       });
-      setHasBooked(response.data.hasBooked || false);
-      setPaymentStatus(response.data.paymentStatus || null);
-      setCheckoutDate(response.data.booking?.checkout || null);
+
+      const { hasBooked, paymentStatus, booking } = response.data;
+      setHasBooked(hasBooked || false);
+      setPaymentStatus(paymentStatus || null);
+      setCheckoutDate(booking?.checkout || null);
 
       const currentDate = new Date();
-      const checkout = new Date(response.data.booking?.checkout);
-      setCanReview(response.data.hasBooked && response.data.paymentStatus === "paid" && currentDate >= checkout);
+      const checkout = booking?.checkout ? new Date(booking.checkout) : null;
+      setCanReview(hasBooked && paymentStatus === "paid" && checkout && currentDate >= checkout);
     } catch (error) {
-      console.error("Error checking booking status:", error);
+      console.error("Lỗi khi kiểm tra trạng thái đặt phòng:", {
+        message: error.message,
+        response: error.response?.data,
+      });
+      setError("Không thể kiểm tra trạng thái đặt phòng. Vui lòng thử lại.");
       setHasBooked(false);
       setPaymentStatus(null);
       setCheckoutDate(null);
@@ -118,11 +138,14 @@ function Testimonial() {
         const response = await axios.get("/api/reviews", {
           params: { roomId: selectedRoom },
         });
-        setReviews(response.data);
+        setReviews(response.data.reviews || []); // Đảm bảo reviews là mảng
         setCurrentIndex(0);
       } catch (error) {
         setError("Không thể tải đánh giá. Vui lòng thử lại.");
-        console.error("Error fetching reviews:", error);
+        console.error("Lỗi khi lấy đánh giá:", {
+          message: error.message,
+          response: error.response?.data,
+        });
       } finally {
         setLoading(false);
       }
@@ -140,7 +163,10 @@ function Testimonial() {
         });
         setAverageRating(response.data);
       } catch (error) {
-        console.error("Error fetching average rating:", error);
+        console.error("Lỗi khi lấy điểm trung bình:", {
+          message: error.message,
+          response: error.response?.data,
+        });
         setAverageRating({ average: 0, totalReviews: 0 });
       }
     };
@@ -218,7 +244,7 @@ function Testimonial() {
       const updatedReviews = await axios.get("/api/reviews", {
         params: { roomId: selectedRoom },
       });
-      setReviews(updatedReviews.data);
+      setReviews(updatedReviews.data.reviews || []);
 
       const updatedAverage = await axios.get("/api/reviews/average", {
         params: { roomId: selectedRoom },
@@ -234,7 +260,10 @@ function Testimonial() {
         navigate("/rooms");
       }, 2000);
     } catch (error) {
-      console.error("Error submitting review:", error);
+      console.error("Lỗi khi gửi đánh giá:", {
+        message: error.message,
+        response: error.response?.data,
+      });
       setSubmitStatus({
         type: "error",
         message: error.response?.data?.message || "Gửi đánh giá thất bại, vui lòng thử lại.",

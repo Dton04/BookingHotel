@@ -24,6 +24,18 @@ const reviewSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
+    lowercase: true,
+    validate: {
+      validator: function(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: props => `${props.value} không phải là email hợp lệ!`
+    },
+  },
+  bookingId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Booking',
+    required: false,
   },
   isDeleted: {
     type: Boolean,
@@ -34,5 +46,10 @@ const reviewSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+// Thêm index
+reviewSchema.index({ roomId: 1, isDeleted: 1 });
+reviewSchema.index({ email: 1, isDeleted: 1 });
+reviewSchema.index({ roomId: 1, email: 1, isDeleted: 1 });
 
 module.exports = mongoose.model('Review', reviewSchema);

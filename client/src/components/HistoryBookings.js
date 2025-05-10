@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
+import { Modal, Button, Form, Alert } from "react-bootstrap";
 import "../css/historybooking.css";
 
 function HistoryBookings() {
@@ -9,6 +11,10 @@ function HistoryBookings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelError, setCancelError] = useState(null);
   const navigate = useNavigate();
 
   // Lấy email người dùng từ localStorage
@@ -33,7 +39,10 @@ function HistoryBookings() {
       setBookings(userBookings);
       setFilteredBookings(userBookings);
     } catch (err) {
-      setError("Lỗi khi tải lịch sử đặt phòng. Vui lòng thử lại sau.");
+      setError(
+        err.response?.data?.message ||
+          "Lỗi khi tải lịch sử đặt phòng. Vui lòng thử lại sau."
+      );
     } finally {
       setLoading(false);
     }
@@ -56,28 +65,59 @@ function HistoryBookings() {
     }
   }, [filterStatus, bookings]);
 
+  // Mở modal xác nhận hủy
+  const handleOpenCancelModal = (bookingId) => {
+    setSelectedBookingId(bookingId);
+    setCancelReason("");
+    setCancelError(null);
+    setShowCancelModal(true);
+  };
+
+  // Đóng modal xác nhận hủy
+  const handleCloseCancelModal = () => {
+    setShowCancelModal(false);
+    setSelectedBookingId(null);
+    setCancelReason("");
+    setCancelError(null);
+  };
+
   // Xử lý hủy đặt phòng
-  const handleCancelBooking = async (bookingId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn hủy đặt phòng này?")) {
+  const handleCancelBooking = async () => {
+    if (!cancelReason.trim()) {
+      setCancelError("Vui lòng nhập lý do hủy.");
       return;
     }
 
     try {
       setLoading(true);
-      await axios.put(`/api/bookings/${bookingId}/cancel`);
-      const updatedBookings = bookings.map((booking) =>
-        booking._id === bookingId ? { ...booking, status: "canceled" } : booking
-      );
-      setBookings(updatedBookings);
-      setFilteredBookings(
-        filterStatus === "all"
-          ? updatedBookings
-          : updatedBookings.filter((booking) => booking.status === filterStatus)
-      );
+      setCancelError(null);
+      await axios.put(`/api/bookings/${selectedBookingId}/cancel`, {
+        cancelReason,
+      });
+      await fetchBookings(); // Làm mới dữ liệu từ server
+      handleCloseCancelModal();
     } catch (err) {
-      setError("Lỗi khi hủy đặt phòng. Vui lòng thử lại.");
+      setCancelError(
+        err.response?.data?.message ||
+          "Lỗi khi hủy đặt phòng. Vui lòng thử lại."
+      );
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Xem lý do hủy
+  const handleViewCancelReason = async (bookingId) => {
+    try {
+      const response = await axios.get(
+        `/api/bookings/cancel-reason?bookingId=${bookingId}`
+      );
+      alert(`Lý do hủy: ${response.data.cancelReason}`);
+    } catch (err) {
+      alert(
+        err.response?.data?.message ||
+          "Lỗi khi lấy lý do hủy. Vui lòng thử lại."
+      );
     }
   };
 
@@ -117,7 +157,9 @@ function HistoryBookings() {
       {/* Bộ lọc trạng thái và nút làm mới */}
       <div className="filter-section mb-4 d-flex justify-content-between align-items-center">
         <div>
-          <label htmlFor="statusFilter" className="me-2">Lọc theo trạng thái:</label>
+          <label htmlFor="statusFilter" className="me-2">
+            Lọc theo trạng thái:
+          </label>
           <select
             id="statusFilter"
             className="form-control d-inline-block w-auto"
@@ -194,15 +236,22 @@ function HistoryBookings() {
                     </span>
                   </td>
                   <td>
-                    {booking.status === "pending" && (
+                    {booking.status === "pending" ? (
                       <button
                         className="btn btn-danger btn-sm"
-                        onClick={() => handleCancelBooking(booking._id)}
+                        onClick={() => handleOpenCancelModal(booking._id)}
                         disabled={loading}
                       >
                         Hủy
                       </button>
-                    )}
+                    ) : booking.status === "canceled" ? (
+                      <button
+                        className="btn btn-info btn-sm"
+                        onClick={() => handleViewCancelReason(booking._id)}
+                      >
+                        Xem lý do hủy
+                      </button>
+                    ) : null}
                   </td>
                 </tr>
               ))}
@@ -210,6 +259,39 @@ function HistoryBookings() {
           </table>
         </div>
       )}
+
+      {/* Modal xác nhận hủy */}
+      <Modal show={showCancelModal} onHide={handleCloseCancelModal} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Xác nhận hủy đặt phòng</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {cancelError && <Alert variant="danger">{cancelError}</Alert>}
+          <p>Bạn có chắc chắn muốn hủy đặt phòng này?</p>
+          <Form.Group controlId="cancelReason">
+            <Form.Label>Lý do hủy (bắt buộc):</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Nhập lý do hủy (ví dụ: Thay đổi kế hoạch)"
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseCancelModal}>
+            Đóng
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleCancelBooking}
+            disabled={loading}
+          >
+            {loading ? "Đang xử lý..." : "Hủy đặt phòng"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

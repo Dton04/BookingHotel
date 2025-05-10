@@ -1,4 +1,4 @@
-// src/screens/Room.js
+
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Carousel, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
@@ -14,16 +14,23 @@ function Room({ room }) {
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [reviewPage, setReviewPage] = useState(1);
+  const reviewsPerPage = 5;
   const navigate = useNavigate();
 
   const handleClose = () => setShow(false);
   const handleImageClick = async () => {
     setShow(true);
+    setReviewPage(1); // Reset trang khi mở modal
     await Promise.all([fetchReviews(), fetchSuggestions()]);
   };
 
   const handleBooking = () => {
     navigate(`/book/${room._id}`);
+  };
+
+  const handleViewAllReviews = () => {
+    navigate(`/testimonial?roomId=${room._id}`);
   };
 
   const formatPriceVND = (price) => {
@@ -33,15 +40,26 @@ function Room({ room }) {
     }).format(price || 1000000);
   };
 
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
   const fetchReviews = async () => {
     try {
       setLoadingReviews(true);
       const response = await axios.get("/api/reviews", {
-        params: { roomId: room._id },
+        params: { roomId: room._id, limit: 50 }, // Lấy tối đa 50 đánh giá để phân trang trong modal
       });
-      setReviews(response.data);
+      setReviews(response.data.reviews || []); // Đảm bảo reviews là mảng
     } catch (error) {
-      console.error("Lỗi khi lấy đánh giá:", error);
+      console.error("Lỗi khi lấy đánh giá:", {
+        message: error.message,
+        response: error.response?.data,
+      });
     } finally {
       setLoadingReviews(false);
     }
@@ -56,7 +74,10 @@ function Room({ room }) {
         });
         setSuggestions(response.data);
       } catch (error) {
-        console.error("Lỗi khi lấy phòng gợi ý:", error);
+        console.error("Lỗi khi lấy phòng gợi ý:", {
+          message: error.message,
+          response: error.response?.data,
+        });
       } finally {
         setLoadingSuggestions(false);
       }
@@ -71,7 +92,10 @@ function Room({ room }) {
         });
         setAverageRating(response.data);
       } catch (error) {
-        console.error("Lỗi khi lấy điểm đánh giá trung bình:", error);
+        console.error("Lỗi khi lấy điểm đánh giá trung bình:", {
+          message: error.message,
+          response: error.response?.data,
+        });
       }
     };
 
@@ -108,6 +132,13 @@ function Room({ room }) {
   };
 
   const status = getRoomStatus();
+
+  // Phân trang đánh giá
+  const totalReviewPages = Math.ceil(reviews.length / reviewsPerPage);
+  const displayedReviews = reviews.slice(
+    (reviewPage - 1) * reviewsPerPage,
+    reviewPage * reviewsPerPage
+  );
 
   return (
     <div className="room-card">
@@ -153,7 +184,11 @@ function Room({ room }) {
               emptySymbol={<i className="far fa-star"></i>}
               fullSymbol={<i className="fas fa-star"></i>}
             />
-            <span>({averageRating.totalReviews} đánh giá)</span>
+             {averageRating.totalReviews > 0 && (
+              <span>
+                ({averageRating.average.toFixed(1)}/5)
+              </span>
+            )}
           </div>
           <div className="room-actions">
             <button
@@ -219,34 +254,77 @@ function Room({ room }) {
               {loadingReviews ? (
                 <p>Đang tải đánh giá...</p>
               ) : reviews.length > 0 ? (
-                <div className="review-list">
-                  {reviews.slice(0, 3).map((review, index) => (
-                    <div key={index} className="review-item">
-                      <div className="review-header">
-                        <Rating
-                          readonly
-                          initialRating={review.rating}
-                          emptySymbol={<i className="far fa-star"></i>}
-                          fullSymbol={<i className="fas fa-star"></i>}
-                        />
-                        <span>{review.userName || "Khách ẩn danh"}</span>
-                      </div>
-                      <p className="review-text">{review.comment}</p>
-                      {review.image && (
-                        <div className="review-image-container">
-                          <img
-                            src={review.image}
-                            alt="Review"
-                            className="review-image"
-                            onError={(e) => {
-                              e.target.src = "https://via.placeholder.com/400";
-                            }}
-                          />
+                <>
+                  <div className="review-list">
+                    {displayedReviews.map((review) => (
+                      <div key={review._id} className="review-item" style={{ borderBottom: "1px solid #ddd", padding: "10px 0" }}>
+                        <div className="review-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div>
+                            <Rating
+                              readonly
+                              initialRating={review.rating}
+                              emptySymbol={<i className="far fa-star"></i>}
+                              fullSymbol={<i className="fas fa-star"></i>}
+                            />
+                            <span style={{ marginLeft: "10px" }}>{review.userName || "Khách ẩn danh"}</span>
+                          </div>
+                          <span style={{ fontSize: "0.9em", color: "#666" }}>
+                            {formatDate(review.createdAt)}
+                          </span>
                         </div>
-                      )}
+                        <p className="review-text">{review.comment}</p>
+                        {review.image && (
+                          <div className="review-image-container">
+                            <img
+                              src={review.image}
+                              alt="Review"
+                              className="review-image"
+                              style={{ maxWidth: "200px", marginTop: "10px" }}
+                              onError={(e) => {
+                                e.target.src = "https://via.placeholder.com/400";
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {reviews.length > reviewsPerPage && (
+                    <div className="review-pagination" style={{ display: "flex", justifyContent: "center", marginTop: "15px" }}>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => setReviewPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={reviewPage === 1}
+                        style={{ marginRight: "10px" }}
+                      >
+                        Trước
+                      </Button>
+                      <span style={{ alignSelf: "center" }}>
+                        Trang {reviewPage} / {totalReviewPages}
+                      </span>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => setReviewPage((prev) => Math.min(prev + 1, totalReviewPages))}
+                        disabled={reviewPage === totalReviewPages}
+                        style={{ marginLeft: "10px" }}
+                      >
+                        Sau
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                  {averageRating.totalReviews > reviewsPerPage && (
+                    <div style={{ textAlign: "center", marginTop: "15px" }}>
+                      <Button
+                        variant="link"
+                        onClick={handleViewAllReviews}
+                      >
+                        Xem tất cả {averageRating.totalReviews} đánh giá
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <p>Chưa có đánh giá nào.</p>
               )}
