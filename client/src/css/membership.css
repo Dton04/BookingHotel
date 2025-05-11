@@ -1,0 +1,82 @@
+.membership-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.membership-info {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.membership-info h3 {
+  color: #007bff;
+  font-size: 1.8rem;
+}
+
+.points-history {
+  margin-bottom: 2rem;
+}
+
+.points-history h4 {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.table th {
+  background-color: #007bff;
+  color: white;
+}
+
+.rewards-section h4 {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.rewards-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.reward-item {
+  flex: 1 1 45%;
+  padding: 1rem;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.reward-item p {
+  margin: 0.5rem 0;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border: none;
+  padding: 0.5rem 1rem;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}

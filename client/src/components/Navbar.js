@@ -131,6 +131,12 @@ function Navbar() {
                           <i className="fas fa-bed me-2"></i>Quản Lý Phòng
                         </Link>
                       </li>
+                      <li>
+                        <Link className="dropdown-item" to="/admin/promotions">
+                          <i className="fas fa-tags me-2"></i>Quản Lý Khuyến Mãi
+                        </Link>
+                      </li>
+
                     </>
                   ) : user.role === 'staff' ? (
                     <>
@@ -141,7 +147,7 @@ function Navbar() {
                       </li>
                       <li>
                         <Link className="dropdown-item" to="/stats">
-                          Thống Kê  
+                          Thống Kê
                         </Link>
                       </li>
                     </>
@@ -159,7 +165,19 @@ function Navbar() {
                       </li>
                     </>
                   )}
-                  {/* Thêm liên kết Profile cho tất cả role */}
+                  {/* Thêm liên kết Membership và Profile cho tất cả role */}
+                  <li>
+                    <Link
+                      className="dropdown-item"
+                      to="/membership"
+                      onClick={() => {
+                        closeDropdown();
+                        closeNav();
+                      }}
+                    >
+                      <i className="fas fa-star me-2"></i>Membership
+                    </Link>
+                  </li>
                   <li>
                     <Link
                       className="dropdown-item"

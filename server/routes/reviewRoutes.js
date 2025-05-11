@@ -178,6 +178,38 @@ router.get("/by-email", async (req, res) => {
     res.status(500).json({ message: "Lỗi khi lấy danh sách đánh giá theo email", error: error.message });
   }
 });
+// PATCH /api/reviews/:id/toggle-hidden - Ẩn/hiển thị đánh giá (chỉ admin hoặc staff)
+router.patch("/:id/toggle-hidden", protect, adminOrStaff, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID đánh giá không hợp lệ" });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
+    }
+
+    const review = await Review.findById(id);
+    if (!review) {
+      return res.status(404).json({ message: "Không tìm thấy đánh giá với ID này" });
+    }
+
+    if (review.isDeleted) {
+      return res.status(400).json({ message: "Không thể thay đổi trạng thái ẩn của đánh giá đã bị xóa" });
+    }
+
+    review.isVisible = !review.isVisible;
+    await review.save();
+
+    const message = review.isHidden ? "Ẩn đánh giá thành công" : "Hiển thị đánh giá thành công";
+    res.status(200).json({ message, review });
+  } catch (error) {
+    console.error("Lỗi khi thay đổi trạng thái ẩn của đánh giá:", error.message, error.stack);
+    res.status(500).json({ message: "Lỗi khi thay đổi trạng thái ẩn của đánh giá", error: error.message });
+  }
+});
 
 
 // DELETE /api/reviews/:id - Xóa mềm đánh giá (chỉ admin hoặc staff)
@@ -211,5 +243,7 @@ router.delete("/:id", protect, adminOrStaff, async (req, res) => {
     res.status(500).json({ message: "Lỗi khi xóa mềm đánh giá", error: error.message });
   }
 });
+
+
 
 module.exports = router;
