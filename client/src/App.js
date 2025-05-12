@@ -27,7 +27,7 @@ import ProfileManagement from './components/ProfileManagement';
 import GoogleCallBack from './screens/Auth/GoogleCallBack';
 
 import Membership from './components/Membership';
-
+import AdminDiscounts from './components/AdminDiscounts';
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
   const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -74,7 +74,7 @@ function App() {
           <Route path="/admin/rooms" element={<RoomManagement />} />
           <Route path="/admin/editroom/:id" element={<EditRoomForm />} />
           <Route path="/membership" element={<Membership />} />
-
+          <Route path="/admin/discounts" element={<AdminDiscounts />} />        
 
 
           {/* Route cho StaffManagement, chỉ admin truy cập được */}

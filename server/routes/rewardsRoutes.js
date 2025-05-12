@@ -3,7 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const User = require('../models/user');
 const Transaction = require('../models/transaction');
-const Voucher = require('../models/voucher');
+const Discount = require('../models/discount');
 const { protect, admin } = require('../middleware/auth');
 
 // Schema cho Reward

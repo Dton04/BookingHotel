@@ -131,12 +131,11 @@ function Navbar() {
                           <i className="fas fa-bed me-2"></i>Quản Lý Phòng
                         </Link>
                       </li>
-                      <li>
-                        <Link className="dropdown-item" to="/admin/promotions">
-                          <i className="fas fa-tags me-2"></i>Quản Lý Khuyến Mãi
+                          <li>
+                        <Link className="dropdown-item" to="/admin/discounts">
+                          <i className="fas fa-bed me-2"></i>Quản Lý Khuyến Mãi
                         </Link>
                       </li>
-
                     </>
                   ) : user.role === 'staff' ? (
                     <>

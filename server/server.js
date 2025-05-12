@@ -53,7 +53,6 @@ const contactRoute = require('./routes/contactRoutes');
 const reviewRoute = require('./routes/reviewRoutes');
 const dashboardRoute = require('./routes/dashboardRoutes');
 const revenueRoute = require('./routes/revenueRoutes');
-const voucherRoute = require('./routes/voucherRoutes');
 const regionsRoute = require('./routes/regionsRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const momoRoutes = require('./routes/momoRoutes');
@@ -66,7 +65,6 @@ console.log('contactRoute:', contactRoute);
 console.log('reviewRoute:', reviewRoute);
 console.log('dashboardRoute:', dashboardRoute);
 console.log('revenueRoute:', revenueRoute);
-console.log('voucherRoute:', voucherRoute);
 console.log('regionsRoute:', regionsRoute);
 console.log('transactionRoutes:', transactionRoutes);
 console.log('momoRoutes:', momoRoutes);
@@ -76,7 +74,7 @@ console.log('momoRoutes:', momoRoutes);
 const hotelRoutes = require('./routes/hotelRoutes');
 const rewardsRoutes = require('./routes/rewardsRoutes');
 const statsRoutes = require('./routes/statsRoutes');
-const promotionRoutes = require('./routes/promotionRoutes');
+const discountRoutes = require('./routes/discountRoutes')
 
 
 // Routes
@@ -87,13 +85,13 @@ app.use('/api/reviews', reviewRoute);
 app.use('/api/contacts', contactRoute);
 app.use('/api/dashboard', dashboardRoute);
 app.use('/api/revenue', revenueRoute);
-app.use('/api/vouchers', voucherRoute);
 app.use('/api/regions', regionsRoute);
 app.use('/api/transaction', transactionRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/stats', statsRoutes);
-app.use('/api/promotions', promotionRoutes);
+app.use('/api/discounts',discountRoutes)
+
 
 // Xử lý lỗi không được bắt
 app.use((err, req, res, next) => {

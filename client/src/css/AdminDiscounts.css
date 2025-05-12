@@ -1,0 +1,72 @@
+.admin-discounts-container {
+  padding: 30px;
+  background-color: #f8f9fc;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.admin-discounts-container h2 {
+  font-size: 28px;
+  margin-bottom: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.add-button {
+  background: linear-gradient(45deg, #007bff, #00c6ff);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  transition: background 0.3s ease;
+}
+
+.add-button:hover {
+  background: linear-gradient(45deg, #0056b3, #0090cc);
+}
+
+.discounts-table {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.discounts-table th,
+.discounts-table td {
+  vertical-align: middle;
+  text-align: center;
+  padding: 12px;
+}
+
+.edit-button,
+.delete-button {
+  padding: 6px 12px;
+  margin: 0 4px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.edit-button {
+  background-color: green ;
+  color: #fff;
+  margin-bottom: 5px;
+}
+
+.delete-button {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.edit-button:hover {
+  background-color: #e0a800;
+}
+
+.delete-button:hover {
+  background-color: #c82333;
+}
