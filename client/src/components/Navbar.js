@@ -150,11 +150,11 @@ function Navbar() {
                       <li>
                         <Link className="dropdown-item" to="/admin/vouchers">
                           <i className="fas fa-ticket-alt me-2"></i>Quản Lý Khuyến Mãi
-
-                          <li>
+                        </Link>
+                      </li>
+                      <li>
                         <Link className="dropdown-item" to="/admin/discounts">
                           <i className="fas fa-bed me-2"></i>Quản Lý Khuyến Mãi
-
                         </Link>
                       </li>
                     </>
