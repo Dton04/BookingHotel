@@ -1,0 +1,30 @@
+/* room-results.css */
+.room-results-section {
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.room-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.room-image img {
+  transition: transform 0.3s;
+}
+
+.room-image img:hover {
+  transform: scale(1.05);
+}
+
+.btn-book {
+  font-weight: 600;
+}
+
+.container {
+  max-width: 1200px;
+}

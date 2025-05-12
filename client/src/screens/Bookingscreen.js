@@ -167,39 +167,33 @@ function Bookingscreen() {
       localStorage.setItem("bookedRoomId", roomid);
 
       if (data.paymentMethod === "mobile_payment") {
+    setBookingStatus({
+        type: "info",
+        message: "Đang tạo hóa đơn thanh toán MoMo...",
+    });
+
+    const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
+    const orderInfo = `Thanh toán đặt phòng ${room.name}`;
+    const amount = room.rentperday || 50000;
+
+    const momoResponse = await axios.post("/api/momo/create-payment", {
+        amount: amount.toString(),
+        orderId,
+        orderInfo,
+        bookingId: bookingResponse.data.booking._id,
+    });
+
+    if (momoResponse.data.payUrl) {
         setBookingStatus({
-          type: "info",
-          message: "Đang tạo hóa đơn thanh toán MoMo...",
-        });
-
-        const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
-        const orderInfo = `Thanh toán đặt phòng ${room.name}`;
-        const amount = room.rentperday || 50000;
-
-        const momoResponse = await axios.post("/api/momo/create-payment", {
-          amount: amount.toString(),
-          orderId,
-          orderInfo,
-          bookingId: bookingResponse.data.booking._id,
-        });
-
-        if (momoResponse.data.payUrl) {
-          await axios.put(`/api/bookings/${bookingResponse.data.booking._id}`, {
-            momoOrderId: orderId,
-            momoRequestId: momoResponse.data.requestId,
-          });
-
-          setBookingStatus({
             type: "success",
             message: "Đang chuyển hướng đến trang thanh toán MoMo. Vui lòng hoàn tất thanh toán.",
-          });
-          setPaymentStatus("pending");
-
-          window.location.href = momoResponse.data.payUrl;
-        } else {
-          throw new Error(momoResponse.data.message || "Lỗi khi tạo hóa đơn MoMo");
-        }
-      } else {
+        });
+        setPaymentStatus("pending");
+        window.location.href = momoResponse.data.payUrl;
+    } else {
+        throw new Error(momoResponse.data.message || "Lỗi khi tạo hóa đơn MoMo");
+    }
+} else {
         setBookingStatus({
           type: "success",
           message: "Đặt phòng thành công! Vui lòng kiểm tra thông tin thanh toán.",

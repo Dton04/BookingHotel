@@ -2,14 +2,16 @@ const express = require('express');
 const router = express.Router();
 const https = require('https');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
+const Booking = require('../models/booking'); // Giả định đây là đường dẫn đến model Booking
 
 // MoMo configuration (Test environment)
 const config = {
-    partnerCode: process.env.MOMO_PARTNER_CODE || 'MOMO',
-    accessKey: process.env.MOMO_ACCESS_KEY || 'F8BBA842ECF85',
-    secretKey: process.env.MOMO_SECRET_KEY || 'K951B6PE1waDMi640xX08PD3vg6EkVlz',
-    redirectUrl: 'https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b',
-    ipnUrl: 'https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b',
+    partnerCode: process.env.MOMO_PARTNER_CODE,
+    accessKey: process.env.MOMO_ACCESS_KEY,
+    secretKey: process.env.MOMO_SECRET_KEY,
+    redirectUrl: process.env.MOMO_REDIRECT_URL || 'http://localhost:3000',
+    ipnUrl: process.env.MOMO_IPN_URL || 'https://your-production-ipn-url',
     requestType: 'payWithMethod',
     autoCapture: true,
     lang: 'vi',
@@ -17,35 +19,60 @@ const config = {
     path: '/v2/gateway/api/create',
 };
 
-// Endpoint to create MoMo payment
+// Kiểm tra cấu hình MoMo
+if (!config.partnerCode || !config.accessKey || !config.secretKey) {
+    throw new Error('Thiếu cấu hình MoMo: partnerCode, accessKey hoặc secretKey không được định nghĩa');
+}
+
+// Endpoint để tạo hóa đơn MoMo
 router.post('/create-payment', async (req, res) => {
     try {
-        const { amount, orderId, orderInfo } = req.body;
+        const { amount, orderId, orderInfo, bookingId } = req.body;
 
-        // Validate input
-        if (!amount || !orderId || !orderInfo) {
-            return res.status(400).json({ message: 'Missing required fields: amount, orderId, orderInfo' });
+        // Xác thực đầu vào
+        if (!amount || !orderId || !orderInfo || !bookingId) {
+            return res.status(400).json({ message: 'Thiếu các trường bắt buộc: amount, orderId, orderInfo, bookingId' });
+        }
+
+        // Kiểm tra bookingId hợp lệ
+        if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+            return res.status(400).json({ message: 'bookingId không hợp lệ' });
+        }
+
+        // Kiểm tra đặt phòng tồn tại và ở trạng thái pending
+        const booking = await Booking.findById(bookingId);
+        if (!booking) {
+            return res.status(404).json({ message: 'Không tìm thấy đặt phòng' });
+        }
+        if (booking.paymentStatus !== 'pending') {
+            return res.status(400).json({ message: 'Đặt phòng không ở trạng thái chờ thanh toán' });
+        }
+
+        // Chuyển đổi amount thành số
+        const parsedAmount = parseInt(amount, 10);
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            return res.status(400).json({ message: 'Số tiền không hợp lệ' });
         }
 
         const requestId = orderId;
         const extraData = ''; // Optional
         const orderGroupId = '';
 
-        // Create raw signature
-        const rawSignature = `accessKey=${config.accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${config.ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${config.partnerCode}&redirectUrl=${config.redirectUrl}&requestId=${requestId}&requestType=${config.requestType}`;
+        // Tạo raw signature
+        const rawSignature = `accessKey=${config.accessKey}&amount=${parsedAmount}&extraData=${extraData}&ipnUrl=${config.ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${config.partnerCode}&redirectUrl=${config.redirectUrl}&requestId=${requestId}&requestType=${config.requestType}`;
         
-        // Generate signature
+        // Tạo chữ ký
         const signature = crypto.createHmac('sha256', config.secretKey)
             .update(rawSignature)
             .digest('hex');
 
-        // Create request body
+        // Tạo body yêu cầu
         const requestBody = JSON.stringify({
             partnerCode: config.partnerCode,
             partnerName: 'Test',
             storeId: 'MomoTestStore',
             requestId: requestId,
-            amount: amount,
+            amount: parsedAmount,
             orderId: orderId,
             orderInfo: orderInfo,
             redirectUrl: config.redirectUrl,
@@ -58,7 +85,7 @@ router.post('/create-payment', async (req, res) => {
             signature: signature,
         });
 
-        // HTTPS request options
+        // Tùy chọn yêu cầu HTTPS
         const options = {
             hostname: config.hostname,
             port: 443,
@@ -70,26 +97,37 @@ router.post('/create-payment', async (req, res) => {
             },
         };
 
-        // Send request to MoMo
+        // Gửi yêu cầu đến MoMo
         const momoReq = https.request(options, (momoRes) => {
             let data = '';
             momoRes.setEncoding('utf8');
             momoRes.on('data', (chunk) => {
                 data += chunk;
             });
-            momoRes.on('end', () => {
+            momoRes.on('end', async () => {
                 const response = JSON.parse(data);
                 if (response.resultCode === 0) {
-                    // Success: return payUrl
-                    res.status(200).json({
-                        payUrl: response.payUrl,
-                        orderId: orderId,
-                        requestId: requestId,
-                    });
+                    // Thành công: Lưu momoOrderId và momoRequestId vào đặt phòng
+                    try {
+                        await Booking.findByIdAndUpdate(bookingId, {
+                            momoOrderId: orderId,
+                            momoRequestId: requestId,
+                        });
+                        res.status(200).json({
+                            payUrl: response.payUrl,
+                            orderId: orderId,
+                            requestId: requestId,
+                            bookingId: bookingId,
+                        });
+                    } catch (updateError) {
+                        console.error('Lỗi khi cập nhật đặt phòng:', updateError);
+                        res.status(500).json({ message: 'Lỗi khi lưu thông tin MoMo vào đặt phòng' });
+                    }
                 } else {
-                    // Error from MoMo
+                    // Lỗi từ MoMo
+                    console.error('Lỗi từ MoMo:', response);
                     res.status(400).json({
-                        message: response.message || 'Failed to create MoMo payment',
+                        message: response.message || 'Không thể tạo hóa đơn MoMo',
                         resultCode: response.resultCode,
                     });
                 }
@@ -97,14 +135,16 @@ router.post('/create-payment', async (req, res) => {
         });
 
         momoReq.on('error', (e) => {
-            res.status(500).json({ message: `MoMo request error: ${e.message}` });
+            console.error('Lỗi yêu cầu MoMo:', e);
+            res.status(500).json({ message: `Lỗi yêu cầu MoMo: ${e.message}` });
         });
 
-        // Write data and send request
+        // Gửi dữ liệu yêu cầu
         momoReq.write(requestBody);
         momoReq.end();
     } catch (error) {
-        res.status(500).json({ message: `Server error: ${error.message}` });
+        console.error('Lỗi server:', error);
+        res.status(500).json({ message: `Lỗi server: ${error.message}` });
     }
 });
 
