@@ -88,7 +88,7 @@
 }
 
 .chart-card.modern-card:hover {
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  box_shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 
 .chart-card.modern-card .card-body {
@@ -108,7 +108,8 @@
   margin-right: 15px;
 }
 
-.chart-filter .modern-select {
+.chart-filter .modern-select,
+.chart-filter .modern-month-picker {
   max-width: 220px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
@@ -119,7 +120,12 @@
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.chart-filter .modern-select:focus {
+.chart-filter .modern-month-picker {
+  width: 180px;
+}
+
+.chart-filter .modern-select:focus,
+.chart-filter .modern-month-picker:focus {
   border-color: #3498db;
   box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
   outline: none;
@@ -184,8 +190,13 @@
     font-size: 2rem;
   }
 
-  .chart-filter .modern-select {
+  .chart-filter .modern-select,
+  .chart-filter .modern-month-picker {
     max-width: 200px;
+  }
+
+  .chart-filter .modern-month-picker {
+    width: 160px;
   }
 }
 
@@ -219,8 +230,13 @@
     padding: 25px;
   }
 
-  .chart-filter .modern-select {
+  .chart-filter .modern-select,
+  .chart-filter .modern-month-picker {
     max-width: 180px;
+  }
+
+  .chart-filter .modern-month-picker {
+    width: 140px;
   }
 }
 
@@ -271,7 +287,8 @@
     margin-bottom: 10px;
   }
 
-  .chart-filter .modern-select {
+  .chart-filter .modern-select,
+  .chart-filter .modern-month-picker {
     max-width: 100%;
     width: 100%;
   }

@@ -2,91 +2,49 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Voucher = require('../models/voucher');
-const Room = require('../models/room'); // Đảm bảo import model Room
+const Room = require('../models/room');
 const { protect, admin } = require('../middleware/auth');
 
 /**
- * @route   POST /api/vouchers
- * @desc    Tạo voucher mới
+ * @route   GET /api/vouchers/admin
+ * @desc    Lấy tất cả voucher (bao gồm đã hết hạn) cho admin
  * @access  Riêng tư (yêu cầu token, chỉ admin)
  */
-router.post('/', protect, admin, async (req, res) => {
-  const {
-    code,
-    description,
-    discountType,
-    discountValue,
-    applicableHotels,
-    startDate,
-    endDate,
-    minBookingAmount,
-    maxDiscount,
-    isStackable,
-  } = req.body;
-
+router.get('/admin', protect, admin, async (req, res) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
     }
 
-    if (!['percentage', 'fixed'].includes(discountType)) {
-      return res.status(400).json({ message: 'Loại giảm giá không hợp lệ' });
-    }
-
-    if (applicableHotels && applicableHotels.length > 0) {
-      const rooms = await Room.find({ _id: { $in: applicableHotels } });
-      if (rooms.length !== applicableHotels.length) {
-        return res.status(400).json({ message: 'Một hoặc nhiều phòng không tồn tại' });
-      }
-    }
-
-    const voucherExists = await Voucher.findOne({ code });
-    if (voucherExists) {
-      return res.status(400).json({ message: 'Mã voucher đã tồn tại' });
-    }
-
-    const voucher = new Voucher({
-      code,
-      description,
-      discountType,
-      discountValue,
-      applicableHotels: applicableHotels || [],
-      startDate,
-      endDate,
-      minBookingAmount: minBookingAmount || 0,
-      maxDiscount,
-      isStackable: isStackable || false,
+    const vouchers = await Voucher.find().populate('applicableHotels', 'name');
+    // Lọc bỏ các applicableHotels không hợp lệ (null hoặc không tồn tại)
+    const cleanedVouchers = vouchers.map((voucher) => {
+      const validHotels = voucher.applicableHotels.filter((hotel) => hotel !== null && hotel.name);
+      return {
+        ...voucher._doc,
+        applicableHotels: validHotels,
+      };
     });
 
-    await voucher.save();
-    res.status(201).json({ message: 'Tạo voucher thành công', voucher });
+    res.status(200).json(cleanedVouchers);
   } catch (error) {
-    console.error('Lỗi khi tạo voucher:', error.message, error.stack);
-    res.status(500).json({ message: 'Lỗi khi tạo voucher', error: error.message });
+    console.error('Lỗi khi lấy danh sách voucher:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi lấy danh sách voucher', error: error.message });
   }
 });
 
 /**
- * @route   GET /api/vouchers
- * @desc    Lấy danh sách voucher hiện có
- * @access  Công khai
+ * @route   GET /api/vouchers/check-code/:code
+ * @desc    Kiểm tra mã voucher có tồn tại không
+ * @access  Riêng tư (yêu cầu token, chỉ admin)
  */
-router.get('/', async (req, res) => {
+router.get('/check-code/:code', protect, admin, async (req, res) => {
   try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
-    }
-
-    const now = new Date();
-    const vouchers = await Voucher.find({
-      startDate: { $lte: now },
-      endDate: { $gte: now },
-    }).populate('applicableHotels', 'name');
-
-    res.status(200).json(vouchers);
+    const voucher = await Voucher.findOne({ code: req.params.code });
+    res.status(200).json({ exists: !!voucher });
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách voucher:', error.message, error.stack);
-    res.status(500).json({ message: 'Lỗi khi lấy danh sách voucher', error: error.message });
+    console.error('Lỗi khi kiểm tra mã voucher:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi kiểm tra mã voucher', error: error.message });
   }
 });
 
@@ -99,9 +57,22 @@ router.post('/hotel-specific', protect, admin, async (req, res) => {
   try {
     const { code, description, discountType, discountValue, applicableHotels, startDate, endDate, minBookingAmount, maxDiscount, isStackable } = req.body;
 
+    if (!['percentage', 'fixed'].includes(discountType)) {
+      return res.status(400).json({ message: 'Loại giảm giá không hợp lệ' });
+    }
+
+    if (!applicableHotels || applicableHotels.length === 0) {
+      return res.status(400).json({ message: 'Phải chọn ít nhất một khách sạn' });
+    }
+
     const rooms = await Room.find({ _id: { $in: applicableHotels } });
     if (rooms.length !== applicableHotels.length) {
       return res.status(400).json({ message: 'Một hoặc nhiều phòng không tồn tại' });
+    }
+
+    const voucherExists = await Voucher.findOne({ code });
+    if (voucherExists) {
+      return res.status(400).json({ message: 'Mã voucher đã tồn tại' });
     }
 
     const voucher = new Voucher({
@@ -120,18 +91,18 @@ router.post('/hotel-specific', protect, admin, async (req, res) => {
     await voucher.save();
     res.status(201).json(voucher);
   } catch (error) {
-    console.error('Lỗi khi tạo khuyến mãi:', error.message);
+    console.error('Lỗi khi tạo khuyến mãi:', error.message, error.stack);
     res.status(500).json({ message: 'Lỗi khi tạo khuyến mãi', error: error.message });
   }
 });
 
 /**
  * @route   PUT /api/vouchers/override
- * @desc    Cập nhật thuộc tính isStackable của voucher
+ * @desc    Cập nhật toàn bộ thông tin voucher
  * @access  Riêng tư (yêu cầu token, chỉ admin)
  */
 router.put('/override', protect, admin, async (req, res) => {
-  const { voucherId, isStackable } = req.body;
+  const { voucherId, code, description, discountType, discountValue, applicableHotels, startDate, endDate, minBookingAmount, maxDiscount, isStackable } = req.body;
 
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -147,13 +118,59 @@ router.put('/override', protect, admin, async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy khuyến mãi' });
     }
 
-    voucher.isStackable = isStackable !== undefined ? isStackable : voucher.isStackable;
-    const updatedVoucher = await voucher.save();
+    if (applicableHotels && applicableHotels.length > 0) {
+      const rooms = await Room.find({ _id: { $in: applicableHotels } });
+      if (rooms.length !== applicableHotels.length) {
+        return res.status(400).json({ message: 'Một hoặc nhiều phòng không tồn tại' });
+      }
+    }
 
+    voucher.code = code || voucher.code;
+    voucher.description = description || voucher.description;
+    voucher.discountType = discountType || voucher.discountType;
+    voucher.discountValue = discountValue !== undefined ? discountValue : voucher.discountValue;
+    voucher.applicableHotels = applicableHotels || voucher.applicableHotels;
+    voucher.startDate = startDate || voucher.startDate;
+    voucher.endDate = endDate || voucher.endDate;
+    voucher.minBookingAmount = minBookingAmount !== undefined ? minBookingAmount : voucher.minBookingAmount;
+    voucher.maxDiscount = maxDiscount !== undefined ? maxDiscount : voucher.maxDiscount;
+    voucher.isStackable = isStackable !== undefined ? isStackable : voucher.isStackable;
+
+    const updatedVoucher = await voucher.save();
     res.status(200).json({ message: 'Cập nhật khuyến mãi thành công', voucher: updatedVoucher });
   } catch (error) {
     console.error('Lỗi khi cập nhật khuyến mãi:', error.message, error.stack);
     res.status(500).json({ message: 'Lỗi khi cập nhật khuyến mãi', error: error.message });
+  }
+});
+
+/**
+ * @route   DELETE /api/vouchers/:id
+ * @desc    Xóa voucher
+ * @access  Riêng tư (yêu cầu token, chỉ admin)
+ */
+router.delete('/:id', protect, admin, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'ID khuyến mãi không hợp lệ' });
+    }
+
+    const voucher = await Voucher.findById(id);
+    if (!voucher) {
+      return res.status(404).json({ message: 'Không tìm thấy khuyến mãi' });
+    }
+
+    await Voucher.deleteOne({ _id: id });
+    res.status(200).json({ message: 'Xóa khuyến mãi thành công' });
+  } catch (error) {
+    console.error('Lỗi khi xóa khuyến mãi:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi xóa khuyến mãi', error: error.message });
   }
 });
 
@@ -226,6 +243,8 @@ router.post('/apply-promotions', async (req, res) => {
         discount,
       });
     }
+
+   
 
     totalAmount = Math.max(0, totalAmount - totalDiscount);
 

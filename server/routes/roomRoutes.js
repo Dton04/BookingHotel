@@ -1,8 +1,8 @@
-// roomRoutes.js
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 const Room = require("../models/room");
+const Hotel = require("../models/hotel");
 const Booking = require("../models/booking");
 const { protect, admin, restrictRoomManagement } = require("../middleware/auth");
 const multer = require('multer');
@@ -15,7 +15,7 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Cấu hình multer với kiểm tra định dạng và kích thước
+// Cấu hình multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'Uploads/'),
   filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
@@ -36,14 +36,32 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // Giới hạn 5MB
 });
 
+// GET /api/rooms - Lấy danh sách phòng theo khách sạn
+router.get('/', async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
+    }
+
+    const { hotel } = req.query;
+    const query = hotel && mongoose.Types.ObjectId.isValid(hotel) ? { hotel } : {};
+
+    const rooms = await Room.find(query).populate('hotel', 'name _id');
+    res.status(200).json(rooms);
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách phòng:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi lấy danh sách phòng', error: error.message });
+  }
+});
+
 // GET /api/rooms/getallrooms - Lấy tất cả phòng
 router.get('/getallrooms', async (req, res) => {
   try {
     if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
+      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
     }
 
-    const rooms = await Room.find({});
+    const rooms = await Room.find().populate('hotel', 'name _id');
     res.send(rooms);
   } catch (error) {
     console.error("Lỗi khi lấy danh sách phòng:", error.message, error.stack);
@@ -64,8 +82,7 @@ router.post("/getroombyid", async (req, res) => {
       return res.status(400).json({ message: "ID phòng không hợp lệ" });
     }
 
-    const room = await Room.findById(roomid);
-
+    const room = await Room.findById(roomid).populate('hotel', 'name _id');
     if (room) {
       res.send(room);
     } else {
@@ -78,7 +95,7 @@ router.post("/getroombyid", async (req, res) => {
 });
 
 // POST /api/rooms - Tạo phòng mới (chỉ admin)
-router.post("/", protect, restrictRoomManagement, async (req, res) => {
+router.post("/", protect, restrictRoomManagement, upload.array('images', 5), async (req, res) => {
   const {
     name,
     maxcount,
@@ -86,77 +103,239 @@ router.post("/", protect, restrictRoomManagement, async (req, res) => {
     baths,
     phonenumber,
     rentperday,
-    imageurls = [],
-    currentbookings = [],
-    availabilityStatus = 'available',
     type,
-    description
+    description,
+    hotel,
+    availabilityStatus = 'available',
   } = req.body;
 
+  const session = await mongoose.startSession();
   try {
+    session.startTransaction();
+
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
     }
 
-    if (!name || !maxcount || !beds || !baths || !phonenumber || !rentperday || !type || !description) {
-      return res.status(400).json({ message: "Vui lòng cung cấp đầy đủ cácsono cung cấp đầy đủ các trường bắt buộc: name, maxcount, beds, baths, phonenumber, rentperday, type, description" });
+    console.log('POST /api/rooms - Request body:', req.body);
+    console.log('POST /api/rooms - Uploaded files:', req.files);
+
+    const missingFields = [];
+    if (!name) missingFields.push('name');
+    if (!maxcount) missingFields.push('maxcount');
+    if (!beds) missingFields.push('beds');
+    if (!baths) missingFields.push('baths');
+    if (!phonenumber) missingFields.push('phonenumber');
+    if (!rentperday) missingFields.push('rentperday');
+    if (!type) missingFields.push('type');
+    if (!description) missingFields.push('description');
+    if (!hotel) missingFields.push('hotel');
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: `Vui lòng cung cấp đầy đủ các trường bắt buộc: ${missingFields.join(', ')}`,
+        missingFields,
+      });
     }
 
-    if (isNaN(maxcount) || isNaN(beds) || isNaN(baths) || isNaN(phonenumber) || isNaN(rentperday)) {
-      return res.status(400).json({ message: "maxcount, beds, baths, phonenumber, rentperday phải là số" });
+    if (isNaN(maxcount) || isNaN(beds) || isNaN(baths) || isNaN(rentperday)) {
+      return res.status(400).json({ message: "maxcount, beds, baths, rentperday phải là số" });
+    }
+
+    const phoneRegex = /^\d{10,11}$/;
+    if (!phoneRegex.test(phonenumber)) {
+      return res.status(400).json({ message: "Số điện thoại phải có 10-11 chữ số" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(hotel)) {
+      return res.status(400).json({ message: "ID khách sạn không hợp lệ" });
+    }
+
+    const hotelExists = await Hotel.findById(hotel).session(session);
+    if (!hotelExists) {
+      return res.status(404).json({ message: "Không tìm thấy khách sạn" });
     }
 
     if (!["available", "maintenance", "busy"].includes(availabilityStatus)) {
       return res.status(400).json({ message: "Trạng thái không hợp lệ. Phải là: available, maintenance, hoặc busy" });
     }
 
+    const imageurls = req.files
+      ? req.files.map(file => `${req.protocol}://${req.get('host')}/Uploads/${file.filename}`)
+      : [];
+
     const newRoom = new Room({
       name,
       maxcount: Number(maxcount),
       beds: Number(beds),
       baths: Number(baths),
-      phonenumber: Number(phonenumber),
+      phonenumber,
       rentperday: Number(rentperday),
       imageurls,
-      currentbookings,
       availabilityStatus,
       type,
-      description
+      description,
+      hotel,
     });
 
-    const savedRoom = await newRoom.save();
+    const savedRoom = await newRoom.save({ session });
 
+    hotelExists.rooms.push(savedRoom._id);
+    await hotelExists.save({ session });
+
+    await session.commitTransaction();
     res.status(201).json({
       message: "Tạo phòng thành công",
-      room: {
-        _id: savedRoom._id,
-        name: savedRoom.name,
-        maxcount: savedRoom.maxcount,
-        beds: savedRoom.beds,
-        baths: savedRoom.baths,
-        phonenumber: savedRoom.phonenumber,
-        rentperday: savedRoom.rentperday,
-        imageurls: savedRoom.imageurls,
-        currentbookings: savedRoom.currentbookings,
-        availabilityStatus: savedRoom.availabilityStatus,
-        type: savedRoom.type,
-        description: savedRoom.description,
-        createdAt: savedRoom.createdAt,
-        updatedAt: savedRoom.updatedAt
-      }
+      room: savedRoom,
     });
   } catch (error) {
+    await session.abortTransaction();
     console.error("Lỗi khi tạo phòng:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi tạo phòng", error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
-// POST /api/rooms/:id/availability - Cập nhật trạng thái phòng
-router.post("/:id/availability", async (req, res) => {
+// PUT /api/rooms/:id - Cập nhật thông tin phòng
+router.put("/:id", protect, restrictRoomManagement, upload.array('images', 5), async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const {
+    name,
+    maxcount,
+    beds,
+    baths,
+    phonenumber,
+    rentperday,
+    availabilityStatus,
+    type,
+    description,
+    hotel,
+  } = req.body;
 
+  const session = await mongoose.startSession();
   try {
+    session.startTransaction();
+
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
+    }
+
+    console.log('PUT /api/rooms/:id - Request body:', req.body);
+    console.log('PUT /api/rooms/:id - Uploaded files:', req.files);
+    console.log('PUT /api/rooms/:id - Room ID:', id);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID phòng không hợp lệ" });
+    }
+
+    const missingFields = [];
+    if (!name) missingFields.push('name');
+    if (!maxcount) missingFields.push('maxcount');
+    if (!beds) missingFields.push('beds');
+    if (!baths) missingFields.push('baths');
+    if (!phonenumber) missingFields.push('phonenumber');
+    if (!rentperday) missingFields.push('rentperday');
+    if (!type) missingFields.push('type');
+    if (!description) missingFields.push('description');
+    if (!hotel) missingFields.push('hotel');
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: `Vui lòng cung cấp đầy đủ các trường bắt buộc: ${missingFields.join(', ')}`,
+        missingFields,
+      });
+    }
+
+    if (isNaN(maxcount) || isNaN(beds) || isNaN(baths) || isNaN(rentperday)) {
+      return res.status(400).json({ message: "maxcount, beds, baths, rentperday phải là số" });
+    }
+
+    const phoneRegex = /^\d{10,11}$/;
+    if (!phoneRegex.test(phonenumber)) {
+      return res.status(400).json({ message: "Số điện thoại phải có 10-11 chữ số" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(hotel)) {
+      return res.status(400).json({ message: "ID khách sạn không hợp lệ" });
+    }
+
+    const hotelExists = await Hotel.findById(hotel).session(session);
+    if (!hotelExists) {
+      return res.status(404).json({ message: "Không tìm thấy khách sạn" });
+    }
+
+    if (!["available", "maintenance", "busy"].includes(availabilityStatus)) {
+      return res.status(400).json({ message: "Trạng thái không hợp lệ. Phải là: available, maintenance, hoặc busy" });
+    }
+
+    const room = await Room.findById(id).session(session);
+    if (!room) {
+      return res.status(404).json({ message: "Không tìm thấy phòng" });
+    }
+
+    const imageurls = req.files
+      ? req.files.map(file => `${req.protocol}://${req.get('host')}/Uploads/${file.filename}`)
+      : [];
+
+    // Nếu khách sạn thay đổi, cập nhật mảng rooms
+    if (!room.hotel || room.hotel.toString() !== hotel) {
+      console.log('PUT /api/rooms/:id - Hotel changed. Old hotel:', room.hotel, 'New hotel:', hotel);
+      if (room.hotel) {
+        const oldHotel = await Hotel.findById(room.hotel).session(session);
+        if (oldHotel) {
+          oldHotel.rooms = oldHotel.rooms.filter(r => r.toString() !== id);
+          await oldHotel.save({ session });
+          console.log('PUT /api/rooms/:id - Removed room from old hotel:', oldHotel._id);
+        }
+      }
+      // Đảm bảo phòng được thêm vào mảng rooms của khách sạn mới
+      if (!hotelExists.rooms.includes(id)) {
+        hotelExists.rooms.push(id);
+        await hotelExists.save({ session });
+        console.log('PUT /api/rooms/:id - Added room to new hotel:', hotelExists._id);
+      }
+    } else if (!hotelExists.rooms.includes(id)) {
+      // Nếu khách sạn không thay đổi nhưng phòng chưa có trong mảng rooms
+      hotelExists.rooms.push(id);
+      await hotelExists.save({ session });
+      console.log('PUT /api/rooms/:id - Added room to existing hotel:', hotelExists._id);
+    }
+
+    room.name = name;
+    room.maxcount = Number(maxcount);
+    room.beds = Number(beds);
+    room.baths = Number(baths);
+    room.phonenumber = phonenumber;
+    room.rentperday = Number(rentperday);
+    room.imageurls = imageurls.length > 0 ? [...room.imageurls, ...imageurls] : room.imageurls;
+    room.availabilityStatus = availabilityStatus;
+    room.type = type;
+    room.description = description;
+    room.hotel = hotel;
+
+    const updatedRoom = await room.save({ session });
+    console.log('PUT /api/rooms/:id - Updated room:', updatedRoom);
+
+    await session.commitTransaction();
+    res.status(200).json({ message: "Cập nhật phòng thành công", room: updatedRoom });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Lỗi khi cập nhật phòng:", error.message, error.stack);
+    res.status(500).json({ message: "Lỗi khi cập nhật phòng", error: error.message });
+  } finally {
+    session.endSession();
+  }
+});
+
+// DELETE /api/rooms/:id - Xóa phòng
+router.delete("/:id", protect, restrictRoomManagement, async (req, res) => {
+  const { id } = req.params;
+
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
     }
@@ -165,28 +344,51 @@ router.post("/:id/availability", async (req, res) => {
       return res.status(400).json({ message: "ID phòng không hợp lệ" });
     }
 
-    if (!["available", "maintenance", "busy"].includes(status)) {
-      return res.status(400).json({ message: "Trạng thái không hợp lệ. Phải là: available, maintenance, hoặc busy" });
-    }
-
-    const room = await Room.findById(id);
+    const room = await Room.findById(id).session(session);
     if (!room) {
-      return res.status(404).json({ message: "Không tìm thấy phòng với ID này" });
+      return res.status(404).json({ message: "Không tìm thấy phòng" });
     }
 
-    room.availabilityStatus = status;
-    await room.save();
+    // Kiểm tra đặt phòng đang hoạt động
+    const activeBookings = await Booking.find({
+      roomid: id,
+      status: { $in: ["pending", "confirmed"] }
+    }).session(session);
 
-    res.status(200).json({ message: `Cập nhật trạng thái phòng thành ${status} thành công`, room });
+    if (activeBookings.length > 0) {
+      return res.status(400).json({ message: "Không thể xóa phòng vì vẫn còn đặt phòng đang hoạt động" });
+    }
+
+    // Xóa ảnh khỏi thư mục Uploads
+    for (const url of room.imageurls) {
+      const filePath = path.join(__dirname, '../', url.replace(`${req.protocol}://${req.get('host')}`, ''));
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    // Xóa phòng khỏi mảng rooms trong Hotel
+    const hotel = await Hotel.findById(room.hotel).session(session);
+    if (hotel) {
+      hotel.rooms = hotel.rooms.filter(r => r.toString() !== id);
+      await hotel.save({ session });
+    }
+
+    await Room.deleteOne({ _id: id }).session(session);
+    await session.commitTransaction();
+    res.status(200).json({ message: "Xóa phòng thành công" });
   } catch (error) {
-    console.error("Lỗi khi cập nhật trạng thái phòng:", error.message, error.stack);
-    res.status(500).json({ message: "Lỗi khi cập nhật trạng thái phòng", error: error.message });
+    await session.abortTransaction();
+    console.error("Lỗi khi xóa phòng:", error.message, error.stack);
+    res.status(500).json({ message: "Lỗi khi xóa phòng", error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
 // GET /api/rooms/available - Lấy danh sách phòng trống
 router.get("/available", async (req, res) => {
-  const { checkin, checkout } = req.query;
+  const { checkin, checkout, hotel } = req.query;
 
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -207,9 +409,12 @@ router.get("/available", async (req, res) => {
       return res.status(400).json({ message: "Ngày nhận phòng phải trước ngày trả phòng" });
     }
 
-    const rooms = await Room.find({
-      availabilityStatus: 'available',
-    });
+    const query = { availabilityStatus: 'available' };
+    if (hotel && mongoose.Types.ObjectId.isValid(hotel)) {
+      query.hotel = hotel;
+    }
+
+    const rooms = await Room.find(query).populate('hotel', 'name _id');
 
     const availableRooms = rooms.filter(room => {
       return !room.currentbookings.some(booking => {
@@ -232,7 +437,7 @@ router.get("/available", async (req, res) => {
 
 // GET /api/rooms/suggestions - Lấy danh sách phòng gợi ý
 router.get("/suggestions", async (req, res) => {
-  const { roomId, roomType, checkin, checkout, limit } = req.query;
+  const { roomId, roomType, checkin, checkout, limit, hotel } = req.query;
 
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -272,11 +477,15 @@ router.get("/suggestions", async (req, res) => {
       type: roomType,
       availabilityStatus: 'available',
     };
+    if (hotel && mongoose.Types.ObjectId.isValid(hotel)) {
+      query.hotel = hotel;
+    }
 
     let suggestions = await Room.find(query)
       .sort({ rentperday: 1 })
       .limit(finalLimit)
-      .select('_id name type rentperday imageurls availabilityStatus');
+      .select('_id name type rentperday imageurls availabilityStatus hotel')
+      .populate('hotel', 'name _id');
 
     if (checkin && checkout) {
       suggestions = suggestions.filter(room => {
@@ -292,10 +501,6 @@ router.get("/suggestions", async (req, res) => {
       });
     }
 
-    if (suggestions.length === 0) {
-      return res.status(200).json([]);
-    }
-
     res.status(200).json(suggestions);
   } catch (error) {
     console.error("Lỗi khi lấy phòng gợi ý:", error.message, error.stack);
@@ -303,104 +508,7 @@ router.get("/suggestions", async (req, res) => {
   }
 });
 
-// BE4.14 PUT /api/rooms/:id - Cập nhật thông tin phòng
-router.put("/:id", protect, restrictRoomManagement, async (req, res) => {
-  const { id } = req.params;
-  const {
-    name,
-    maxcount,
-    beds,
-    baths,
-    phonenumber,
-    rentperday,
-    imageurls,
-    availabilityStatus,
-    type,
-    description,
-  } = req.body;
-
-  try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "ID phòng không hợp lệ" });
-    }
-
-    if (!name || !maxcount || !beds || !baths || !phonenumber || !rentperday || !type || !description) {
-      return res.status(400).json({ message: "Vui lòng cung cấp đầy đủ các trường bắt buộc: name, maxcount, beds, baths, phonenumber, rentperday, type, description" });
-    }
-
-    if (isNaN(maxcount) || isNaN(beds) || isNaN(baths) || isNaN(phonenumber) || isNaN(rentperday)) {
-      return res.status(400).json({ message: "maxcount, beds, baths, phonenumber, rentperday phải là số" });
-    }
-
-    if (!["available", "maintenance", "busy"].includes(availabilityStatus)) {
-      return res.status(400).json({ message: "Trạng thái không hợp lệ. Phải là: available, maintenance, hoặc busy" });
-    }
-
-    const room = await Room.findById(id);
-    if (!room) {
-      return res.status(404).json({ message: "Không tìm thấy phòng" });
-    }
-
-    room.name = name;
-    room.maxcount = Number(maxcount);
-    room.beds = Number(beds);
-    room.baths = Number(baths);
-    room.phonenumber = Number(phonenumber);
-    room.rentperday = Number(rentperday);
-    room.imageurls = imageurls || [];
-    room.availabilityStatus = availabilityStatus;
-    room.type = type;
-    room.description = description;
-
-    const updatedRoom = await room.save();
-    res.status(200).json({ message: "Cập nhật phòng thành công", room: updatedRoom });
-  } catch (error) {
-    console.error("Lỗi khi cập nhật phòng:", error.message, error.stack);
-    res.status(500).json({ message: "Lỗi khi cập nhật phòng", error: error.message });
-  }
-});
-
-// BE4.15 DELETE /api/rooms/:id - Xóa phòng
-router.delete("/:id", protect, restrictRoomManagement, async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "ID phòng không hợp lệ" });
-    }
-
-    const room = await Room.findById(id);
-    if (!room) {
-      return res.status(404).json({ message: "Không tìm thấy phòng" });
-    }
-
-    // Kiểm tra xem phòng có đặt phòng đang hoạt động không
-    const activeBookings = await Booking.find({
-      roomid: id,
-      status: { $in: ["pending", "confirmed"] }
-    });
-
-    if (activeBookings.length > 0) {
-      return res.status(400).json({ message: "Không thể xóa phòng vì vẫn còn đặt phòng đang hoạt động" });
-    }
-
-    await Room.deleteOne({ _id: id });
-    res.status(200).json({ message: "Xóa phòng thành công" });
-  } catch (error) {
-    console.error("Lỗi khi xóa phòng:", error.message, error.stack);
-    res.status(500).json({ message: "Lỗi khi xóa phòng", error: error.message });
-  }
-});
-
-// BE4.16 PATCH /api/rooms/:id/maintenance - Chuyển trạng thái phòng sang bảo trì
+// PATCH /api/rooms/:id/maintenance - Chuyển trạng thái phòng sang bảo trì
 router.patch("/:id/maintenance", protect, restrictRoomManagement, async (req, res) => {
   const { id } = req.params;
 
@@ -418,7 +526,6 @@ router.patch("/:id/maintenance", protect, restrictRoomManagement, async (req, re
       return res.status(404).json({ message: "Không tìm thấy phòng" });
     }
 
-    // Kiểm tra xem phòng có đặt phòng đang hoạt động không
     const activeBookings = await Booking.find({
       roomid: id,
       status: { $in: ["pending"] }
@@ -438,7 +545,7 @@ router.patch("/:id/maintenance", protect, restrictRoomManagement, async (req, re
   }
 });
 
-// BE4.17 GET /api/rooms/summary - Thống kê trạng thái phòng
+// GET /api/rooms/summary - Thống kê trạng thái phòng
 router.get("/summary", async (req, res) => {
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -459,7 +566,7 @@ router.get("/summary", async (req, res) => {
   }
 });
 
-// BE4.18 GET /api/rooms/similar/:id - Trả về danh sách phòng tương tự
+// GET /api/rooms/similar/:id - Trả về danh sách phòng tương tự
 router.get("/similar/:id", async (req, res) => {
   const { id } = req.params;
   const { limit = 3 } = req.query;
@@ -473,7 +580,7 @@ router.get("/similar/:id", async (req, res) => {
       return res.status(400).json({ message: "ID phòng không hợp lệ" });
     }
 
-    const room = await Room.findById(id);
+    const room = await Room.findById(id).populate('hotel', 'name _id');
     if (!room) {
       return res.status(404).json({ message: "Không tìm thấy phòng" });
     }
@@ -484,11 +591,13 @@ router.get("/similar/:id", async (req, res) => {
     const similarRooms = await Room.find({
       _id: { $ne: id },
       type: room.type,
+      hotel: room.hotel,
       availabilityStatus: 'available'
     })
       .sort({ rentperday: 1 })
       .limit(finalLimit)
-      .select('_id name type rentperday imageurls availabilityStatus');
+      .select('_id name type rentperday imageurls availabilityStatus hotel')
+      .populate('hotel', 'name _id');
 
     res.status(200).json(similarRooms);
   } catch (error) {
@@ -497,7 +606,7 @@ router.get("/similar/:id", async (req, res) => {
   }
 });
 
-// BE4.19 GET /api/rooms/popular - Phòng được đặt nhiều nhất
+// GET /api/rooms/popular - Phòng được đặt nhiều nhất
 router.get("/popular", async (req, res) => {
   const { limit = 5 } = req.query;
 
@@ -524,6 +633,15 @@ router.get("/popular", async (req, res) => {
       },
       { $unwind: "$room" },
       {
+        $lookup: {
+          from: "hotels",
+          localField: "room.hotel",
+          foreignField: "_id",
+          as: "room.hotel"
+        }
+      },
+      { $unwind: "$room.hotel" },
+      {
         $project: {
           _id: "$room._id",
           name: "$room.name",
@@ -531,6 +649,7 @@ router.get("/popular", async (req, res) => {
           rentperday: "$room.rentperday",
           imageurls: "$room.imageurls",
           availabilityStatus: "$room.availabilityStatus",
+          hotel: "$room.hotel.name",
           bookingCount: 1
         }
       }
@@ -543,7 +662,7 @@ router.get("/popular", async (req, res) => {
   }
 });
 
-// BE4.20 PATCH /api/rooms/:id/price - Cập nhật giá phòng
+// PATCH /api/rooms/:id/price - Cập nhật giá phòng
 router.patch("/:id/price", protect, restrictRoomManagement, async (req, res) => {
   const { id } = req.params;
   const { rentperday } = req.body;
@@ -576,7 +695,7 @@ router.patch("/:id/price", protect, restrictRoomManagement, async (req, res) => 
   }
 });
 
-// BE4.21 POST /api/rooms/:id/images - Tải ảnh phòng
+// POST /api/rooms/:id/images - Tải ảnh phòng
 router.post("/:id/images", protect, restrictRoomManagement, upload.array('images', 5), async (req, res) => {
   const { id } = req.params;
 
@@ -609,7 +728,7 @@ router.post("/:id/images", protect, restrictRoomManagement, upload.array('images
   }
 });
 
-// BE4.22 DELETE /api/rooms/:id/images/:imgId - Xóa ảnh phòng
+// DELETE /api/rooms/:id/images/:imgId - Xóa ảnh phòng
 router.delete("/:id/images/:imgId", protect, restrictRoomManagement, async (req, res) => {
   const { id, imgId } = req.params;
 
@@ -648,7 +767,7 @@ router.delete("/:id/images/:imgId", protect, restrictRoomManagement, async (req,
   }
 });
 
-// BE4.23 GET /api/rooms/images/:id - Lấy danh sách ảnh của phòng
+// GET /api/rooms/images/:id - Lấy danh sách ảnh của phòng
 router.get("/images/:id", async (req, res) => {
   const { id } = req.params;
 

@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Carousel, Alert } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Rating from "react-rating";
 import ReviewChart from "./ReviewChart";
 import SuggestionCard from "../components/SuggestionCard";
+import "../css/room.css";
 
-function Room({ room }) {
+function Room({ room, showModalOnClick = false }) {
   const [show, setShow] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState({ average: 0, totalReviews: 0 });
@@ -17,12 +17,23 @@ function Room({ room }) {
   const [reviewPage, setReviewPage] = useState(1);
   const reviewsPerPage = 5;
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleClose = () => setShow(false);
   const handleImageClick = async () => {
-    setShow(true);
-    setReviewPage(1); // Reset trang khi mở modal
-    await Promise.all([fetchReviews(), fetchSuggestions()]);
+    if (showModalOnClick) {
+      setShow(true);
+      setReviewPage(1);
+      await Promise.all([fetchReviews(), fetchSuggestions()]);
+    } else {
+      // Kiểm tra nếu room.hotel tồn tại trước khi truy cập _id
+      if (room.hotel && room.hotel._id) {
+        navigate(`/hotels/${room.hotel._id}`);
+      } else {
+        console.error('Không tìm thấy thông tin khách sạn cho phòng này');
+        navigate('/hotels'); // Điều hướng về danh sách khách sạn
+      }
+    }
   };
 
   const handleBooking = () => {
@@ -52,9 +63,9 @@ function Room({ room }) {
     try {
       setLoadingReviews(true);
       const response = await axios.get("/api/reviews", {
-        params: { roomId: room._id, limit: 50 }, // Lấy tối đa 50 đánh giá để phân trang trong modal
+        params: { roomId: room._id, limit: 50, isVisible: true },
       });
-      setReviews(response.data.reviews || []); // Đảm bảo reviews là mảng
+      setReviews(response.data.reviews || []);
     } catch (error) {
       console.error("Lỗi khi lấy đánh giá:", {
         message: error.message,
@@ -66,11 +77,11 @@ function Room({ room }) {
   };
 
   const fetchSuggestions = async () => {
-    if (room.availabilityStatus !== 'available') {
+    if (room.availabilityStatus !== "available") {
       try {
         setLoadingSuggestions(true);
         const response = await axios.get("/api/rooms/suggestions", {
-          params: { roomId: room._id, roomType: room.type },
+          params: { roomId: room._id, roomType: room.type, hotel: room.hotel?._id },
         });
         setSuggestions(response.data);
       } catch (error) {
@@ -133,7 +144,6 @@ function Room({ room }) {
 
   const status = getRoomStatus();
 
-  // Phân trang đánh giá
   const totalReviewPages = Math.ceil(reviews.length / reviewsPerPage);
   const displayedReviews = reviews.slice(
     (reviewPage - 1) * reviewsPerPage,
@@ -160,6 +170,7 @@ function Room({ room }) {
 
       <div className="room-content">
         <h3 className="room-title">{room.name}</h3>
+        <p className="room-hotel">Khách sạn: {room.hotel?.name || "Không xác định"}</p>
         <div className="room-features">
           <span>
             <i className="fas fa-bed"></i> {room.beds || "3"} Giường
@@ -184,10 +195,8 @@ function Room({ room }) {
               emptySymbol={<i className="far fa-star"></i>}
               fullSymbol={<i className="fas fa-star"></i>}
             />
-             {averageRating.totalReviews > 0 && (
-              <span>
-                ({averageRating.average.toFixed(1)}/5)
-              </span>
+            {averageRating.totalReviews > 0 && (
+              <span>({averageRating.average.toFixed(1)}/5)</span>
             )}
           </div>
           <div className="room-actions">
@@ -221,6 +230,9 @@ function Room({ room }) {
           </Carousel>
           <div className="room-modal-content">
             <div className="room-highlights">
+              <div>
+                <i className="fas fa-hotel"></i> Khách sạn: {room.hotel?.name || "Không xác định"}
+              </div>
               <div>
                 <i className="fas fa-bed"></i> {room.beds || "3"} Giường
               </div>
@@ -329,7 +341,7 @@ function Room({ room }) {
                 <p>Chưa có đánh giá nào.</p>
               )}
             </div>
-            {room.availabilityStatus !== 'available' && (
+            {room.availabilityStatus !== "available" && (
               <div className="room-suggestions">
                 <h5>Phòng tương tự</h5>
                 {loadingSuggestions ? (

@@ -1,0 +1,195 @@
+.my-5 {
+  margin-top: 3rem !important;
+  margin-bottom: 3rem !important;
+}
+
+h3 {
+  color: #f5a623; /* Đồng bộ với navbar */
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+.hotel-card {
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(245, 166, 35, 0.2); /* Viền nhẹ đồng bộ với #f5a623 */
+  overflow: hidden;
+  transition: transform 0.3s ease;
+  background-color: #fff;
+}
+
+.hotel-card:hover {
+  transform: translateY(-5px);
+}
+
+.card-title {
+  font-size: 1.8rem;
+  color: #f5a623; /* Đồng bộ với navbar */
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+}
+
+.card-text {
+  font-size: 1rem;
+  color: #636e72;
+  line-height: 1.6;
+  font-family: 'Roboto', sans-serif;
+}
+
+.alert {
+  margin-top: 1rem;
+  border-radius: 10px;
+}
+
+/* Carousel styling */
+.hotel-carousel {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(245, 166, 35, 0.2); /* Viền nhẹ đồng bộ với #f5a623 */
+}
+
+.hotel-carousel .carousel-inner {
+  border-radius: 10px;
+}
+
+.hotel-carousel .carousel-item {
+  transition: transform 0.6s ease-in-out; /* Chuyển ảnh mượt mà */
+}
+
+.hotel-carousel img {
+  border-radius: 10px;
+  object-fit: cover;
+  object-position: center;
+  width: 100%;
+  height: 400px; /* Kích thước cố định để đồng nhất */
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.hotel-carousel img:hover {
+  transform: scale(1.05); /* Zoom nhẹ khi hover */
+  filter: brightness(1.1); /* Tăng sáng khi hover */
+}
+
+/* Carousel controls */
+.hotel-carousel .carousel-control-prev,
+.hotel-carousel .carousel-control-next {
+  width: 50px;
+  background: linear-gradient(90deg, rgba(26, 37, 47, 0.5), transparent); /* Đồng bộ với #1a252f */
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.hotel-carousel .carousel-control-prev:hover,
+.hotel-carousel .carousel-control-next:hover {
+  opacity: 1;
+}
+
+.hotel-carousel .carousel-control-prev-icon,
+.hotel-carousel .carousel-control-next-icon {
+  background-color: #f5a623; /* Đồng bộ với navbar */
+  border-radius: 50%;
+  padding: 10px;
+  width: 30px;
+  height: 30px;
+}
+
+.hotel-carousel .carousel-control-prev-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%231a252f' viewBox='0 0 8 8'%3E%3Cpath d='M5.25 0l-4 4 4 4 1.5-1.5-2.5-2.5 2.5-2.5-1.5-1.5z'/%3E%3C/svg%3E");
+}
+
+.hotel-carousel .carousel-control-next-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%231a252f' viewBox='0 0 8 8'%3E%3Cpath d='M2.75 0l-1.5 1.5 2.5 2.5-2.5 2.5 1.5 1.5 4-4-4-4z'/%3E%3C/svg%3E");
+}
+
+/* Carousel indicators */
+.hotel-carousel .carousel-indicators {
+  bottom: -50px;
+}
+
+.hotel-carousel .carousel-indicators button {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #dfe6e9;
+  border: none;
+  margin: 0 6px;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.hotel-carousel .carousel-indicators .active {
+  background-color: #f5a623; /* Đồng bộ với navbar */
+  transform: scale(1.2);
+}
+
+/* Modern button */
+.btn-modern {
+  padding: 12px 24px;
+  border-radius: 50px;
+  border: none;
+  background: linear-gradient(45deg, #f5a623, #e69500); /* Đồng bộ với navbar */
+  color: #1a252f;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  text-transform: uppercase;
+  box-shadow: 0 4px 15px rgba(245, 166, 35, 0.4);
+  transition: all 0.3s ease;
+}
+
+.btn-modern:hover {
+  background: linear-gradient(45deg, #e69500, #f5a623);
+  box-shadow: 0 6px 20px rgba(245, 166, 35, 0.6);
+  transform: translateY(-2px);
+}
+
+.btn-modern:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(245, 166, 35, 0.3);
+}
+
+/* Rooms section background (giữ nguyên từ yêu cầu trước) */
+.rooms-section {
+  position: relative;
+  background-image: url('https://images.unsplash.com/photo-1519441352428-31c5078e6d1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  padding: 3rem 0;
+  margin-top: 2rem;
+  z-index: 1;
+}
+
+.rooms-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(26, 37, 47, 0.6);
+  z-index: -1;
+}
+
+.rooms-section h3 {
+  color: #f5a623;
+  text-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.rooms-section .room-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.rooms-section .room-card:hover {
+  transform: translateY(-5px);
+}
+
+.rooms-section .alert {
+  background: rgba(255, 255, 255, 0.95);
+  color: #2d3436;
+  border-radius: 10px;
+}

@@ -41,6 +41,10 @@ const reviewSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  isVisible: {
+    type: Boolean,
+    default: true, // Mặc định hiển thị
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -52,4 +56,4 @@ reviewSchema.index({ roomId: 1, isDeleted: 1 });
 reviewSchema.index({ email: 1, isDeleted: 1 });
 reviewSchema.index({ roomId: 1, email: 1, isDeleted: 1 });
 
-module.exports = mongoose.model('Review', reviewSchema);
+module.exports = mongoose.model('Review', reviewSchema);    

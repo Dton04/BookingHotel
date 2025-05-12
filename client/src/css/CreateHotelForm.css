@@ -4,12 +4,8 @@
 }
 
 h2 {
-  color: #333;
   font-weight: bold;
-}
-
-.form-label {
-  font-weight: 500;
+  color: #333;
 }
 
 .form-control,
@@ -22,6 +18,10 @@ h2 {
 .form-select:focus {
   border-color: #007bff;
   box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+.form-select[multiple] {
+  height: 120px;
 }
 
 .btn-primary {

@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@400;500&display=swap');
+
+.hotel-management {
+  font-family: 'Poppins', sans-serif;
+}
+
+.hotel-management h2 {
+  color: #f5a623; /* Đồng bộ với navbar */
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.filter-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.filter-section .form-label {
+  color: #1a252f; /* Đồng bộ với navbar */
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.filter-section .form-select {
+  border-radius: 8px;
+  border: 1px solid #dfe6e9;
+  padding: 0.5rem;
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.9rem;
+  color: #1a252f;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.3s ease;
+}
+
+.filter-section .form-select:focus {
+  border-color: #f5a623;
+  box-shadow: 0 0 0 0.2rem rgba(245, 166, 35, 0.25);
+}
+
+.create-hotel-btn {
+  padding: 10px 20px;
+  border-radius: 50px;
+  border: none;
+  background: linear-gradient(45deg, #f5a623, #e69500); /* Đồng bộ với navbar */
+  color: #1a252f;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  text-transform: uppercase;
+  box-shadow: 0 4px 15px rgba(245, 166, 35, 0.4);
+  transition: all 0.3s ease;
+}
+
+.create-hotel-btn:hover {
+  background: linear-gradient(45deg, #e69500, #f5a623);
+  box-shadow: 0 6px 20px rgba(245, 166, 35, 0.6);
+  transform: translateY(-2px);
+}
+
+.create-hotel-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(245, 166, 35, 0.3);
+}
+
+.hotel-table {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  font-family: 'Roboto', sans-serif;
+}
+
+.hotel-table th {
+  background-color: #1a252f; /* Đồng bộ với navbar */
+  color: #f5a623;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 1rem;
+}
+
+.hotel-table td {
+  vertical-align: middle;
+  padding: 1rem;
+  color: #2d3436;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.action-btn.variant-warning {
+  background: linear-gradient(45deg, #f5a623, #e69500);
+  border: none;
+  color: #1a252f;
+}
+
+.action-btn.variant-warning:hover {
+  background: linear-gradient(45deg, #e69500, #f5a623);
+  box-shadow: 0 4px 10px rgba(245, 166, 35, 0.4);
+}
+
+.action-btn.variant-danger {
+  background: linear-gradient(45deg, #e74c3c, #c0392b);
+  border: none;
+  color: #fff;
+}
+
+.action-btn.variant-danger:hover {
+  background: linear-gradient(45deg, #c0392b, #e74c3c);
+  box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4);
+}
+
+.alert-danger {
+  border-radius: 8px;
+  background-color: rgba(231, 76, 60, 0.1);
+  color: #c0392b;
+  font-family: 'Roboto', sans-serif;
+}

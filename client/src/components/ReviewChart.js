@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 function ReviewChart({ roomId }) {
   const [chartData, setChartData] = useState([]);
+  const [averageRating, setAverageRating] = useState({ average: 0, totalReviews: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [canViewChart, setCanViewChart] = useState(false);
@@ -14,9 +15,7 @@ function ReviewChart({ roomId }) {
     const fetchUser = async () => {
       try {
         const userInfo = localStorage.getItem("userInfo");
-        console.log("userInfo from localStorage:", userInfo); // Debug userInfo
         if (!userInfo) {
-          console.log("No userInfo found, setting canViewChart to false");
           setCanViewChart(false);
           setUserLoading(false);
           return;
@@ -24,9 +23,7 @@ function ReviewChart({ roomId }) {
 
         const parsedUserInfo = JSON.parse(userInfo);
         const token = parsedUserInfo.token;
-        console.log("Token from userInfo:", token); // Debug token
         if (!token) {
-          console.log("No token found in userInfo, setting canViewChart to false");
           setCanViewChart(false);
           setUserLoading(false);
           return;
@@ -35,15 +32,13 @@ function ReviewChart({ roomId }) {
         const response = await axios.get("/api/users/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("User data from API:", response.data); // Debug user data
         const user = response.data;
-        // Kiểm tra vai trò: admin (isAdmin: true) hoặc staff (role: 'staff')
         setCanViewChart(user.isAdmin === true || user.role === "staff");
       } catch (error) {
         console.error("Error fetching user profile:", error.response?.status, error.response?.data?.message || error.message);
         if (error.response?.status === 401) {
-          localStorage.removeItem("userInfo"); // Xóa userInfo nếu token hết hạn
-          console.log("Token expired or invalid, removed userInfo");
+          localStorage.removeItem("userInfo");
+          setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
         }
         setCanViewChart(false);
       } finally {
@@ -54,15 +49,23 @@ function ReviewChart({ roomId }) {
     fetchUser();
   }, []);
 
-  // Lấy dữ liệu đánh giá nếu có quyền
+  // Lấy dữ liệu đánh giá và điểm trung bình
   useEffect(() => {
-    const fetchReviews = async () => {
-      if (!roomId || !canViewChart) return; // Không fetch nếu không có quyền
+    const fetchReviewData = async () => {
+      if (!roomId || !canViewChart) return;
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get("/api/reviews", { params: { roomId } });
-        const reviews = response.data;
+
+        // Lấy điểm trung bình và tổng số đánh giá
+        const averageResponse = await axios.get("/api/reviews/average", { params: { roomId } });
+        setAverageRating(averageResponse.data);
+
+        // Lấy danh sách đánh giá với isVisible: true
+        const reviewsResponse = await axios.get("/api/reviews", { 
+          params: { roomId, limit: 100, status: "active", isVisible: true } // Thêm isVisible: true
+        });
+        const reviews = reviewsResponse.data.reviews || [];
 
         // Tính số lượng đánh giá theo từng mức sao
         const ratingCounts = Array(5).fill(0);
@@ -79,46 +82,54 @@ function ReviewChart({ roomId }) {
         }));
         setChartData(data);
       } catch (error) {
-        setError("Không thể tải dữ liệu đánh giá.");
-        console.error("Error fetching reviews for chart:", error);
+        setError("Không thể tải dữ liệu đánh giá. Vui lòng thử lại sau.");
+        console.error("Error fetching review data:", error.response?.status, error.response?.data?.message || error.message);
       } finally {
         setLoading(false);
       }
     };
 
     if (!userLoading) {
-      fetchReviews();
+      fetchReviewData();
     }
   }, [roomId, canViewChart, userLoading]);
 
-  // Nếu đang tải thông tin người dùng, hiển thị loader
   if (userLoading) {
-    return <p>Đang tải...</p>;
+    return <p className="text-center">Đang tải...</p>;
   }
 
-  // Nếu không phải admin hoặc staff, không hiển thị gì
   if (!canViewChart) {
-    return <p>Bạn không có quyền xem biểu đồ này.</p>;
+    return <p className="text-danger text-center">Bạn không có quyền xem biểu đồ này.</p>;
   }
 
   return (
     <div className="review-chart">
       <h5>Biểu đồ đánh giá</h5>
       {loading ? (
-        <p>Đang tải biểu đồ...</p>
+        <p className="text-center">Đang tải biểu đồ...</p>
       ) : error ? (
-        <p className="error-text">{error}</p>
+        <p className="text-danger text-center">{error}</p>
       ) : chartData.length > 0 ? (
-        <BarChart width={400} height={300} data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="count" fill="#8884d8" />
-        </BarChart>
+        <>
+          <div className="rating-summary text-center mb-3">
+            <p>
+              Điểm trung bình: <strong>{averageRating.average.toFixed(1)}</strong>/5 
+              ({averageRating.totalReviews} đánh giá)
+            </p>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#8884d8" name="Số lượng đánh giá" />
+            </BarChart>
+          </ResponsiveContainer>
+        </>
       ) : (
-        <p>Chưa có đánh giá nào để hiển thị.</p>
+        <p className="text-center">Chưa có đánh giá nào để hiển thị.</p>
       )}
     </div>
   );
