@@ -61,9 +61,9 @@ function ReviewChart({ roomId }) {
         const averageResponse = await axios.get("/api/reviews/average", { params: { roomId } });
         setAverageRating(averageResponse.data);
 
-        // Lấy danh sách đánh giá
+        // Lấy danh sách đánh giá với isVisible: true
         const reviewsResponse = await axios.get("/api/reviews", { 
-          params: { roomId, limit: 100, status: "active" } // Giới hạn 100 đánh giá, chỉ lấy active
+          params: { roomId, limit: 100, status: "active", isVisible: true }
         });
         const reviews = reviewsResponse.data.reviews || [];
 
@@ -82,8 +82,15 @@ function ReviewChart({ roomId }) {
         }));
         setChartData(data);
       } catch (error) {
-        setError("Không thể tải dữ liệu đánh giá. Vui lòng thử lại sau.");
-        console.error("Error fetching review data:", error.response?.status, error.response?.data?.message || error.message);
+        console.error("Error fetching review data:", error);
+        if (error.response?.status === 401) {
+          setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+          localStorage.removeItem("userInfo");
+        } else if (error.response?.status === 500) {
+          setError("Có lỗi xảy ra từ máy chủ. Vui lòng thử lại sau.");
+        } else {
+          setError("Không thể tải dữ liệu đánh giá. Vui lòng thử lại sau.");
+        }
       } finally {
         setLoading(false);
       }
@@ -99,7 +106,7 @@ function ReviewChart({ roomId }) {
   }
 
   if (!canViewChart) {
-    return <p className="text-danger text-center">Bạn không có quyền xem biểu đồ này.</p>;
+    return null; // Ẩn hoàn toàn khi role là "user"
   }
 
   return (
