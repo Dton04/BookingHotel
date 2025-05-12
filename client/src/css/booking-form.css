@@ -5,6 +5,7 @@
   position: relative;
   align-items: center;
   padding: 40px 15px;
+
  
 }
 
@@ -33,6 +34,7 @@
   display: flex;
   flex-direction: column;
   min-width: 150px;
+
 }
 
 .form-group label {
@@ -53,12 +55,18 @@
   width: 100%;
   box-sizing: border-box;
 }
+.booking-form input{
+  margin-bottom: 5px;
+  
+}
+
 
 .booking-form input:focus,
 .booking-form select:focus {
   outline: none;
   border-color: #f5a623;
   box-shadow: 0 0 5px rgba(245, 166, 35, 0.3);
+  
 }
 
 /* Placeholder cho input date */
@@ -85,6 +93,7 @@
   transition: background-color 0.3s ease;
   min-width: 150px;
   transform: translateY(-20px);
+  
   
 }
 

@@ -32,6 +32,8 @@ import HotelManagement from './components/HotelManagement';
 import HotelList from './components/HotelList'; // Thêm import
 import HotelDetail from './components/HotelDetail'; // Thêm import
 
+import Membership from './components/Membership';
+import AdminDiscounts from './components/AdminDiscounts';
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
   const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -79,9 +81,17 @@ function App() {
           <Route path="/admin/createroom" element={<CreateRoomForm />} />
           <Route path="/admin/rooms" element={<RoomManagement />} />
           <Route path="/admin/editroom/:id" element={<EditRoomForm />} />
+
           <Route path="/admin/createhotel" element={<CreateHotelForm />} />
           <Route path="/admin/edithotel/:id" element={<CreateHotelForm />} />
           <Route path="/admin/hotels" element={<HotelManagement />} />
+
+          <Route path="/membership" element={<Membership />} />
+          <Route path="/admin/discounts" element={<AdminDiscounts />} />        
+
+
+          {/* Route cho StaffManagement, chỉ admin truy cập được */}
+
           <Route
             path="/admin/staffmanagement"
             element={

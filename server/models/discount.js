@@ -1,19 +1,23 @@
 const mongoose = require('mongoose');
 
-const promotionSchema = new mongoose.Schema({
+const discountSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    // Tên chương trình khuyến mãi
+    // Tên chương trình khuyến mãi hoặc voucher
+  },
+  code: {
+    type: String,
+    unique: true,
+    sparse: true, // Cho phép null nhưng vẫn đảm bảo tính duy nhất
+    // Mã voucher (bắt buộc nếu type là voucher)
   },
   description: {
     type: String,
-    required: true,
-    // Mô tả khuyến mãi
   },
   type: {
     type: String,
-    enum: ['festival', 'voucher', 'member', 'accumulated'],
+    enum: ['voucher', 'festival', 'member', 'accumulated'],
     required: true,
     // Loại khuyến mãi
   },
@@ -45,7 +49,7 @@ const promotionSchema = new mongoose.Schema({
   minBookingAmount: {
     type: Number,
     default: 0,
-    // Số tiền đặt phòng tối thiểu để áp dụng
+    // Số tiền đặt phòng tối thiểu
   },
   maxDiscount: {
     type: Number,
@@ -57,16 +61,11 @@ const promotionSchema = new mongoose.Schema({
     default: false,
     // Cho phép chồng khuyến mãi
   },
-  voucherCode: {
-    type: String,
-    default: null,
-    // Mã voucher liên kết (nếu type là voucher)
-  },
   membershipLevel: {
     type: String,
     enum: ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', null],
     default: null,
-    // Cấp độ thành viên yêu cầu (nếu type là member)
+    // Cấp độ thành viên (nếu type là member)
   },
   minSpending: {
     type: Number,
@@ -83,5 +82,24 @@ const promotionSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+// Trong discount.js, thêm trường usedBy vào discountSchema
+usedBy: [{
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  count: {
+    type: Number,
+    default: 0,
+  },
+}],
 
-module.exports = mongoose.model('Promotion', promotionSchema);
+// Đảm bảo code là bắt buộc nếu type là voucher
+discountSchema.pre('save', function (next) {
+  if (this.type === 'voucher' && !this.code) {
+    return next(new Error('Mã voucher là bắt buộc cho loại voucher'));
+  }
+  next();
+});
+
+module.exports = mongoose.model('Discount', discountSchema);

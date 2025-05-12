@@ -3,7 +3,7 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const Booking = require("../models/booking");
 const Room = require("../models/room");
-const Voucher = require("../models/voucher");
+const Discount = require("../models/discount");
 const User = require("../models/user");
 const axios = require("axios");
 
@@ -87,8 +87,8 @@ router.post("/apply-promotions", async (req, res) => {
     const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
     let totalAmount = room.rentperday * days;
 
-    const vouchers = await Voucher.find({ code: { $in: voucherCodes } });
-    if (!vouchers.length) {
+    const discounts = await Discount.find({ code: { $in: voucherCodes }, type: "voucher", isDeleted: false });
+    if (!discounts.length) {
       return res.status(404).json({ message: "Không tìm thấy mã khuyến mãi hợp lệ" });
     }
 
@@ -99,51 +99,52 @@ router.post("/apply-promotions", async (req, res) => {
     try {
       session.startTransaction();
 
-      for (const voucher of vouchers) {
+      for (const discount of discounts) {
         const now = new Date();
-        if (now < voucher.startDate || now > voucher.endDate) {
+        if (now < discount.startDate || now > discount.endDate) {
           continue;
         }
 
-        if (!voucher.applicableHotels.some((id) => id.equals(bookingData.roomid))) {
+        if (discount.applicableHotels.length > 0 && !discount.applicableHotels.some((id) => id.equals(bookingData.roomid))) {
           continue;
         }
 
-        if (totalAmount < voucher.minBookingAmount) {
+        if (totalAmount < discount.minBookingAmount) {
           continue;
         }
 
-        const userUsage = voucher.usedBy.find((u) => u.userId.equals(user._id));
+        const userUsage = discount.usedBy ? discount.usedBy.find((u) => u.userId.equals(user._id)) : null;
         if (userUsage && userUsage.count >= 1) {
           continue;
         }
 
-        let discount = 0;
-        if (voucher.discountType === "percentage") {
-          discount = (totalAmount * voucher.discountValue) / 100;
-          if (voucher.maxDiscount && discount > voucher.maxDiscount) {
-            discount = voucher.maxDiscount;
+        let discountAmount = 0;
+        if (discount.discountType === "percentage") {
+          discountAmount = (totalAmount * discount.discountValue) / 100;
+          if (discount.maxDiscount && discountAmount > discount.maxDiscount) {
+            discountAmount = discount.maxDiscount;
           }
-        } else if (voucher.discountType === "fixed") {
-          discount = voucher.discountValue;
+        } else if (discount.discountType === "fixed") {
+          discountAmount = discount.discountValue;
         }
 
-        if (!voucher.isStackable && appliedVouchers.length > 0) {
+        if (!discount.isStackable && appliedVouchers.length > 0) {
           continue;
         }
 
-        totalDiscount += discount;
+        totalDiscount += discountAmount;
         appliedVouchers.push({
-          code: voucher.code,
-          discount,
+          code: discount.code,
+          discount: discountAmount,
         });
 
+        if (!discount.usedBy) discount.usedBy = [];
         if (userUsage) {
           userUsage.count += 1;
         } else {
-          voucher.usedBy.push({ userId: user._id, count: 1 });
+          discount.usedBy.push({ userId: user._id, count: 1 });
         }
-        await voucher.save({ session });
+        await discount.save({ session });
       }
 
       totalAmount = Math.max(0, totalAmount - totalDiscount);
@@ -393,7 +394,6 @@ router.post("/momo/verify-payment", async (req, res) => {
       return res.status(400).json({ message: "Order ID không khớp" });
     }
 
-    // Giả lập kiểm tra trạng thái thanh toán với MoMo API
     const momoVerifyResponse = await axios.post("https://api.momo.vn/verify-payment", {
       orderId: momoOrderId,
       requestId: booking.momoRequestId,
@@ -484,7 +484,7 @@ router.get("/:id/payment-deadline", async (req, res) => {
 
         const room = await Room.findById(booking.roomid).session(session);
         if (room) {
-          room.currentbookings = room.currentbookings.filter((b) => b.bookingId.toString() !== id);
+          room.currentbookings = room.currentbookings.filter((b) => b.bookingId && b.bookingId.toString() !== id);
           await room.save({ session });
         }
 
@@ -508,7 +508,9 @@ router.get("/:id/payment-deadline", async (req, res) => {
       expired: false,
     });
   } catch (error) {
-    console.error("Lỗi khi kiểm tra thời gian thanh toán:", error.message, error.stack);
+    console.error("Lỗi khi kiểm tra thời gian thanh toán:", error.message,
+
+ error.stack);
     res.status(500).json({ message: "Lỗi khi kiểm tra thời gian thanh toán", error: error.message });
   }
 });
@@ -747,7 +749,7 @@ router.put("/:id/cancel", async (req, res) => {
 
     const room = await Room.findById(booking.roomid).session(session);
     if (room) {
-      room.currentbookings = room.currentbookings.filter((b) => b.bookingId.toString() !== id);
+      room.currentbookings = room.currentbookings.filter((b) => b.bookingId && b.bookingId.toString() !== id);
       await room.save({ session });
     }
 
@@ -1003,7 +1005,7 @@ router.post("/:id/assign-room", async (req, res) => {
     }
 
     if (oldRoom) {
-      oldRoom.currentbookings = oldRoom.currentbookings.filter((b) => b.bookingId.toString() !== id);
+      oldRoom.currentbookings = oldRoom.currentbookings.filter((b) => b.bookingId && b.bookingId.toString() !== id);
       await oldRoom.save({ session });
     }
 
@@ -1070,7 +1072,7 @@ router.patch("/:id/extend", async (req, res) => {
     }
 
     const isRoomBooked = room.currentbookings.some((b) => {
-      if (b.bookingId.toString() === id) return false;
+      if (b.bookingId && b.bookingId.toString() === id) return false;
       const existingCheckin = new Date(b.checkin);
       const existingCheckout = new Date(b.checkout);
       return (
@@ -1086,7 +1088,7 @@ router.patch("/:id/extend", async (req, res) => {
     booking.checkout = newCheckoutDate;
     await booking.save({ session });
 
-    const bookingInRoom = room.currentbookings.find((b) => b.bookingId.toString() === id);
+    const bookingInRoom = room.currentbookings.find((b) => b.bookingId && b.bookingId.toString() === id);
     if (bookingInRoom) {
       bookingInRoom.checkout = newCheckoutDate;
       await room.save({ session });
