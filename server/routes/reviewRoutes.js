@@ -14,7 +14,6 @@ const adminOrStaff = (req, res, next) => {
   }
 };
 
-
 // POST /api/reviews – Gửi đánh giá mới
 router.post("/", async (req, res) => {
   const { roomId, userName, rating, comment, email } = req.body;
@@ -60,6 +59,7 @@ router.post("/", async (req, res) => {
       rating,
       comment,
       email: email.toLowerCase(),
+      isVisible: true, // Mặc định hiển thị khi tạo
     });
 
     console.log("Saving new review:", newReview);
@@ -76,10 +76,9 @@ router.post("/", async (req, res) => {
   }
 });
 
-
 // GET /api/reviews - Lấy danh sách tất cả đánh giá với bộ lọc và phân trang
 router.get("/", async (req, res) => {
-  const { roomId, email, status, page = 1, limit = 10 } = req.query;
+  const { roomId, email, status, page = 1, limit = 10, isVisible } = req.query;
 
   try {
     const query = {};
@@ -105,6 +104,10 @@ router.get("/", async (req, res) => {
       }
     } else {
       query.isDeleted = false; // Mặc định chỉ lấy các đánh giá chưa bị xóa
+    }
+
+    if (isVisible !== undefined) {
+      query.isVisible = isVisible === 'true';
     }
 
     if (mongoose.connection.readyState !== 1) {
@@ -146,7 +149,7 @@ router.get("/average", async (req, res) => {
       return res.status(400).json({ message: "ID phòng không hợp lệ hoặc thiếu" });
     }
 
-    const reviews = await Review.find({ roomId, isDeleted: false });
+    const reviews = await Review.find({ roomId, isDeleted: false, isVisible: true });
     const totalReviews = reviews.length;
     const average = totalReviews > 0 ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews : 0;
 
@@ -211,7 +214,6 @@ router.patch("/:id/toggle-hidden", protect, adminOrStaff, async (req, res) => {
   }
 });
 
-
 // DELETE /api/reviews/:id - Xóa mềm đánh giá (chỉ admin hoặc staff)
 router.delete("/:id", protect, adminOrStaff, async (req, res) => {
   const { id } = req.params;
@@ -244,6 +246,28 @@ router.delete("/:id", protect, adminOrStaff, async (req, res) => {
   }
 });
 
+// PATCH /api/reviews/:id/toggle-visibility - Bật/tắt hiển thị đánh giá
+router.patch("/:id/toggle-visibility", protect, adminOrStaff, async (req, res) => {
+  const { id } = req.params;
 
+  try {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID đánh giá không hợp lệ" });
+    }
+
+    const review = await Review.findById(id);
+    if (!review) {
+      return res.status(404).json({ message: "Không tìm thấy đánh giá" });
+    }
+
+    review.isVisible = !review.isVisible;
+    await review.save();
+
+    res.status(200).json({ message: "Cập nhật trạng thái hiển thị thành công", review });
+  } catch (error) {
+    console.error("Lỗi khi thay đổi trạng thái hiển thị:", error.message, error.stack);
+    res.status(500).json({ message: "Lỗi khi thay đổi trạng thái hiển thị", error: error.message });
+  }
+});
 
 module.exports = router;

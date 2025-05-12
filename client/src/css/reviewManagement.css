@@ -1,0 +1,357 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.review-management-page {
+  padding: 80px 0;
+  background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ff 100%);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.review-management-header {
+  margin-bottom: 50px;
+  text-align: center;
+  animation: fadeIn 1s ease-in-out;
+}
+
+.review-management-header .title {
+  font-size: 2.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.review-management-header .title span {
+  background: linear-gradient(to right, #4f46e5, #9333ea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.review-management-header .title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(to right, #4f46e5, #9333ea);
+  opacity: 0.7;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.gap-3 {
+  gap: 12px;
+}
+
+.form-control {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus {
+  border-color: #4f46e5;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.form-select {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.form-select:focus {
+  border-color: #4f46e5;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.modern-table {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  animation: slideUp 0.8s ease-out;
+}
+
+.modern-table .table {
+  margin-bottom: 0;
+}
+
+.modern-table thead {
+  background: linear-gradient(to right, #4f46e5, #9333ea);
+  color: #ffffff;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.modern-table th,
+.modern-table td {
+  padding: 16px;
+  font-size: 0.95rem;
+  vertical-align: middle;
+  text-align: center;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modern-table th {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.modern-table tbody tr {
+  transition: background 0.3s ease;
+}
+
+.modern-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.modern-table .btn {
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.modern-table .btn-success {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+.modern-table .btn-success:hover {
+  background-color: #059669;
+  transform: translateY(-1px);
+}
+
+.modern-table .btn-warning {
+  background-color: #f59e0b;
+  color: #ffffff;
+}
+
+.modern-table .btn-warning:hover {
+  background-color: #d97706;
+  transform: translateY(-1px);
+}
+
+.modern-table .btn-info {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+
+.modern-table .btn-info:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.modern-table .btn-danger {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.modern-table .btn-danger:hover {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+}
+
+.modern-table .btn:active {
+  transform: translateY(0);
+}
+
+.pagination {
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.page-item {
+  margin: 0 4px;
+}
+
+.page-link {
+  border-radius: 50%;
+  padding: 8px 12px;
+  color: #1e293b;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.page-link:hover,
+.page-item.active .page-link {
+  background: linear-gradient(to right, #4f46e5, #9333ea);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-5 {
+  margin-top: 3rem;
+}
+
+.modern-alert {
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 1rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  background-color: #fee2e2;
+  color: #dc2626;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1600px;
+  }
+
+  .review-management-header .title {
+    font-size: 3.5rem;
+  }
+}
+
+@media (max-width: 1400px) {
+  .review-management-page {
+    padding: 60px 0;
+  }
+
+  .review-management-header .title {
+    font-size: 2.5rem;
+  }
+
+  .modern-table th,
+  .modern-table td {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 991px) {
+  .review-management-page {
+    padding: 50px 0;
+  }
+
+  .review-management-header .title {
+    font-size: 2.25rem;
+  }
+
+  .modern-table th,
+  .modern-table td {
+    font-size: 0.9rem;
+    padding: 12px;
+  }
+
+  .modern-table .btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  .form-control,
+  .form-select {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .review-management-page {
+    padding: 40px 0;
+  }
+
+  .review-management-header .title {
+    font-size: 2rem;
+  }
+
+  .modern-table th,
+  .modern-table td {
+    font-size: 0.85rem;
+    padding: 10px;
+  }
+
+  .modern-table .btn {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+  }
+
+  .d-flex {
+    flex-direction: column;
+  }
+
+  .gap-3 {
+    gap: 8px;
+  }
+
+  .form-control,
+  .form-select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .review-management-page {
+    padding: 30px 0;
+  }
+
+  .review-management-header .title {
+    font-size: 1.75rem;
+  }
+
+  .modern-table th,
+  .modern-table td {
+    font-size: 0.8rem;
+    padding: 8px;
+  }
+
+  .modern-table .btn {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .review-management-header .title {
+    font-size: 1.5rem;
+  }
+
+  .modern-table th,
+  .modern-table td {
+    font-size: 0.75rem;
+    padding: 6px;
+  }
+
+  .modern-table .btn {
+    padding: 3px 6px;
+    font-size: 0.7rem;
+  }
+}

@@ -61,9 +61,15 @@ function ReviewChart({ roomId }) {
         const averageResponse = await axios.get("/api/reviews/average", { params: { roomId } });
         setAverageRating(averageResponse.data);
 
+
+        // Lấy danh sách đánh giá với isVisible: true
+        const reviewsResponse = await axios.get("/api/reviews", { 
+          params: { roomId, limit: 100, status: "active", isVisible: true } // Thêm isVisible: true
+
         // Lấy danh sách đánh giá
         const reviewsResponse = await axios.get("/api/reviews", { 
           params: { roomId, limit: 100, status: "active" } // Giới hạn 100 đánh giá, chỉ lấy active
+
         });
         const reviews = reviewsResponse.data.reviews || [];
 

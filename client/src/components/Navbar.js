@@ -131,9 +131,30 @@ function Navbar() {
                           <i className="fas fa-bed me-2"></i>Quản Lý Phòng
                         </Link>
                       </li>
+
+                      <li>
+                        <Link className="dropdown-item" to="/admin/createhotel">
+                          <i className="fas fa-hotel me-2"></i>Tạo Khách Sạn Mới
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/admin/hotels">
+                          <i className="fas fa-hotel me-2"></i>Quản Lý Khách Sạn
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/admin/reviews">
+                          <i className="fas fa-star me-2"></i>Quản Lý Đánh Giá
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/admin/vouchers">
+                          <i className="fas fa-ticket-alt me-2"></i>Quản Lý Khuyến Mãi
+
                           <li>
                         <Link className="dropdown-item" to="/admin/discounts">
                           <i className="fas fa-bed me-2"></i>Quản Lý Khuyến Mãi
+
                         </Link>
                       </li>
                     </>
@@ -164,6 +185,8 @@ function Navbar() {
                       </li>
                     </>
                   )}
+
+
                   {/* Thêm liên kết Membership và Profile cho tất cả role */}
                   <li>
                     <Link
@@ -177,6 +200,7 @@ function Navbar() {
                       <i className="fas fa-star me-2"></i>Membership
                     </Link>
                   </li>
+
                   <li>
                     <Link
                       className="dropdown-item"
@@ -238,8 +262,8 @@ function Navbar() {
                 SERVICES
               </Link>
             </li>
-            <li className={`nav-item ${location.pathname === '/rooms' ? 'active' : ''}`}>
-              <Link className="nav-link" to="/rooms" onClick={closeNav}>
+            <li className={`nav-item ${location.pathname === '/hotels' ? 'active' : ''}`}>
+              <Link className="nav-link" to="/hotels" onClick={closeNav}>
                 ROOMS
               </Link>
             </li>

@@ -23,8 +23,14 @@ import AdminDashboard from './components/AdminDashboard';
 import CreateRoomForm from './components/CreateRoomForm';
 import RoomManagement from './components/RoomManagement';
 import EditRoomForm from './components/EditRoomForm';
-import ProfileManagement from './components/ProfileManagement'; 
+import ProfileManagement from './components/ProfileManagement';
+import ReviewManagement from './components/ReviewManagement';
+import VoucherManagement from './components/VoucherManagement';
 import GoogleCallBack from './screens/Auth/GoogleCallBack';
+import CreateHotelForm from './components/CreateHotelForm';
+import HotelManagement from './components/HotelManagement';
+import HotelList from './components/HotelList'; // Thêm import
+import HotelDetail from './components/HotelDetail'; // Thêm import
 
 import Membership from './components/Membership';
 import AdminDiscounts from './components/AdminDiscounts';
@@ -54,6 +60,8 @@ function App() {
         <Routes>
           <Route path="/home" element={<Homescreen />} />
           <Route path="/rooms" element={<Rooms />} />
+          <Route path="/hotels" element={<HotelList />} /> {/* Thêm tuyến danh sách khách sạn */}
+          <Route path="/hotels/:hotelId" element={<HotelDetail />} /> {/* Thêm tuyến chi tiết khách sạn */}
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<ServicesScreen />} />
           <Route path="/book/:roomid" element={<Bookingscreen />} />
@@ -66,18 +74,24 @@ function App() {
           <Route path="/register" element={<Registerscreen />} />
           <Route path="/bookings" element={<HistoryBookings />} />
           <Route path="/auth/google/callback" element={<GoogleCallBack />} />
-          <Route path="/stats" element={<UserStats/>} />
+          <Route path="/stats" element={<UserStats />} />
           <Route path="/bookings" element={<BookingList />} />
           <Route path="/rooms" element={<BookingForm />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/createroom" element={<CreateRoomForm />} />
           <Route path="/admin/rooms" element={<RoomManagement />} />
           <Route path="/admin/editroom/:id" element={<EditRoomForm />} />
+
+          <Route path="/admin/createhotel" element={<CreateHotelForm />} />
+          <Route path="/admin/edithotel/:id" element={<CreateHotelForm />} />
+          <Route path="/admin/hotels" element={<HotelManagement />} />
+
           <Route path="/membership" element={<Membership />} />
           <Route path="/admin/discounts" element={<AdminDiscounts />} />        
 
 
           {/* Route cho StaffManagement, chỉ admin truy cập được */}
+
           <Route
             path="/admin/staffmanagement"
             element={
@@ -94,7 +108,6 @@ function App() {
               </AdminRoute>
             }
           />
-          {/* Route cho UserManagement, cả admin và staff truy cập được */}
           <Route
             path="/admin/users"
             element={
@@ -103,7 +116,22 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* Route cho ProfileManagement, chỉ người dùng đã đăng nhập truy cập được */}
+          <Route
+            path="/admin/reviews"
+            element={
+              <AdminRoute>
+                <ReviewManagement />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/vouchers"
+            element={
+              <AdminRoute>
+                <VoucherManagement />
+              </AdminRoute>
+            }
+          />
           <Route
             path="/profile"
             element={
