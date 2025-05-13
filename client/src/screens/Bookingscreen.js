@@ -30,7 +30,7 @@ const bookingSchema = yup.object().shape({
   paymentMethod: yup
     .string()
     .required("Vui lòng chọn phương thức thanh toán")
-    .oneOf(["cash", "credit_card", "bank_transfer", "mobile_payment"], "Phương thức thanh toán không hợp lệ"),
+    .oneOf(["cash", "credit_card", "bank_transfer", "mobile_payment", "vnpay"], "Phương thức thanh toán không hợp lệ"), // Thêm "vnpay" vào đây
 });
 
 function Bookingscreen() {
@@ -167,33 +167,60 @@ function Bookingscreen() {
       localStorage.setItem("bookedRoomId", roomid);
 
       if (data.paymentMethod === "mobile_payment") {
-    setBookingStatus({
-        type: "info",
-        message: "Đang tạo hóa đơn thanh toán MoMo...",
-    });
-
-    const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
-    const orderInfo = `Thanh toán đặt phòng ${room.name}`;
-    const amount = room.rentperday || 50000;
-
-    const momoResponse = await axios.post("/api/momo/create-payment", {
-        amount: amount.toString(),
-        orderId,
-        orderInfo,
-        bookingId: bookingResponse.data.booking._id,
-    });
-
-    if (momoResponse.data.payUrl) {
         setBookingStatus({
+          type: "info",
+          message: "Đang tạo hóa đơn thanh toán MoMo...",
+        });
+
+        const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
+        const orderInfo = `Thanh toán đặt phòng ${room.name}`;
+        const amount = room.rentperday || 50000;
+
+        const momoResponse = await axios.post("/api/momo/create-payment", {
+          amount: amount.toString(),
+          orderId,
+          orderInfo,
+          bookingId: bookingResponse.data.booking._id,
+        });
+
+        if (momoResponse.data.payUrl) {
+          setBookingStatus({
             type: "success",
             message: "Đang chuyển hướng đến trang thanh toán MoMo. Vui lòng hoàn tất thanh toán.",
+          });
+          setPaymentStatus("pending");
+          window.location.href = momoResponse.data.payUrl;
+        } else {
+          throw new Error(momoResponse.data.message || "Lỗi khi tạo hóa đơn MoMo");
+        }
+      } else if (data.paymentMethod === "vnpay") {
+        setBookingStatus({
+          type: "info",
+          message: "Đang tạo hóa đơn thanh toán VNPay...",
         });
-        setPaymentStatus("pending");
-        window.location.href = momoResponse.data.payUrl;
-    } else {
-        throw new Error(momoResponse.data.message || "Lỗi khi tạo hóa đơn MoMo");
-    }
-} else {
+
+        const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
+        const orderInfo = `Thanh toán đặt phòng ${room.name}`;
+        const amount = room.rentperday || 50000;
+
+        const vnpayResponse = await axios.post("/api/vnpay/create-payment", {
+          amount: amount.toString(),
+          orderId,
+          orderInfo,
+          bookingId: bookingResponse.data.booking._id,
+        });
+
+        if (vnpayResponse.data.payUrl) {
+          setBookingStatus({
+            type: "success",
+            message: "Đang chuyển hướng đến trang thanh toán VNPay. Vui lòng hoàn tất thanh toán.",
+          });
+          setPaymentStatus("pending");
+          window.location.href = vnpayResponse.data.payUrl;
+        } else {
+          throw new Error(vnpayResponse.data.message || "Lỗi khi tạo hóa đơn VNPay");
+        }
+      } else {
         setBookingStatus({
           type: "success",
           message: "Đặt phòng thành công! Vui lòng kiểm tra thông tin thanh toán.",
@@ -219,7 +246,7 @@ function Bookingscreen() {
         }
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Lỗi khi đặt phòng hoặc tạo hóa đơn MoMo. Vui lòng thử lại.";
+      const errorMessage = error.response?.data?.message || "Lỗi khi đặt phòng hoặc tạo hóa đơn thanh toán. Vui lòng thử lại.";
       setBookingStatus({
         type: "error",
         message: errorMessage,
@@ -554,6 +581,7 @@ function Bookingscreen() {
                       <option value="credit_card">Thẻ tín dụng</option>
                       <option value="bank_transfer">Tài khoản ngân hàng</option>
                       <option value="mobile_payment">MoMo</option>
+                      <option value="vnpay">VNPay</option>
                     </select>
                     {errors.paymentMethod && <div className="invalid-feedback">{errors.paymentMethod.message}</div>}
                   </div>
