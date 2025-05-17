@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useForm } from "react-hook-form";
@@ -15,9 +15,7 @@ import { Carousel } from "react-bootstrap";
 const bookingSchema = yup.object().shape({
   name: yup.string().required("Vui lòng nhập họ và tên").min(2, "Tên phải có ít nhất 2 ký tự"),
   email: yup.string().email("Email không hợp lệ").required("Vui lòng nhập email"),
-  phone: yup
-    .string()
-    .required("Vui lòng nhập số điện thoại"),
+  phone: yup.string().required("Vui lòng nhập số điện thoại"),
   checkin: yup.date().required("Vui lòng chọn ngày nhận phòng"),
   checkout: yup
     .date()
@@ -70,28 +68,76 @@ function Bookingscreen() {
   const [newBookingId, setNewBookingId] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-  // Thêm state để lưu bookingDetails
   const [bookingDetails, setBookingDetails] = useState(null);
+  const [pointsEarned, setPointsEarned] = useState(null);
+
+  // Hàm lấy dữ liệu phòng
+  const fetchRoomData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data } = await axios.post("/api/rooms/getroombyid", { roomid });
+      setRoom(data);
+      setValue("roomType", data.type || "");
+      if (data.availabilityStatus !== "available") {
+        await fetchSuggestions(data._id, data.type);
+      }
+    } catch (error) {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [roomid, setValue]);
+
+  // Hàm lấy gợi ý phòng
+  const fetchSuggestions = useCallback(async (roomId, roomType) => {
+    try {
+      setLoadingSuggestions(true);
+      const response = await axios.get("/api/rooms/suggestions", {
+        params: { roomId, roomType },
+      });
+      setSuggestions(response.data);
+    } catch (error) {
+      console.error("Lỗi khi lấy phòng gợi ý:", error);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, []);
+
+  // Hàm tích điểm
+  const accumulatePoints = useCallback(async (bookingId) => {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+      if (!userInfo || !userInfo.token) {
+        return { success: false, message: "Vui lòng đăng nhập để tích điểm" };
+      }
+
+      const config = {
+        headers: { Authorization: `Bearer ${userInfo.token}` },
+      };
+
+      // Kiểm tra trạng thái booking trước khi tích điểm
+      const bookingCheck = await axios.get(`/api/bookings/${bookingId}`, config);
+      if (bookingCheck.data.status !== "confirmed" || bookingCheck.data.paymentStatus !== "paid") {
+        return { success: false, message: "Đặt phòng chưa đủ điều kiện để tích điểm" };
+      }
+
+      const response = await axios.post("/api/bookings/checkout", { bookingId }, config);
+      return {
+        success: true,
+        pointsEarned: response.data.pointsEarned,
+        totalPoints: response.data.totalPoints,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Lỗi khi tích điểm",
+      };
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchRoomData = async () => {
-      try {
-        setLoading(true);
-        const { data } = await axios.post("/api/rooms/getroombyid", { roomid });
-        setRoom(data);
-        setValue("roomType", data.type || "");
-        if (data.availabilityStatus !== "available") {
-          await fetchSuggestions(data._id, data.type);
-        }
-      } catch (error) {
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRoomData();
-  }, [roomid, setValue]);
+  }, [fetchRoomData]);
 
   useEffect(() => {
     let interval;
@@ -124,20 +170,6 @@ function Bookingscreen() {
     return () => clearInterval(interval);
   }, [bookingId, paymentStatus, bankInfo]);
 
-  const fetchSuggestions = async (roomId, roomType) => {
-    try {
-      setLoadingSuggestions(true);
-      const response = await axios.get("/api/rooms/suggestions", {
-        params: { roomId, roomType },
-      });
-      setSuggestions(response.data);
-    } catch (error) {
-      console.error("Lỗi khi lấy phòng gợi ý:", error);
-    } finally {
-      setLoadingSuggestions(false);
-    }
-  };
-
   const onSubmit = async (data) => {
     try {
       setLoading(true);
@@ -146,8 +178,9 @@ function Bookingscreen() {
       setBankInfo(null);
       setTimeRemaining(null);
       setPaymentExpired(false);
+      setPointsEarned(null);
 
-      // Lưu đặt phòng trước
+      // Gửi yêu cầu đặt phòng
       const bookingResponse = await axios.post("/api/bookings/bookroom", {
         roomid,
         ...data,
@@ -155,7 +188,6 @@ function Bookingscreen() {
 
       setBookingId(bookingResponse.data.booking._id);
       setNewBookingId(bookingResponse.data.booking._id);
-      // Lưu bookingDetails để sử dụng trong CancelConfirmationModal
       setBookingDetails({
         roomName: room.name,
         checkin: data.checkin,
@@ -167,33 +199,33 @@ function Bookingscreen() {
       localStorage.setItem("bookedRoomId", roomid);
 
       if (data.paymentMethod === "mobile_payment") {
-    setBookingStatus({
-        type: "info",
-        message: "Đang tạo hóa đơn thanh toán MoMo...",
-    });
-
-    const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
-    const orderInfo = `Thanh toán đặt phòng ${room.name}`;
-    const amount = room.rentperday || 50000;
-
-    const momoResponse = await axios.post("/api/momo/create-payment", {
-        amount: amount.toString(),
-        orderId,
-        orderInfo,
-        bookingId: bookingResponse.data.booking._id,
-    });
-
-    if (momoResponse.data.payUrl) {
         setBookingStatus({
+          type: "info",
+          message: "Đang tạo hóa đơn thanh toán MoMo...",
+        });
+
+        const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
+        const orderInfo = `Thanh toán đặt phòng ${room.name}`;
+        const amount = room.rentperday || 50000;
+
+        const momoResponse = await axios.post("/api/momo/create-payment", {
+          amount: amount.toString(),
+          orderId,
+          orderInfo,
+          bookingId: bookingResponse.data.booking._id,
+        });
+
+        if (momoResponse.data.payUrl) {
+          setBookingStatus({
             type: "success",
             message: "Đang chuyển hướng đến trang thanh toán MoMo. Vui lòng hoàn tất thanh toán.",
-        });
-        setPaymentStatus("pending");
-        window.location.href = momoResponse.data.payUrl;
-    } else {
-        throw new Error(momoResponse.data.message || "Lỗi khi tạo hóa đơn MoMo");
-    }
-} else {
+          });
+          setPaymentStatus("pending");
+          window.location.href = momoResponse.data.payUrl;
+        } else {
+          throw new Error(momoResponse.data.message || "Lỗi khi tạo hóa đơn MoMo");
+        }
+      } else {
         setBookingStatus({
           type: "success",
           message: "Đặt phòng thành công! Vui lòng kiểm tra thông tin thanh toán.",
@@ -204,12 +236,33 @@ function Bookingscreen() {
           setBankInfo(bookingResponse.data.paymentResult.bankInfo);
         }
 
+        // Kiểm tra và tích điểm nếu thanh toán hoàn tất
         if (data.paymentMethod !== "bank_transfer") {
           const bookingCheck = await axios.get(`/api/bookings/${bookingResponse.data.booking._id}`);
           if (bookingCheck.data.status === "confirmed" && bookingCheck.data.paymentStatus === "paid") {
-            setTimeout(() => {
-              navigate(`/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingResponse.data.booking._id}`);
-            }, 5000);
+            const pointsResult = await accumulatePoints(bookingResponse.data.booking._id);
+            if (pointsResult.success) {
+              setPointsEarned(pointsResult.pointsEarned);
+              setBookingStatus({
+                type: "success",
+                message: `Thanh toán thành công! Bạn đã nhận được ${pointsResult.pointsEarned} điểm. Đang chuyển hướng đến trang đánh giá...`,
+              });
+              setTimeout(() => {
+                navigate(
+                  `/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingResponse.data.booking._id}`
+                );
+              }, 5000);
+            } else {
+              setBookingStatus({
+                type: "warning",
+                message: `Thanh toán thành công, nhưng không thể tích điểm: ${pointsResult.message}. Đang chuyển hướng đến trang đánh giá...`,
+              });
+              setTimeout(() => {
+                navigate(
+                  `/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingResponse.data.booking._id}`
+                );
+              }, 5000);
+            }
           } else {
             setBookingStatus({
               type: "warning",
@@ -234,20 +287,32 @@ function Bookingscreen() {
     if (!bookingId) return;
     try {
       setLoading(true);
-      await axios.put(`/api/bookings/${bookingId}/confirm`);
+      const response = await axios.put(`/api/bookings/${bookingId}/confirm`);
       setPaymentStatus("paid");
-      setBookingStatus({
-        type: "success",
-        message: "Thanh toán thành công! Đang chuyển hướng đến trang đánh giá...",
-      });
+
+      // Tích điểm sau khi xác nhận thanh toán
+      const pointsResult = await accumulatePoints(bookingId);
+      if (pointsResult.success) {
+        setPointsEarned(pointsResult.pointsEarned);
+        setBookingStatus({
+          type: "success",
+          message: `Thanh toán thành công! Bạn đã nhận được ${pointsResult.pointsEarned} điểm. Đang chuyển hướng đến trang đánh giá...`,
+        });
+      } else {
+        setBookingStatus({
+          type: "warning",
+          message: `Thanh toán thành công, nhưng không thể tích điểm: ${pointsResult.message}. Đang chuyển hướng đến trang đánh giá...`,
+        });
+      }
+
       setTimeout(() => {
-        navigate(`/testimonial?roomId=${roomid}&showReviewForm=true`);
-      }, 2000);
+        navigate(`/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingId}`);
+      }, 3000);
     } catch (error) {
       console.error("Lỗi khi giả lập thanh toán:", error);
       setBookingStatus({
         type: "error",
-        message: "Lỗi khi giả lập thanh toán. Vui lòng thử lại.",
+        message: error.response?.data?.message || "Lỗi khi giả lập thanh toán. Vui lòng thử lại.",
       });
     } finally {
       setLoading(false);
@@ -255,18 +320,32 @@ function Bookingscreen() {
   };
 
   const handleCheckPaymentStatus = async () => {
+    if (!bookingId) return;
     try {
       setLoading(true);
       const response = await axios.get(`/api/bookings/${bookingId}`);
-      if (response.data.paymentStatus === "paid") {
-        setPaymentStatus("paid");
-        setBookingStatus({
-          type: "success",
-          message: "Thanh toán đã được xác nhận! Đang chuyển hướng đến trang đánh giá...",
-        });
-        setTimeout(() => {
-          navigate(`/testimonial?roomId=${roomid}&showReviewForm=true`);
-        }, 2000);
+      setPaymentStatus(response.data.paymentStatus);
+
+      if (response.data.paymentStatus === "paid" && response.data.status === "confirmed") {
+        const pointsResult = await accumulatePoints(bookingId);
+        if (pointsResult.success) {
+          setPointsEarned(pointsResult.pointsEarned);
+          setBookingStatus({
+            type: "success",
+            message: `Thanh toán đã được xác nhận! Bạn đã nhận được ${pointsResult.pointsEarned} điểm. Đang chuyển hướng đến trang đánh giá...`,
+          });
+          setTimeout(() => {
+            navigate(`/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingId}`);
+          }, 3000);
+        } else {
+          setBookingStatus({
+            type: "warning",
+            message: `Thanh toán đã được xác nhận, nhưng không thể tích điểm: ${pointsResult.message}. Đang chuyển hướng đến trang đánh giá...`,
+          });
+          setTimeout(() => {
+            navigate(`/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingId}`);
+          }, 3000);
+        }
       } else {
         setBookingStatus({
           type: "info",
@@ -276,7 +355,7 @@ function Bookingscreen() {
     } catch (error) {
       setBookingStatus({
         type: "error",
-        message: "Lỗi khi kiểm tra trạng thái thanh toán. Vui lòng thử lại.",
+        message: error.response?.data?.message || "Lỗi khi kiểm tra trạng thái thanh toán. Vui lòng thử lại.",
       });
     } finally {
       setLoading(false);
@@ -350,6 +429,16 @@ function Bookingscreen() {
     );
   };
 
+  const renderPointsEarned = () => {
+    if (!pointsEarned) return null;
+    return (
+      <div className="points-earned mt-3 p-3 bg-success text-white rounded">
+        <h5>Chúc mừng!</h5>
+        <p>Bạn đã nhận được <strong>{pointsEarned} điểm</strong> cho lần đặt phòng này.</p>
+      </div>
+    );
+  };
+
   const handleOpenCancelModal = () => {
     setShowCancelModal(true);
   };
@@ -361,14 +450,14 @@ function Bookingscreen() {
       message: "Đã hủy đặt phòng thành công.",
     });
     setNewBookingId(null);
-    setBookingDetails(null); // Reset bookingDetails sau khi hủy
+    setBookingDetails(null);
   };
 
   const handleCloseAlert = () => {
     setBookingStatus(null);
   };
 
-  return (
+ return (
     <div className="booking-page">
       <div className="container">
         <div className="booking-header text-center">
@@ -378,253 +467,216 @@ function Bookingscreen() {
             <span className="line"></span>
           </h2>
           <h1 className="title">
-            Đặt một <span>PHÒNG SANG TRỌNG</span>
+            Trải nghiệm <span>NGHỈ DƯỠNG CAO CẤP</span>
           </h1>
         </div>
 
-        <AlertMessage
-          type={bookingStatus?.type}
-          message={bookingStatus?.message}
-          onClose={handleCloseAlert}
-        />
+        {bookingStatus && (
+          <AlertMessage
+            type={bookingStatus?.type}
+            message={bookingStatus?.message}
+            onClose={handleCloseAlert}
+          />
+        )}
+
+        {renderPointsEarned()}
 
         {loading ? (
           <Loader loading={loading} />
         ) : error ? (
-          <h1 className="text-center text-danger">Lỗi khi tải chi tiết phòng...</h1>
-        ) : room ? (
-          <div className="row align-items-center">
+          <div className="alert alert-danger text-center">Lỗi khi tải dữ liệu phòng.</div>
+        ) : (
+          <div className="row">
             <div className="col-md-6">
-              <div className="booking-images">
-                <div className="row">
-                  {room.imageurls.slice(0, 4).map((url, index) => (
-                    <div key={index} className="col-6 mb-3">
-                      <div className="image-container">
-                        <img
-                          src={url || `https://via.placeholder.com/300x200?text=Image+${index + 1}`}
-                          alt={`Phòng ${index + 1}`}
-                          className="img-fluid room-image"
-                          onError={(e) => {
-                            e.target.src = `https://via.placeholder.com/300x200?text=Image+${index + 1}`;
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <div className="booking-images-vertical">
+  {room.imageurls?.slice(0, 4).map((url, idx) => (
+    <div key={idx} className="image-wrapper-vertical mb-3">
+      <img
+        src={url}
+        alt={`Phòng ${idx + 1}`}
+        className="img-fluid vertical-room-image"
+      />
+    </div>
+  ))}
+</div>
             </div>
-
             <div className="col-md-6">
-              {bookingStatus && (
-                <div className={`alert ${bookingStatus.type === "success" ? "alert-success" : bookingStatus.type === "info" ? "alert-info" : "alert-danger"}`}>
-                  {bookingStatus.message}
-                  {bookingStatus.type === "info" && (
-                    <div className="spinner-border spinner-border-sm ms-2" role="status">
-                      <span className="visually-hidden">Đang xử lý...</span>
-                    </div>
-                  )}
-                </div>
-              )}
               {renderPaymentStatus()}
               {renderBankInfo()}
               <div className="booking-screen-wrapper">
-                <form className="booking-screen" onSubmit={handleSubmit(onSubmit)}>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <input
-                          type="text"
-                          className={`form-control ${errors.name ? "is-invalid" : ""}`}
-                          {...register("name")}
-                          placeholder="Họ và tên"
-                        />
-                        {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <input
-                          type="email"
-                          className={`form-control ${errors.email ? "is-invalid" : ""}`}
-                          {...register("email")}
-                          placeholder="Email của bạn"
-                        />
-                        {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <input
-                          type="tel"
-                          className={`form-control ${errors.phone ? "is-invalid" : ""}`}
-                          {...register("phone")}
-                          placeholder="Số điện thoại"
-                        />
-                        {errors.phone && <div className="invalid-feedback">{errors.phone.message}</div>}
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <input
-                          type="date"
-                          className={`form-control ${errors.checkin ? "is-invalid" : ""}`}
-                          {...register("checkin")}
-                          placeholder="Ngày nhận phòng"
-                          min={new Date().toISOString().split("T")[0]}
-                        />
-                        {errors.checkin && <div className="invalid-feedback">{errors.checkin.message}</div>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <input
-                          type="date"
-                          className={`form-control ${errors.checkout ? "is-invalid" : ""}`}
-                          {...register("checkout")}
-                          placeholder="Ngày trả phòng"
-                        />
-                        {errors.checkout && <div className="invalid-feedback">{errors.checkout.message}</div>}
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <select
-                          className={`form-control ${errors.adults ? "is-invalid" : ""}`}
-                          {...register("adults")}
-                        >
-                          <option value="" disabled>
-                            Chọn số người lớn
-                          </option>
-                          {[1, 2, 3, 4].map((num) => (
-                            <option key={num} value={num}>
-                              {num} Người lớn
-                            </option>
-                          ))}
-                        </select>
-                        {errors.adults && <div className="invalid-feedback">{errors.adults.message}</div>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <select
-                          className={`form-control ${errors.children ? "is-invalid" : ""}`}
-                          {...register("children")}
-                        >
-                          <option value="" disabled>
-                            Chọn số trẻ em
-                          </option>
-                          {[0, 1, 2, 3].map((num) => (
-                            <option key={num} value={num}>
-                              {num} Trẻ em
-                            </option>
-                          ))}
-                        </select>
-                        {errors.children && <div className="invalid-feedback">{errors.children.message}</div>}
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <select
-                          className={`form-control ${errors.roomType ? "is-invalid" : ""}`}
-                          {...register("roomType")}
-                        >
-                          <option value="" disabled>
-                            Chọn loại phòng
-                          </option>
-                          <option value={room.type}>{room.type}</option>
-                        </select>
-                        {errors.roomType && <div className="invalid-feedback">{errors.roomType.message}</div>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="paymentMethod">Phương thức thanh toán</label>
-                    <select
-                      className={`form-control ${errors.paymentMethod ? "is-invalid" : ""}`}
-                      {...register("paymentMethod")}
-                    >
-                      <option value="cash">Tiền mặt</option>
-                      <option value="credit_card">Thẻ tín dụng</option>
-                      <option value="bank_transfer">Tài khoản ngân hàng</option>
-                      <option value="mobile_payment">MoMo</option>
-                    </select>
-                    {errors.paymentMethod && <div className="invalid-feedback">{errors.paymentMethod.message}</div>}
-                  </div>
-                  <div className="form-group">
-                    <textarea
-                      className={`form-control ${errors.specialRequest ? "is-invalid" : ""}`}
-                      {...register("specialRequest")}
-                      placeholder="Yêu cầu đặc biệt"
-                      rows="3"
-                    />
-                    {errors.specialRequest && <div className="invalid-feedback">{errors.specialRequest.message}</div>}
-                  </div>
-                  <button
-                    type="submit"
-                    className="btn btn-book-now"
-                    disabled={loading || room.availabilityStatus !== "available"}
-                  >
-                    {loading ? "Đang xử lý..." : "ĐẶT PHÒNG NGAY"}
-                  </button>
-                  {bookingStatus?.type === "success" && newBookingId && (
-                    <button
-                      type="button"
-                      className="btn btn-danger mt-2"
-                      onClick={handleOpenCancelModal}
-                    >
-                      Hủy Đặt Phòng
+                <h3 className="mb-4">Thông tin đặt phòng</h3>
+              <form onSubmit={handleSubmit(onSubmit)}>
+  <div className="mb-3">
+    <label htmlFor="name" className="form-label">Họ và tên</label>
+    <input
+      type="text"
+      className={`form-control ${errors.name ? "is-invalid" : ""}`}
+      id="name"
+      placeholder="Nhập họ và tên"
+      {...register("name")}
+    />
+    {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
+  </div>
+
+  <div className="mb-3">
+    <label htmlFor="email" className="form-label">Email</label>
+    <input
+      type="email"
+      className={`form-control ${errors.email ? "is-invalid" : ""}`}
+      id="email"
+      placeholder="Nhập email của bạn"
+      {...register("email")}
+    />
+    {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
+  </div>
+
+  <div className="mb-3">
+    <label htmlFor="phone" className="form-label">Số điện thoại</label>
+    <input
+      type="text"
+      className={`form-control ${errors.phone ? "is-invalid" : ""}`}
+      id="phone"
+      placeholder="Nhập số điện thoại"
+      {...register("phone")}
+    />
+    {errors.phone && <div className="invalid-feedback">{errors.phone.message}</div>}
+  </div>
+
+  <div className="mb-3">
+    <label htmlFor="checkin" className="form-label">Ngày nhận phòng</label>
+    <input
+      type="date"
+      className={`form-control ${errors.checkin ? "is-invalid" : ""}`}
+      id="checkin"
+      placeholder="dd/mm/yyyy"
+      {...register("checkin")}
+    />
+    {errors.checkin && <div className="invalid-feedback">{errors.checkin.message}</div>}
+  </div>
+
+  <div className="mb-3">
+    <label htmlFor="checkout" className="form-label">Ngày trả phòng</label>
+    <input
+      type="date"
+      className={`form-control ${errors.checkout ? "is-invalid" : ""}`}
+      id="checkout"
+      placeholder="dd/mm/yyyy"
+      {...register("checkout")}
+    />
+    {errors.checkout && <div className="invalid-feedback">{errors.checkout.message}</div>}
+  </div>
+
+  <div className="mb-3">
+    <label htmlFor="adults" className="form-label">Số người lớn</label>
+    <input
+      type="number"
+      className={`form-control ${errors.adults ? "is-invalid" : ""}`}
+      id="adults"
+      placeholder="Nhập số người lớn"
+      min="1"
+      {...register("adults")}
+    />
+    {errors.adults && <div className="invalid-feedback">{errors.adults.message}</div>}
+  </div>
+
+  <div className="mb-3">
+    <label htmlFor="children" className="form-label">Số trẻ em</label>
+    <input
+      type="number"
+      className={`form-control ${errors.children ? "is-invalid" : ""}`}
+      id="children"
+      placeholder="Nhập số trẻ em"
+      min="0"
+      {...register("children")}
+    />
+    {errors.children && <div className="invalid-feedback">{errors.children.message}</div>}
+  </div>
+
+  <div className="mb-3">
+    <label htmlFor="roomType" className="form-label">Loại phòng</label>
+    <select
+      className={`form-control ${errors.roomType ? "is-invalid" : ""}`}
+      id="roomType"
+      {...register("roomType")}
+    >
+      <option value="">Chọn loại phòng</option>
+      <option value="standard">Standard</option>
+      <option value="deluxe">Deluxe</option>
+      <option value="suite">Suite</option>
+    </select>
+    {errors.roomType && <div className="invalid-feedback">{errors.roomType.message}</div>}
+  </div>
+
+  <div className="mb-3">
+    <label htmlFor="paymentMethod" className="form-label">Phương thức thanh toán</label>
+    <select
+      className={`form-control ${errors.paymentMethod ? "is-invalid" : ""}`}
+      id="paymentMethod"
+      {...register("paymentMethod")}
+    >
+      <option value="cash">Tiền mặt</option>
+      <option value="credit_card">Thẻ tín dụng</option>
+      <option value="bank_transfer">Chuyển khoản ngân hàng</option>
+      <option value="mobile_payment">Thanh toán MoMo</option>
+    </select>
+    {errors.paymentMethod && <div className="invalid-feedback">{errors.paymentMethod.message}</div>}
+  </div>
+
+  <div className="mb-3">
+    <label htmlFor="specialRequest" className="form-label">Yêu cầu đặc biệt</label>
+    <textarea
+      className="form-control"
+      id="specialRequest"
+      placeholder="Ghi chú thêm (nếu có)"
+      rows="4"
+      {...register("specialRequest")}
+    ></textarea>
+  </div>
+
+  <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+    {loading ? "Đang xử lý..." : "Đặt phòng ngay"}
+  </button>
+</form>
+
+                {newBookingId && (
+                  <div className="mt-3 text-end">
+                    <button className="btn btn-danger" onClick={handleOpenCancelModal} disabled={paymentStatus === "paid"}>
+                      Hủy đặt phòng
                     </button>
-                  )}
-                </form>
+                  </div>
+                )}
               </div>
-              {room.availabilityStatus !== "available" && (
-                <div className="suggestions-container">
-                  <h5>Phòng tương tự</h5>
-                  {loadingSuggestions ? (
-                    <p>Đang tải phòng gợi ý...</p>
-                  ) : suggestions.length > 0 ? (
-                    <Carousel indicators={false} controls={true} interval={null}>
-                      {suggestions.reduce((acc, suggestion, index) => {
-                        if (index % 2 === 0) {
-                          acc.push(
-                            <Carousel.Item key={index}>
-                              <div className="d-flex justify-content-center">
-                                <SuggestionCard room={suggestions[index]} />
-                                {suggestions[index + 1] && (
-                                  <SuggestionCard room={suggestions[index + 1]} />
-                                )}
-                              </div>
-                            </Carousel.Item>
-                          );
-                        }
-                        return acc;
-                      }, [])}
-                    </Carousel>
-                  ) : (
-                    <p>Không tìm thấy phòng tương tự.</p>
-                  )}
-                </div>
-              )}
             </div>
           </div>
-        ) : (
-          <h1 className="text-center text-danger">Không tìm thấy phòng</h1>
         )}
+
+        {room && room.availabilityStatus !== "available" && (
+          <div className="suggestions-container">
+            <h5>Các phòng tương tự có sẵn</h5>
+            {loadingSuggestions ? (
+              <Loader loading={loadingSuggestions} />
+            ) : suggestions.length > 0 ? (
+              <div className="row">
+                {suggestions.map((sug) => (
+                  <div className="col-md-4 mb-3" key={sug._id}>
+                    <SuggestionCard room={sug} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>Không có phòng tương tự khả dụng vào lúc này.</p>
+            )}
+          </div>
+        )}
+
+        <CancelConfirmationModal
+          show={showCancelModal}
+          onHide={() => setShowCancelModal(false)}
+          bookingId={newBookingId}
+          onConfirmSuccess={handleConfirmSuccess}
+          bookingDetails={bookingDetails}
+        />
       </div>
-      <CancelConfirmationModal
-        show={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
-        onConfirmSuccess={handleConfirmSuccess}
-        bookingId={newBookingId}
-        bookingDetails={bookingDetails} // Sử dụng bookingDetails thay vì bookingData
-      />
     </div>
   );
 }

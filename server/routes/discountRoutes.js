@@ -188,7 +188,7 @@ router.get('/accumulated', protect, async (req, res) => {
     }
 
     const transactions = await Transaction.find({ userId: req.user.id, status: 'completed' });
-    const totalSpending = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+    const totalSpending = transactions.reduce((sum, transaction) => sum + (transaction.amount || 0), 0);
 
     const now = new Date();
     const discounts = await Discount.find({
@@ -199,7 +199,22 @@ router.get('/accumulated', protect, async (req, res) => {
       endDate: { $gte: now },
     }).populate('applicableHotels', 'name');
 
-    res.status(200).json({ totalSpending, discounts });
+    res.status(200).json({
+      totalSpending,
+      discounts: discounts.map(discount => ({
+        id: discount._id,
+        name: discount.name,
+        code: discount.code,
+        description: discount.description,
+        discountType: discount.discountType,
+        discountValue: discount.discountValue,
+        minBookingAmount: discount.minBookingAmount,
+        maxDiscount: discount.maxDiscount,
+        applicableHotels: discount.applicableHotels,
+        startDate: discount.startDate,
+        endDate: discount.endDate,
+      })),
+    });
   } catch (error) {
     console.error('Lỗi khi lấy khuyến mãi theo chi tiêu tích lũy:', error.message, error.stack);
     res.status(500).json({ message: 'Lỗi khi lấy khuyến mãi theo chi tiêu tích lũy', error: error.message });

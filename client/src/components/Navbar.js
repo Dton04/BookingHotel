@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import '../css/navbar.css';
+import axios from 'axios';
 
 // Import icons
 import facebookIcon from '../assets/icons/facebook-icon.jpg';
@@ -10,26 +11,35 @@ import youtubeIcon from '../assets/icons/youtube-icon.jpg';
 
 function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [isNavOpen, setNavOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const [points, setPoints] = useState(0);
 
-  const checkLoginStatus = () => {
+  const checkLoginStatus = async () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
     console.log('User Info from localStorage:', userInfo);
-    if (userInfo && userInfo.name) {
+    if (userInfo && userInfo.name && userInfo.token) {
       setIsLoggedIn(true);
       setUser(userInfo);
+      // Fetch user points
+      try {
+        const config = {
+          headers: { Authorization: `Bearer ${userInfo.token}` },
+        };
+        const response = await axios.get('/api/users/points', config);
+        setPoints(response.data.points);
+      } catch (error) {
+        console.error('Error fetching points:', error);
+      }
     } else {
       setIsLoggedIn(false);
       setUser(null);
+      setPoints(0);
     }
   };
-
-  useEffect(() => {
-    checkLoginStatus();
-  }, []);
 
   useEffect(() => {
     checkLoginStatus();
@@ -56,7 +66,14 @@ function Navbar() {
     localStorage.removeItem('userInfo');
     setIsLoggedIn(false);
     setUser(null);
-    window.location.href = '/home';
+    setPoints(0);
+    navigate('/home');
+  };
+
+  const handlePointsClick = () => {
+    closeDropdown();
+    closeNav();
+    navigate('/points');
   };
 
   return (
@@ -94,58 +111,64 @@ function Navbar() {
                   type="button"
                   id="dropdownMenuButton1"
                   data-bs-toggle="dropdown"
-                  aria-expanded="false"
+                  aria-expanded={isDropdownOpen}
+                  onClick={toggleDropdown}
                 >
-                  {user.name}
+                  {user.name} ({points} points)
                 </button>
                 <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                   {user.role === 'admin' ? (
                     <>
                       <li>
-                        <Link className="dropdown-item" to="/admin/dashboard">
+                        <Link className="dropdown-item" to="/admin/dashboard" onClick={closeNav}>
                           <i className="fas fa-tachometer-alt me-2"></i>Dashboard
                         </Link>
                       </li>
                       <li>
-                        <Link className="dropdown-item" to="/admin/staffmanagement">
+                        <Link className="dropdown-item" to="/admin/staffmanagement" onClick={closeNav}>
                           <i className="fas fa-users-cog me-2"></i>Staff Management
                         </Link>
                       </li>
                       <li>
-                        <Link className="dropdown-item" to="/admin/bookings">
+                        <Link className="dropdown-item" to="/admin/bookings" onClick={closeNav}>
                           <i className="fas fa-book me-2"></i>All Bookings
                         </Link>
                       </li>
                       <li>
-                        <Link className="dropdown-item" to="/admin/users">
+                        <Link className="dropdown-item" to="/admin/users" onClick={closeNav}>
                           <i className="fas fa-user-cog me-2"></i>User Management
                         </Link>
                       </li>
                       <li>
-                        <Link className="dropdown-item" to="/admin/createroom">
-                          <i className="fas fa-plus me-2"></i>Tạo Phòng Mới
+                        <Link className="dropdown-item" to="/admin/hotels" onClick={closeNav}>
+                          <i className="fas fa-hotel me-2"></i>Hotel Management
                         </Link>
                       </li>
                       <li>
-                        <Link className="dropdown-item" to="/admin/rooms">
-                          <i className="fas fa-bed me-2"></i>Quản Lý Phòng
+                        <Link className="dropdown-item" to="/admin/createroom" onClick={closeNav}>
+                          <i className="fas fa-plus me-2"></i>Create Room
                         </Link>
                       </li>
-                          <li>
-                        <Link className="dropdown-item" to="/admin/discounts">
-                          <i className="fas fa-bed me-2"></i>Quản Lý Khuyến Mãi
+                      <li>
+                        <Link className="dropdown-item" to="/admin/rooms" onClick={closeNav}>
+                          <i className="fas fa-bed me-2"></i>Room Management
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/admin/discounts" onClick={closeNav}>
+                          <i className="fas fa-tags me-2"></i>Discount Management
                         </Link>
                       </li>
                     </>
                   ) : user.role === 'staff' ? (
                     <>
                       <li>
-                        <Link className="dropdown-item" to="/admin/users">
+                        <Link className="dropdown-item" to="/admin/users" onClick={closeNav}>
                           <i className="fas fa-user-cog me-2"></i>User Management
                         </Link>
                       </li>
                       <li>
-                        <Link className="dropdown-item" to="/stats">
+                        <Link className="dropdown-item" to="/stats" onClick={closeNav}>
                           Thống Kê
                         </Link>
                       </li>
@@ -153,40 +176,35 @@ function Navbar() {
                   ) : (
                     <>
                       <li>
-                        <Link className="dropdown-item" to="/bookings">
+                        <Link className="dropdown-item" to="/bookings" onClick={closeNav}>
                           Bookings
                         </Link>
                       </li>
                       <li>
-                        <Link className="dropdown-item" to="/stats">
+                        <Link className="dropdown-item" to="/stats" onClick={closeNav}>
                           Thống Kê
                         </Link>
                       </li>
                     </>
                   )}
-                  {/* Thêm liên kết Membership và Profile cho tất cả role */}
                   <li>
-                    <Link
-                      className="dropdown-item"
-                      to="/membership"
-                      onClick={() => {
-                        closeDropdown();
-                        closeNav();
-                      }}
-                    >
+                    <Link className="dropdown-item" to="/rewards" onClick={closeNav}>
+                      <i className="fa fa-gift me-2"></i>Ưu đãi
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/membership" onClick={closeNav}>
                       <i className="fas fa-star me-2"></i>Membership
                     </Link>
                   </li>
                   <li>
-                    <Link
-                      className="dropdown-item"
-                      to="/profile"
-                      onClick={() => {
-                        closeDropdown();
-                        closeNav();
-                      }}
-                    >
-                      <i className="fas fa-user me-2"></i>Profile
+                    <button className="dropdown-item" onClick={handlePointsClick}>
+                      <i className="fas fa-coins me-2"></i>Điểm thưởng ({points})
+                    </button>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/profile" onClick={closeNav}>
+                      <i className="fas fa-user me-2"></i>Hồ sơ
                     </Link>
                   </li>
                   <li>

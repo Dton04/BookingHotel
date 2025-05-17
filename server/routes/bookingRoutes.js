@@ -4,8 +4,10 @@ const mongoose = require("mongoose");
 const Booking = require("../models/booking");
 const Room = require("../models/room");
 const Discount = require("../models/discount");
+const Transaction = require('../models/transaction');
 const User = require("../models/user");
 const axios = require("axios");
+const { protect } = require('../middleware/auth');
 
 // Giả lập hàm xử lý thanh toán qua tài khoản ngân hàng
 const processBankPayment = async (bookingData, session) => {
@@ -56,7 +58,7 @@ router.post("/apply-promotions", async (req, res) => {
     }
 
     if (!mongoose.Types.ObjectId.isValid(bookingData.roomid) || !mongoose.Types.ObjectId.isValid(bookingData.bookingId)) {
-      return res.status(400).json({ message: "ID phòng hoặc ID đặt phòng không hợp lệ" });
+      return res.status(400).json ({ message: "ID phòng hoặc ID đặt phòng không hợp lệ" });
     }
 
     const booking = await Booking.findById(bookingData.bookingId).lean();
@@ -170,6 +172,97 @@ router.post("/apply-promotions", async (req, res) => {
   } catch (error) {
     console.error("Lỗi khi áp dụng khuyến mãi:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi áp dụng khuyến mãi", error: error.message });
+  }
+});
+
+// POST /api/bookings/checkout - Tạo giao dịch mới và tích điểm
+router.post('/checkout', protect, async (req, res) => {
+  const { bookingId } = req.body;
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    // Kiểm tra kết nối database
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('Kết nối cơ sở dữ liệu chưa sẵn sàng');
+    }
+
+    // Kiểm tra bookingId hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      throw new Error('ID đặt phòng không hợp lệ');
+    }
+
+    // Kiểm tra giao dịch đã tồn tại
+    const existingTransaction = await Transaction.findOne({ bookingId }).session(session);
+    if (existingTransaction) {
+      throw new Error('Giao dịch cho đặt phòng này đã được tạo trước đó');
+    }
+
+    // Tìm booking
+    const booking = await Booking.findById(bookingId)
+      .populate('roomid')
+      .session(session);
+    if (!booking) {
+      throw new Error('Không tìm thấy đặt phòng');
+    }
+
+    // Kiểm tra trạng thái booking
+    if (booking.status !== 'confirmed' || booking.paymentStatus !== 'paid') {
+      throw new Error('Đặt phòng chưa được xác nhận hoặc chưa thanh toán, không thể tích điểm');
+    }
+
+    // Tìm user
+    const user = await User.findOne({ email: booking.email.toLowerCase() })
+      .session(session);
+    if (!user) {
+      throw new Error('Không tìm thấy người dùng liên quan đến đặt phòng');
+    }
+
+    // Kiểm tra quyền truy cập
+    if (req.user._id.toString() !== user._id.toString() && !['admin', 'staff'].includes(req.user.role)) {
+      throw new Error('Không có quyền tích điểm cho người dùng này');
+    }
+
+    // Tính số tiền booking
+    const checkinDate = new Date(booking.checkin);
+    const checkoutDate = new Date(booking.checkout);
+    const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
+    const totalAmount = booking.roomid.rentperday * days - (booking.voucherDiscount || 0);
+
+    // Tính điểm (1 điểm cho mỗi 100,000 VND)
+    const pointsEarned = Math.floor(totalAmount * 0.01);
+
+    // Tạo giao dịch
+    const transaction = new Transaction({
+      userId: user._id,
+      bookingId: booking._id,
+      amount: totalAmount,
+      points: pointsEarned,
+      type: 'earn',
+      status: 'completed',
+    });
+    await transaction.save({ session });
+
+    // Cập nhật điểm cho user
+    user.points = (user.points || 0) + pointsEarned;
+    await user.save({ session });
+
+    // Commit transaction
+    await session.commitTransaction();
+
+    res.status(201).json({
+      message: 'Tích điểm thành công',
+      transaction,
+      pointsEarned,
+      totalPoints: user.points,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Lỗi khi tích điểm:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi tích điểm', error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
@@ -405,6 +498,45 @@ router.post("/momo/verify-payment", async (req, res) => {
       booking.momoTransactionId = momoVerifyResponse.data.transactionId;
       await booking.save();
 
+      // Tự động tích điểm sau khi thanh toán MoMo thành công
+      try {
+        const user = await User.findOne({ email: booking.email.toLowerCase() });
+        if (user) {
+          const session = await mongoose.startSession();
+          try {
+            session.startTransaction();
+            const checkinDate = new Date(booking.checkin);
+            const checkoutDate = new Date(booking.checkout);
+            const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
+            const room = await Room.findById(booking.roomid).session(session);
+            const totalAmount = room.rentperday * days - (booking.voucherDiscount || 0);
+            const pointsEarned = Math.floor(totalAmount / 100000);
+
+            const transaction = new Transaction({
+              userId: user._id,
+              bookingId: booking._id,
+              amount: totalAmount,
+              points: pointsEarned,
+              type: 'earn',
+              status: 'completed',
+            });
+            await transaction.save({ session });
+
+            user.points = (user.points || 0) + pointsEarned;
+            await user.save({ session });
+
+            await session.commitTransaction();
+          } catch (error) {
+            await session.abortTransaction();
+            throw error;
+          } finally {
+            session.endSession();
+          }
+        }
+      } catch (error) {
+        console.error('Lỗi khi tích điểm tự động:', error.message);
+      }
+
       res.status(200).json({ message: "Thanh toán MoMo thành công", booking });
     } else {
       res.status(400).json({ message: "Thanh toán MoMo thất bại hoặc đang chờ xử lý" });
@@ -484,7 +616,7 @@ router.get("/:id/payment-deadline", async (req, res) => {
 
         const room = await Room.findById(booking.roomid).session(session);
         if (room) {
-          room.currentbookings = room.currentbookings.filter((b) => b.bookingId && b.bookingId.toString() !== id);
+          room.currentbookings = room.currentbookings.filter((b) => bVYbookingId && b.bookingId.toString() !== id);
           await room.save({ session });
         }
 
@@ -508,9 +640,7 @@ router.get("/:id/payment-deadline", async (req, res) => {
       expired: false,
     });
   } catch (error) {
-    console.error("Lỗi khi kiểm tra thời gian thanh toán:", error.message,
-
- error.stack);
+    console.error("Lỗi khi kiểm tra thời gian thanh toán:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi kiểm tra thời gian thanh toán", error: error.message });
   }
 });
@@ -792,6 +922,37 @@ router.put("/:id/confirm", async (req, res) => {
     booking.status = "confirmed";
     booking.paymentStatus = "paid";
     await booking.save({ session });
+
+    // Tự động tích điểm sau khi xác nhận thanh toán
+    try {
+      const user = await User.findOne({ email: booking.email.toLowerCase() }).session(session);
+      if (user) {
+        const room = await Room.findById(booking.roomid).session(session);
+        const checkinDate = new Date(booking.checkin);
+        const checkoutDate = new Date(booking.checkout);
+        const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
+        const totalAmount = room.rentperday * days - (booking.voucherDiscount || 0);
+        const pointsEarned = Math.floor(totalAmount / 100000);
+
+        const existingTransaction = await Transaction.findOne({ bookingId: id }).session(session);
+        if (!existingTransaction) {
+          const transaction = new Transaction({
+            userId: user._id,
+            bookingId: booking._id,
+            amount: totalAmount,
+            points: pointsEarned,
+            type: 'earn',
+            status: 'completed',
+          });
+          await transaction.save({ session });
+
+          user.points = (user.points || 0) + pointsEarned;
+          await user.save({ session });
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi khi tích điểm tự động:', error.message);
+    }
 
     await session.commitTransaction();
     res.status(200).json({ message: "Xác nhận đặt phòng thành công", booking });

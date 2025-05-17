@@ -5,41 +5,36 @@ const transactionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    // ID người dùng thực hiện giao dịch
   },
   bookingId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Booking',
     required: true,
-    // ID đặt phòng liên quan
   },
   amount: {
     type: Number,
-    required: true,
-    // Số tiền giao dịch
+    required: true, // Số tiền giao dịch (từ booking)
   },
-  pointsEarned: {
+  points: {
     type: Number,
-    default: 0,
-    // Điểm tích lũy từ giao dịch
+    required: true, // Số điểm tích được
   },
-  paymentMethod: {
+  type: {
     type: String,
-    enum: ['cash', 'credit_card', 'bank_transfer', 'mobile_payment'],
-    required: true,
-    // Phương thức thanh toán
+    enum: ['earn', 'redeem'],
+    default: 'earn', // Loại giao dịch: tích điểm hoặc đổi điểm
   },
   status: {
     type: String,
     enum: ['pending', 'completed', 'failed'],
     default: 'pending',
-    // Trạng thái giao dịch
   },
   createdAt: {
     type: Date,
     default: Date.now,
-    // Thời gian tạo
   },
 });
+
+transactionSchema.index({ userId: 1, bookingId: 1 });
 
 module.exports = mongoose.model('Transaction', transactionSchema);
