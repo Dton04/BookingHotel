@@ -1,10 +1,16 @@
+// review.js
 const mongoose = require('mongoose');
 
 const reviewSchema = new mongoose.Schema({
+  hotelId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Hotel',
+    required: true,
+  },
   roomId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Room',
-    required: true,
+    required: false, // Không bắt buộc, vì đánh giá là cho khách sạn
   },
   userName: {
     type: String,
@@ -51,9 +57,8 @@ const reviewSchema = new mongoose.Schema({
   },
 });
 
-// Thêm index
-reviewSchema.index({ roomId: 1, isDeleted: 1 });
+// Cập nhật index
+reviewSchema.index({ hotelId: 1, isDeleted: 1 });
 reviewSchema.index({ email: 1, isDeleted: 1 });
-reviewSchema.index({ roomId: 1, email: 1, isDeleted: 1 });
 
 module.exports = mongoose.model('Review', reviewSchema);

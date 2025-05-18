@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Carousel, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
@@ -21,7 +20,7 @@ function Room({ room }) {
   const handleClose = () => setShow(false);
   const handleImageClick = async () => {
     setShow(true);
-    setReviewPage(1); // Reset trang khi mở modal
+    setReviewPage(1);
     await Promise.all([fetchReviews(), fetchSuggestions()]);
   };
 
@@ -30,7 +29,7 @@ function Room({ room }) {
   };
 
   const handleViewAllReviews = () => {
-    navigate(`/testimonial?roomId=${room._id}`);
+    navigate(`/testimonial?hotelId=${room.hotelId}&roomId=${room._id}`);
   };
 
   const formatPriceVND = (price) => {
@@ -52,21 +51,22 @@ function Room({ room }) {
     try {
       setLoadingReviews(true);
       const response = await axios.get("/api/reviews", {
-        params: { roomId: room._id, limit: 50 }, // Lấy tối đa 50 đánh giá để phân trang trong modal
+        params: { hotelId: room.hotelId, roomId: room._id, limit: 50 },
       });
-      setReviews(response.data.reviews || []); // Đảm bảo reviews là mảng
+      setReviews(response.data.reviews || []);
     } catch (error) {
-      console.error("Lỗi khi lấy đánh giá:", {
-        message: error.message,
-        response: error.response?.data,
-      });
+      console.error("Lỗi khi lấy đánh giá:", error);
     } finally {
       setLoadingReviews(false);
     }
   };
 
+  useEffect(() => {
+    fetchReviews();
+  }, [room._id, room.hotelId]);
+
   const fetchSuggestions = async () => {
-    if (room.availabilityStatus !== 'available') {
+    if (room.availabilityStatus !== "available") {
       try {
         setLoadingSuggestions(true);
         const response = await axios.get("/api/rooms/suggestions", {
@@ -88,7 +88,7 @@ function Room({ room }) {
     const fetchAverageRating = async () => {
       try {
         const response = await axios.get("/api/reviews/average", {
-          params: { roomId: room._id },
+          params: { hotelId: room.hotelId },
         });
         setAverageRating(response.data);
       } catch (error) {
@@ -96,11 +96,12 @@ function Room({ room }) {
           message: error.message,
           response: error.response?.data,
         });
+        setAverageRating({ average: 0, totalReviews: 0 });
       }
     };
 
     fetchAverageRating();
-  }, [room._id]);
+  }, [room.hotelId]);
 
   const getRoomStatus = () => {
     switch (room.availabilityStatus) {
@@ -133,7 +134,6 @@ function Room({ room }) {
 
   const status = getRoomStatus();
 
-  // Phân trang đánh giá
   const totalReviewPages = Math.ceil(reviews.length / reviewsPerPage);
   const displayedReviews = reviews.slice(
     (reviewPage - 1) * reviewsPerPage,
@@ -184,7 +184,7 @@ function Room({ room }) {
               emptySymbol={<i className="far fa-star"></i>}
               fullSymbol={<i className="fas fa-star"></i>}
             />
-             {averageRating.totalReviews > 0 && (
+            {averageRating.totalReviews > 0 && (
               <span>
                 ({averageRating.average.toFixed(1)}/5)
               </span>
@@ -250,7 +250,7 @@ function Room({ room }) {
             </div>
             <div className="room-reviews">
               <h5>Đánh giá ({averageRating.totalReviews})</h5>
-              <ReviewChart roomId={room._id} />
+              <ReviewChart hotelId={room.hotelId} /> {/* Sửa để truyền hotelId */}
               {loadingReviews ? (
                 <p>Đang tải đánh giá...</p>
               ) : reviews.length > 0 ? (
@@ -326,10 +326,10 @@ function Room({ room }) {
                   )}
                 </>
               ) : (
-                <p>Chưa có đánh giá nào.</p>
+                <p>Chưa có đánh giá nào cho phòng này.</p>
               )}
             </div>
-            {room.availabilityStatus !== 'available' && (
+            {room.availabilityStatus !== "available" && (
               <div className="room-suggestions">
                 <h5>Phòng tương tự</h5>
                 {loadingSuggestions ? (

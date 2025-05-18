@@ -17,7 +17,7 @@ function LoginScreen() {
     setSuccess('');
 
     if (!email || !password) {
-      setError('Please fill in all fields.');
+      setError('Vui lòng điền đầy đủ thông tin.');
       return;
     }
 
@@ -25,8 +25,15 @@ function LoginScreen() {
       setLoading(true);
       const response = await axios.post('/api/users/login', { email, password });
       const userData = response.data;
+      // Lưu thông tin người dùng
       localStorage.setItem('userInfo', JSON.stringify(userData));
-      setSuccess('Login successful! Redirecting...');
+      // Lưu token riêng
+      if (userData.token) {
+        localStorage.setItem('token', userData.token);
+      } else {
+        throw new Error('Không nhận được token từ server');
+      }
+      setSuccess('Đăng nhập thành công! Đang chuyển hướng...');
       setEmail('');
       setPassword('');
 
@@ -40,7 +47,7 @@ function LoginScreen() {
         }
       }, 2000);
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'An error occurred during login.';
+      const errorMessage = error.response?.data?.message || 'Đã xảy ra lỗi khi đăng nhập.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -50,7 +57,7 @@ function LoginScreen() {
   return (
     <div className="login-container">
       <div className="login-card">
-        <h1 className="login-title">Sign In</h1>
+        <h1 className="login-title">Đăng Nhập</h1>
 
         {error && <div className="alert alert-danger">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
@@ -62,7 +69,7 @@ function LoginScreen() {
               type="email"
               className="form-control"
               id="email"
-              placeholder="Enter your email"
+              placeholder="Nhập email của bạn"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -71,12 +78,12 @@ function LoginScreen() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Mật khẩu</label>
             <input
               type="password"
               className="form-control"
               id="password"
-              placeholder="Enter your password"
+              placeholder="Nhập mật khẩu của bạn"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -85,7 +92,7 @@ function LoginScreen() {
           </div>
 
           <div className="forgot-password">
-            <Link to="/forgot-password">Forgot password?</Link>
+            <Link to="/forgot-password">Quên mật khẩu?</Link>
           </div>
 
           <button
@@ -93,16 +100,16 @@ function LoginScreen() {
             className="btn btn-login"
             disabled={loading}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
         </form>
 
         <div className="links">
           <p>
-            Don't have an account? <Link to="/register">Register here</Link>
+            Chưa có tài khoản? <Link to="/register">Đăng ký tại đây</Link>
           </p>
           <p>
-            <Link to="/">Back to Home</Link>
+            <Link to="/">Quay lại trang chủ</Link>
           </p>
         </div>
       </div>

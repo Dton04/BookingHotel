@@ -1,20 +1,24 @@
+
 .booking-page {
   padding: 60px 0;
-  background: #f8f8f8;
+  background: linear-gradient(to right, #f8f9fa, #fffaf4);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .container {
   max-width: 1200px;
-  margin: 0 auto;
+  margin: auto;
+  padding: 0 15px;
 }
 
 .booking-header {
   margin-bottom: 40px;
+  text-align: center;
 }
 
 .booking-header .subtitle {
   font-size: 1.2rem;
-  color: #d4a373;
+  color: #c59d5f;
   margin-bottom: 10px;
   display: flex;
   align-items: center;
@@ -24,490 +28,148 @@
 .booking-header .subtitle .line {
   width: 50px;
   height: 2px;
-  background: #d4a373;
+  background: #c59d5f;
   margin: 0 10px;
 }
 
 .booking-header .title {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
-  font-weight: bold;
-  color: #333;
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: #2d2d2d;
+  text-shadow: 0px 2px 4px rgba(0,0,0,0.1);
 }
 
 .booking-header .title span {
-  color: #d4a373;
+  color: #c59d5f;
 }
 
-.booking-images {
-  margin-bottom: 20px;
+.booking-images img {
+  width: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+  height: 180px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .room-image:hover {
   transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
 }
 
 .booking-screen-wrapper {
-  background: #fff;
+  background: #ffffff;
   padding: 30px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.5s ease-in-out;
 }
 
-.booking-screen .form-group {
-  margin-bottom: 15px;
-}
-
-.booking-screen .form-control {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1rem;
-}
-
-.booking-screen .form-control:focus {
-  outline: none;
-  border-color: #d4a373;
-  box-shadow: 0 0 5px rgba(212, 163, 115, 0.3);
-}
-
-.booking-screen .btn-book-now {
-  width: 100%;
-  padding: 12px;
-  background: #d4a373;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  font-size: 1rem;
-  font-weight: bold;
-  transition: background 0.3s;
-}
-
-.booking-screen .btn-book-now:hover {
-  background: #b5895e;
-}
-
-.booking-screen .btn-book-now:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.alert {
-  padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 4px;
-}
-
-.alert-success {
-  background: #d4edda;
-  color: #155724;
-}
-
-.alert-danger {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-.sweet-loading {
-  width: 100%;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 8px;
-}
-
-.review-form {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-.review-form h3 {
+.booking-screen-wrapper h3 {
+  font-size: 1.7rem;
+  font-weight: 600;
+  color: #333;
   margin-bottom: 20px;
-  font-size: 1.5rem;
 }
 
-.review-form .form-group {
-  margin-bottom: 15px;
-}
-
-.review-form label {
-  font-weight: bold;
-}
-
-.btn-secondary {
-  background-color: #6c757d;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background-color: #5a6268;
-}
-
-/* Style cho Cancel Confirmation Modal */
-.cancel-confirmation-modal .modal-content {
-  border-radius: 8px;
-}
-
-.cancel-confirmation-modal .modal-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-}
-
-.cancel-confirmation-modal .booking-details {
-  margin-bottom: 1rem;
-}
-
-.cancel-confirmation-modal .booking-details p {
-  margin: 0.5rem 0;
-  font-size: 0.95rem;
-}
-
-.cancel-confirmation-modal .btn-cancel {
-  padding: 8px 20px;
-  font-size: 0.95rem;
-}
-
-.cancel-confirmation-modal .btn-confirm {
-  padding: 8px 20px;
-  font-size: 0.95rem;
-}
-
-/* Style cho Booking List */
-.booking-list-page {
-  padding: 60px 0;
-  background: #f8f8f8;
-}
-
-.booking-list .booking-item {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #fff;
-}
-
-.booking-list .booking-item .card-body {
-  padding: 1.5rem;
-}
-
-.booking-list .booking-item .card-title {
-  font-size: 1.25rem;
-  font-weight: bold;
+.form-group label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: block;
   color: #333;
 }
 
-.booking-list .booking-item p {
-  margin: 0.5rem 0;
-  font-size: 0.95rem;
+.form-control {
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  padding: 12px 14px;
+  font-size: 1rem;
+  background: #fff;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-.booking-list .booking-item .btn-danger {
-  margin-top: 1rem;
-  padding: 8px 16px;
-  font-size: 0.9rem;
+.form-control:focus {
+  border-color: #c59d5f;
+  box-shadow: 0 0 10px rgba(197, 157, 95, 0.3);
+  outline: none;
 }
 
-/* Responsive cho Tablet lớn (992px - 1200px) */
-@media (max-width: 1200px) {
-  .booking-page, .booking-list-page {
-    padding: 50px 0;
-  }
-
-  .booking-header .subtitle {
-    font-size: 1.1rem;
-  }
-
-  .booking-header .title {
-    font-size: 2.2rem;
-  }
-
-  .booking-screen-wrapper {
-    padding: 25px;
-  }
-
-  .booking-screen .form-control {
-    padding: 9px;
-    font-size: 0.95rem;
-  }
-
-  .booking-screen .btn-book-now {
-    padding: 11px;
-    font-size: 0.95rem;
-  }
-
-  .cancel-confirmation-modal .modal-title {
-    font-size: 1.4rem;
-  }
+.btn-book-now {
+  background: #c59d5f;
+  color: white;
+  border: none;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 12px 0;
+  border-radius: 8px;
+  width: 100%;
+  transition: background 0.3s ease;
 }
 
-/* Responsive cho Tablet (768px - 991px) */
-@media (max-width: 991px) {
-  .booking-page, .booking-list-page {
-    padding: 40px 0;
-  }
+.btn-book-now:hover {
+  background-color: #a1783c;
+}
 
-  .booking-header .subtitle {
-    font-size: 1.1rem;
-  }
+.invalid-feedback {
+  font-size: 0.875rem;
+  color: #dc3545;
+  margin-top: 4px;
+}
 
-  .booking-header .subtitle .line {
-    width: 40px;
-  }
+.suggestions-container {
+  margin-top: 40px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+}
 
+.suggestions-container h5 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+@media (max-width: 768px) {
   .booking-header .title {
     font-size: 2rem;
-  }
-
-  .booking-images .col-6 {
-    width: 50%;
   }
 
   .booking-screen-wrapper {
     padding: 20px;
   }
 
-  .booking-screen .form-control {
-    padding: 8px;
-    font-size: 0.9rem;
-  }
-
-  .booking-screen .btn-book-now {
-    padding: 10px;
-    font-size: 0.9rem;
-  }
-
-  .booking-list .booking-item .card-title {
-    font-size: 1.2rem;
+  .booking-images img {
+    height: 160px;
   }
 }
 
-/* Responsive cho Mobile (<768px) */
-@media (max-width: 767px) {
-  .booking-page, .booking-list-page {
-    padding: 30px 0;
-  }
-
-  .booking-header .subtitle {
-    font-size: 1rem;
-  }
-
-  .booking-header .subtitle .line {
-    width: 30px;
-  }
-
-  .booking-header .title {
-    font-size: 1.8rem;
-  }
-
-  .booking-images {
-    margin-bottom: 20px;
-  }
-
-  .booking-images .col-6 {
-    width: 100%;
-    max-width: 300px;
-    margin: 0 auto 10px;
-  }
-
-  .booking-screen-wrapper {
-    padding: 15px;
-  }
-
-  .booking-screen .form-group {
-    margin-bottom: 10px;
-  }
-
-  .booking-screen .form-control {
-    padding: 8px;
-    font-size: 0.9rem;
-  }
-
-  .booking-screen .btn-book-now {
-    padding: 10px;
-    font-size: 0.9rem;
-  }
-
-  .cancel-confirmation-modal .modal-title {
-    font-size: 1.3rem;
-  }
-
-  .booking-list .booking-item .card-body {
-    padding: 1rem;
-  }
-}
-
-/* Responsive cho Mobile nhỏ (<576px) */
-@media (max-width: 576px) {
-  .booking-page, .booking-list-page {
-    padding: 20px 0;
-  }
-
-  .booking-header .subtitle {
-    font-size: 0.9rem;
-  }
-
-  .booking-header .subtitle .line {
-    width: 25px;
-  }
-
-  .booking-header .title {
-    font-size: 1.5rem;
-  }
-
-  .booking-images .col-6 {
-    max-width: 100%;
-  }
-
-  .booking-screen-wrapper {
-    padding: 10px;
-  }
-
-  .booking-screen .form-control {
-    padding: 7px;
-    font-size: 0.85rem;
-  }
-
-  .booking-screen .btn-book-now {
-    padding: 8px;
-    font-size: 0.85rem;
-  }
-
-  .cancel-confirmation-modal .booking-details p {
-    font-size: 0.85rem;
-  }
-
-  .booking-list .booking-item .card-title {
-    font-size: 1.1rem;
-  }
-
-  .booking-list .booking-item p {
-    font-size: 0.85rem;
-  }
-}
-
-/* Responsive cho Mobile rất nhỏ (<400px) */
-@media (max-width: 400px) {
-  .booking-header .subtitle {
-    font-size: 0.8rem;
-  }
-
-  .booking-header .subtitle .line {
-    width: 20px;
-  }
-
-  .booking-header .title {
-    font-size: 1.3rem;
-  }
-
-  .booking-screen .form-control {
-    padding: 6px;
-    font-size: 0.8rem;
-  }
-
-  .booking-screen .btn-book-now {
-    padding: 7px;
-    font-size: 0.8rem;
-  }
-
-  .cancel-confirmation-modal .modal-title {
-    font-size: 1.2rem;
-  }
-
-  .booking-list .booking-item .btn-danger {
-    padding: 6px 12px;
-    font-size: 0.8rem;
-  }
-}
-
-.suggestions-container {
-  margin-top: 20px;
-  text-align: center;
-}
-
-.suggestions-container h5 {
-  font-size: 18px;
-  color: #2d3748;
-  margin-bottom: 15px;
-  font-weight: 600;
-}
-
-
-.payment-status {
-  font-size: 1.2rem;
-  margin-bottom: 15px;
-}
-
-.status-text {
-  font-weight: 500;
-}
-
-.text-success {
-  color: #28a745 !important;
-}
-
-.text-warning {
-  color: #ffc107 !important;
-}
-
-.text-danger {
-  color: #dc3545 !important;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 
 
-.bank-info {
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 5px;
-  padding: 15px;
+
+.booking-images-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.bank-info h4 {
-  font-size: 1.25rem;
-  margin-bottom: 10px;
+.image-wrapper-vertical img.vertical-room-image {
+  width: 100%;
+  height: auto;
+  max-height: 260px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.bank-info p {
-  margin: 5px 0;
-}
-
-.bank-info .text-warning {
-  font-weight: 500;
-}
-.bank-info .text-warning {
-  font-weight: 500;
-}
-
-.bank-info p.time-remaining {
-  font-weight: bold;
-  color: #dc3545;
-}
-
-.momo-qr {
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-}
-
-.momo-qr h4 {
-  margin-bottom: 15px;
-  font-size: 1.5rem;
-  color: #333;
-}
-
-.momo-qr canvas {
-  margin: 0 auto;
-  display: block;
-}
-
-.momo-qr p {
-  margin-top: 10px;
-  font-size: 1rem;
-  color: #555;
-}
-
-.momo-qr .text-warning {
-  color: #e67e22 !important;
-  font-weight: 500;
+.image-wrapper-vertical img.vertical-room-image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
 }

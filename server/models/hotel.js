@@ -30,6 +30,7 @@ const hotelSchema = new mongoose.Schema({
   description: {
     type: String,
   },
+  imageurls: [String],
   createdAt: {
     type: Date,
     default: Date.now,

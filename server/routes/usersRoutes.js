@@ -377,9 +377,9 @@ router.get('/membership/level/:userId', async (req, res) => {
     }
 
     let membershipLevel;
-    if (user.points >= 1000000) {
+    if (user.points >= 350000) {
       membershipLevel = 'Diamond';   
-    } else if (user.points >= 500000) {
+    } else if (user.points >= 200000) {
       membershipLevel = 'Platinum';
     } else if (user.points >= 100000) {
       membershipLevel = 'Gold';
@@ -1091,6 +1091,55 @@ router.post('/regions/assign-admin', protect, admin, async (req, res) => {
   } catch (error) {
     console.error('Lỗi phân quyền admin khu vực:', error.message, error.stack);
     res.status(500).json({ message: 'Lỗi khi phân quyền admin khu vực', error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/users/membership/benefits/:userId
+ * @desc    Lấy danh sách quyền lợi theo cấp độ thành viên
+ * @access  Riêng tư (yêu cầu token)
+ */
+router.get('/membership/benefits/:userId', protect, async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
+    }
+
+    const { userId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: 'ID người dùng không hợp lệ' });
+    }
+
+    const user = await User.findById(userId).select('points');
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    let membershipLevel;
+    if (user.points >= 300000) membershipLevel = 'Diamond';
+    else if (user.points >= 200000) membershipLevel = 'Platinum';
+    else if (user.points >= 100000) membershipLevel = 'Gold';
+    else if (user.points >= 50000) membershipLevel = 'Silver';
+    else membershipLevel = 'Bronze';
+
+    // Quyền lợi mẫu cho từng cấp độ (có thể lưu trong database hoặc config)
+    const benefits = {
+      Bronze: ['Ưu đãi cơ bản', 'Tích điểm 1% mỗi giao dịch'],
+      Silver: ['Ưu đãi cơ bản', 'Tích điểm 1.5% mỗi giao dịch', 'Miễn phí nâng cấp phòng 1 lần/năm'],
+      Gold: ['Ưu đãi cơ bản', 'Tích điểm 2% mỗi giao dịch', 'Miễn phí nâng cấp phòng 2 lần/năm', 'Check-in ưu tiên'],
+      Platinum: ['Ưu đãi cơ bản', 'Tích điểm 2.5% mỗi giao dịch', 'Miễn phí nâng cấp phòng 3 lần/năm', 'Check-in ưu tiên', 'Dịch vụ đưa đón sân bay'],
+      Diamond: ['Ưu đãi cơ bản', 'Tích điểm 3% mỗi giao dịch', 'Miễn phí nâng cấp phòng không giới hạn', 'Check-in ưu tiên', 'Dịch vụ đưa đón sân bay', 'Quà tặng đặc biệt hàng năm'],
+    };
+
+    res.status(200).json({
+      userId,
+      membershipLevel,
+      points: user.points,
+      benefits: benefits[membershipLevel],
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy quyền lợi thành viên:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi lấy quyền lợi thành viên', error: error.message });
   }
 });
 

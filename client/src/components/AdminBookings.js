@@ -123,7 +123,9 @@ function AdminBookings() {
 
       await axios.put(
         `/api/bookings/${bookingId}/cancel`,
-        {},
+        {
+          cancelReason: "Hủy bởi admin"
+        },
         {
           headers: {
             Authorization: `Bearer ${userInfo.token}`,

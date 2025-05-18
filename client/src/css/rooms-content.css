@@ -502,3 +502,37 @@
     font-size: 0.75rem;
   }
 }
+
+.hotel-section {
+  margin-bottom: 40px;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.hotel-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.hotel-address {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.hotel-description {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+

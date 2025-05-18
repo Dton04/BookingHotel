@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const Review = require("../models/review");
 const Booking = require("../models/booking");
+const Hotel = require("../models/hotel");
 const { protect, admin, staff } = require('../middleware/auth');
 
 // Middleware kiểm tra admin hoặc staff
@@ -10,20 +11,23 @@ const adminOrStaff = (req, res, next) => {
   if (req.user && (req.user.role === 'admin' || req.user.role === 'staff')) {
     next();
   } else {
-    res.status(403).json({ message: 'Not authorized as admin or staff' });
+    res.status(403).json({ message: 'Không được phép, yêu cầu quyền admin hoặc staff' });
   }
 };
 
-
 // POST /api/reviews – Gửi đánh giá mới
 router.post("/", async (req, res) => {
-  const { roomId, userName, rating, comment, email } = req.body;
+  const { hotelId, roomId, userName, rating, comment, email } = req.body;
 
   try {
     console.log("Request body:", req.body);
 
-    if (!roomId || !mongoose.Types.ObjectId.isValid(roomId)) {
-      return res.status(400).json({ message: "ID phòng không hợp lệ hoặc thiếu" });
+    if (!hotelId || !mongoose.Types.ObjectId.isValid(hotelId)) {
+      return res.status(400).json({ message: "ID khách sạn không hợp lệ hoặc thiếu" });
+    }
+
+    if (roomId && !mongoose.Types.ObjectId.isValid(roomId)) {
+      return res.status(400).json({ message: "ID phòng không hợp lệ" });
     }
 
     if (!rating || rating < 1 || rating > 5) {
@@ -42,24 +46,42 @@ router.post("/", async (req, res) => {
       return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
     }
 
-    console.log("Checking booking for email:", email, "and roomId:", roomId);
-    const booking = await Booking.findOne({ email: email.toLowerCase(), roomid: roomId });
-    if (!booking) {
-      return res.status(403).json({ message: "Bạn phải đặt phòng này để gửi đánh giá" });
+    // Kiểm tra khách sạn tồn tại
+    const hotel = await Hotel.findById(hotelId);
+    if (!hotel) {
+      return res.status(404).json({ message: "Không tìm thấy khách sạn" });
     }
 
-    console.log("Checking existing review for roomId:", roomId, "and email:", email);
-    const existingReview = await Review.findOne({ roomId, email: email.toLowerCase(), isDeleted: false });
+    // Kiểm tra đặt phòng
+    console.log("Checking booking for email:", email, "and hotelId:", hotelId);
+    const bookingQuery = { email: email.toLowerCase(), roomid: { $in: hotel.rooms } };
+    if (roomId) {
+      bookingQuery.roomid = roomId;
+    }
+    const booking = await Booking.findOne(bookingQuery);
+    if (!booking) {
+      return res.status(403).json({ message: "Bạn phải đặt phòng trong khách sạn này để gửi đánh giá" });
+    }
+
+    // Kiểm tra đánh giá đã tồn tại
+    console.log("Checking existing review for hotelId:", hotelId, "and email:", email);
+    const existingReviewQuery = { hotelId, email: email.toLowerCase(), isDeleted: false };
+    if (roomId) {
+      existingReviewQuery.roomId = roomId;
+    }
+    const existingReview = await Review.findOne(existingReviewQuery);
     if (existingReview) {
-      return res.status(403).json({ message: "Bạn đã gửi đánh giá cho phòng này rồi" });
+      return res.status(403).json({ message: "Bạn đã gửi đánh giá cho khách sạn/phòng này rồi" });
     }
 
     const newReview = new Review({
-      roomId,
+      hotelId,
+      roomId: roomId || null,
       userName: userName || "Ẩn danh",
       rating,
       comment,
       email: email.toLowerCase(),
+      bookingId: booking._id,
     });
 
     console.log("Saving new review:", newReview);
@@ -76,13 +98,19 @@ router.post("/", async (req, res) => {
   }
 });
 
-
-// GET /api/reviews - Lấy danh sách tất cả đánh giá với bộ lọc và phân trang
+// GET /api/reviews - Lấy danh sách đánh giá với bộ lọc và phân trang
 router.get("/", async (req, res) => {
-  const { roomId, email, status, page = 1, limit = 10 } = req.query;
+  const { hotelId, roomId, email, status, page = 1, limit = 10 } = req.query;
 
   try {
     const query = {};
+
+    if (hotelId) {
+      if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+        return res.status(400).json({ message: "ID khách sạn không hợp lệ" });
+      }
+      query.hotelId = hotelId;
+    }
 
     if (roomId) {
       if (!mongoose.Types.ObjectId.isValid(roomId)) {
@@ -104,7 +132,7 @@ router.get("/", async (req, res) => {
         return res.status(400).json({ message: "Trạng thái không hợp lệ, chỉ chấp nhận 'active' hoặc 'deleted'" });
       }
     } else {
-      query.isDeleted = false; // Mặc định chỉ lấy các đánh giá chưa bị xóa
+      query.isDeleted = false;
     }
 
     if (mongoose.connection.readyState !== 1) {
@@ -120,6 +148,7 @@ router.get("/", async (req, res) => {
 
     const totalReviews = await Review.countDocuments(query);
     const reviews = await Review.find(query)
+      .populate("hotelId", "name")
       .populate("roomId", "name type")
       .sort({ createdAt: -1 })
       .skip((parsedPage - 1) * parsedLimit)
@@ -137,16 +166,16 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET /api/reviews/average?roomId=...
+// GET /api/reviews/average?hotelId=...
 router.get("/average", async (req, res) => {
-  const { roomId } = req.query;
+  const { hotelId } = req.query;
 
   try {
-    if (!roomId || !mongoose.Types.ObjectId.isValid(roomId)) {
-      return res.status(400).json({ message: "ID phòng không hợp lệ hoặc thiếu" });
+    if (!hotelId || !mongoose.Types.ObjectId.isValid(hotelId)) {
+      return res.status(400).json({ message: "ID khách sạn không hợp lệ hoặc thiếu" });
     }
 
-    const reviews = await Review.find({ roomId, isDeleted: false });
+    const reviews = await Review.find({ hotelId, isDeleted: false });
     const totalReviews = reviews.length;
     const average = totalReviews > 0 ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews : 0;
 
@@ -171,6 +200,7 @@ router.get("/by-email", async (req, res) => {
     }
 
     const reviews = await Review.find({ email: email.toLowerCase(), isDeleted: false })
+      .populate("hotelId", "name")
       .populate("roomId", "name type");
     res.status(200).json(reviews);
   } catch (error) {
@@ -178,7 +208,8 @@ router.get("/by-email", async (req, res) => {
     res.status(500).json({ message: "Lỗi khi lấy danh sách đánh giá theo email", error: error.message });
   }
 });
-// PATCH /api/reviews/:id/toggle-hidden - Ẩn/hiển thị đánh giá (chỉ admin hoặc staff)
+
+// PATCH /api/reviews/:id/toggle-hidden - Ẩn/hiển thị đánh giá
 router.patch("/:id/toggle-hidden", protect, adminOrStaff, async (req, res) => {
   const { id } = req.params;
 
@@ -203,7 +234,7 @@ router.patch("/:id/toggle-hidden", protect, adminOrStaff, async (req, res) => {
     review.isVisible = !review.isVisible;
     await review.save();
 
-    const message = review.isHidden ? "Ẩn đánh giá thành công" : "Hiển thị đánh giá thành công";
+    const message = review.isVisible ? "Hiển thị đánh giá thành công" : "Ẩn đánh giá thành công";
     res.status(200).json({ message, review });
   } catch (error) {
     console.error("Lỗi khi thay đổi trạng thái ẩn của đánh giá:", error.message, error.stack);
@@ -211,8 +242,7 @@ router.patch("/:id/toggle-hidden", protect, adminOrStaff, async (req, res) => {
   }
 });
 
-
-// DELETE /api/reviews/:id - Xóa mềm đánh giá (chỉ admin hoặc staff)
+// DELETE /api/reviews/:id - Xóa mềm đánh giá
 router.delete("/:id", protect, adminOrStaff, async (req, res) => {
   const { id } = req.params;
 
@@ -243,7 +273,5 @@ router.delete("/:id", protect, adminOrStaff, async (req, res) => {
     res.status(500).json({ message: "Lỗi khi xóa mềm đánh giá", error: error.message });
   }
 });
-
-
 
 module.exports = router;

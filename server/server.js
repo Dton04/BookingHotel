@@ -49,24 +49,27 @@ const connectDB = require('./db');
 const roomsRoute = require('./routes/roomRoutes');
 const bookingRoute = require('./routes/bookingRoutes');
 const usersRoute = require('./routes/usersRoutes');
-const contactRoute = require('./routes/contactRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 const reviewRoute = require('./routes/reviewRoutes');
 const dashboardRoute = require('./routes/dashboardRoutes');
 const revenueRoute = require('./routes/revenueRoutes');
 const regionsRoute = require('./routes/regionsRoutes');
-const transactionRoutes = require('./routes/transactionRoutes');
 const momoRoutes = require('./routes/momoRoutes');
+<<<<<<< HEAD
 const vnpayRoutes = require('./routes/vnpayRoutes');
+=======
+
+
+>>>>>>> 38d826bb57e67fd2111d6b2e57e75f7805e6d69f
 // Debug routes
 console.log('roomsRoute:', roomsRoute);
 console.log('bookingRoute:', bookingRoute);
 console.log('usersRoute:', usersRoute);
-console.log('contactRoute:', contactRoute);
+console.log('contactRoute:', contactRoutes);
 console.log('reviewRoute:', reviewRoute);
 console.log('dashboardRoute:', dashboardRoute);
 console.log('revenueRoute:', revenueRoute);
 console.log('regionsRoute:', regionsRoute);
-console.log('transactionRoutes:', transactionRoutes);
 console.log('momoRoutes:', momoRoutes);
 
 // Connect to MongoDB Gay ra loi khong sai dong duoi
@@ -78,15 +81,15 @@ const discountRoutes = require('./routes/discountRoutes')
 
 
 // Routes
+app.use('/api', contactRoutes);
 app.use('/api/rooms', roomsRoute);
 app.use('/api/bookings', bookingRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/reviews', reviewRoute);
-app.use('/api/contacts', contactRoute);
+app.use('/api/contact', contactRoutes);
 app.use('/api/dashboard', dashboardRoute);
 app.use('/api/revenue', revenueRoute);
 app.use('/api/regions', regionsRoute);
-app.use('/api/transaction', transactionRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/stats', statsRoutes);

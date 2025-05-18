@@ -70,18 +70,18 @@ const AdminDiscounts = () => {
     setSelectedDiscount(discount);
     if (discount) {
       setFormData({
-        name: discount.name,
+        name: discount.name || '',
         code: discount.code || '',
         description: discount.description || '',
-        type: discount.type,
-        discountType: discount.discountType,
-        discountValue: discount.discountValue,
-        applicableHotels: discount.applicableHotels.map((id) => id.toString()),
-        startDate: moment(discount.startDate).format('YYYY-MM-DD'),
-        endDate: moment(discount.endDate).format('YYYY-MM-DD'),
-        minBookingAmount: discount.minBookingAmount,
+        type: discount.type || 'voucher', // Đảm bảo type được đặt chính xác
+        discountType: discount.discountType || 'percentage',
+        discountValue: discount.discountValue || 0,
+        applicableHotels: discount.applicableHotels.map((id) => id.toString()), // Chuyển ObjectId thành chuỗi
+        startDate: discount.startDate ? moment(discount.startDate).format('YYYY-MM-DD') : '',
+        endDate: discount.endDate ? moment(discount.endDate).format('YYYY-MM-DD') : '',
+        minBookingAmount: discount.minBookingAmount || 0,
         maxDiscount: discount.maxDiscount || null,
-        isStackable: discount.isStackable,
+        isStackable: discount.isStackable || false,
         membershipLevel: discount.membershipLevel || null,
         minSpending: discount.minSpending || null,
       });
@@ -244,7 +244,7 @@ const AdminDiscounts = () => {
               <td>
                 {discount.discountType === 'percentage'
                   ? `${discount.discountValue}%`
-                  : `$${discount.discountValue}`}
+                  : `${discount.discountValue} VND`}
               </td>
               <td>{getRoomNames(discount.applicableHotels)}</td>
               <td>{moment(discount.startDate).format('DD/MM/YYYY')}</td>
@@ -361,7 +361,7 @@ const AdminDiscounts = () => {
                 onChange={handleHotelChange}
               >
                 {rooms.map((room) => (
-                  <option key={room._id} value={room._id}>
+                  <option key={room._id} value={room._id.toString()}>
                     {room.name}
                   </option>
                 ))}
@@ -433,7 +433,7 @@ const AdminDiscounts = () => {
                 <Form.Control
                   as="select"
                   name="membershipLevel"
-                  value={formData.membershipLevel}
+                  value={formData.membershipLevel || ''}
                   onChange={handleInputChange}
                   isInvalid={!!errors.membershipLevel}
                 >

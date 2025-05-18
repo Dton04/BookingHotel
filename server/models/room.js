@@ -55,6 +55,9 @@ const roomSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  hotelId: {
+    type:String,
+  }
 }, {
   timestamps: true,
 });
