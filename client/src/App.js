@@ -31,8 +31,10 @@ import RoomResults from "./components/RoomResults";
 import HotelManagement from "./components/HotelManagement";
 import HotelRoomManagement from "./components/HotelRoomManagement";
 import Rewards from "./components/Rewards";
+import PointsPage from "./components/PointsPage";
+import VNPaySuccess from "./components/VNPaySuccess";
 
-import PointsPage from './components/PointsPage';
+
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -85,9 +87,8 @@ function App() {
           <Route path="/admin/hotels" element={<AdminRoute><HotelManagement /></AdminRoute>} />
           <Route path="/admin/hotel/:hotelId/rooms" element={<AdminRoute><HotelRoomManagement /></AdminRoute>} />
           <Route path="/rewards" element={<UserRoute><Rewards /></UserRoute>} />
-
-
           <Route path="/points" element={<PointsPage />} />
+          <Route path="/booking-success" element={<VNPaySuccess />} />
           <Route
             path="/admin/staffmanagement"
             element={

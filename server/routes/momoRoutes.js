@@ -10,7 +10,7 @@ const config = {
     partnerCode: process.env.MOMO_PARTNER_CODE,
     accessKey: process.env.MOMO_ACCESS_KEY,
     secretKey: process.env.MOMO_SECRET_KEY,
-    redirectUrl: process.env.MOMO_REDIRECT_URL || 'http://localhost:3000',
+    redirectUrl: process.env.MOMO_REDIRECT_URL || 'http://localhost:3000/bookings',
     ipnUrl: process.env.MOMO_IPN_URL || 'https://your-production-ipn-url',
     requestType: 'payWithMethod',
     autoCapture: true,

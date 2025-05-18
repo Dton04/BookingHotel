@@ -282,7 +282,7 @@ router.post("/", async (req, res) => {
       throw new Error("Thiếu các trường bắt buộc");
     }
 
-    if (!["cash", "credit_card", "bank_transfer", "mobile_payment"].includes(paymentMethod)) {
+    if (!["cash", "credit_card", "bank_transfer", "mobile_payment", "vnpay"].includes(paymentMethod)) { // Thêm "vnpay" vào đây
       throw new Error("Phương thức thanh toán không hợp lệ");
     }
 
@@ -389,7 +389,7 @@ router.post("/bookroom", async (req, res) => {
       throw new Error("Thiếu các trường bắt buộc");
     }
 
-    if (!["cash", "credit_card", "bank_transfer", "mobile_payment"].includes(paymentMethod)) {
+    if (!["cash", "credit_card", "bank_transfer", "mobile_payment", "vnpay"].includes(paymentMethod)) { // Thêm "vnpay" vào đây
       throw new Error("Phương thức thanh toán không hợp lệ");
     }
 
@@ -442,6 +442,8 @@ router.post("/bookroom", async (req, res) => {
       paymentDeadline: paymentMethod === "bank_transfer" ? new Date(Date.now() + 5 * 60 * 1000) : null,
       momoOrderId: paymentMethod === "mobile_payment" ? orderId : null,
       momoRequestId: paymentMethod === "mobile_payment" ? momoRequestId : null,
+      vnpOrderId: paymentMethod === "vnpay" ? orderId : null, // Thêm trường vnpOrderId cho VNPay
+      vnpRequestId: paymentMethod === "vnpay" ? orderId : null, // Thêm trường vnpRequestId cho VNPay
     });
 
     await newBooking.save({ session });
@@ -1316,7 +1318,7 @@ router.patch("/:id/payment-method", async (req, res) => {
       return res.status(400).json({ message: "ID đặt phòng không hợp lệ" });
     }
 
-    if (!["cash", "credit_card", "bank_transfer", "mobile_payment"].includes(paymentMethod)) {
+    if (!["cash", "credit_card", "bank_transfer", "mobile_payment", "vnpay"].includes(paymentMethod)) { // Thêm "vnpay" vào đây
       return res.status(400).json({ message: "Phương thức thanh toán không hợp lệ" });
     }
 

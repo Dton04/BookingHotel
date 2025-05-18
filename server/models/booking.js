@@ -58,7 +58,7 @@ const bookingSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['cash', 'credit_card', 'bank_transfer', 'mobile_payment'],
+    enum: ['cash', 'credit_card', 'bank_transfer', 'mobile_payment', 'vnpay'], // Thêm 'vnpay'
     default: null,
   },
   paymentStatus: {
@@ -97,6 +97,18 @@ const bookingSchema = new mongoose.Schema({
   momoTransactionId: {
     type: String,
     default: null, // Lưu transactionId từ MoMo (sau khi thanh toán thành công)
+  },
+  vnpOrderId: {
+    type: String,
+    default: null, // Lưu orderId từ VNPay
+  },
+  vnpRequestId: {
+    type: String,
+    default: null, // Lưu requestId từ VNPay
+  },
+  vnpTransactionId: {
+    type: String,
+    default: null, // Lưu transactionId từ VNPay (sau khi thanh toán thành công)
   },
 });
 
