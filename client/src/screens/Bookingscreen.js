@@ -103,7 +103,49 @@ function Bookingscreen() {
     }
   }, []);
 
-  // Hàm tích điểm
+  const accumulatePoints = useCallback(async (bookingId) => {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+      if (!userInfo || !userInfo.token) {
+        return { success: false, message: "Vui lòng đăng nhập để tích điểm" };
+      }
+
+      const config = {
+        headers: { Authorization: `Bearer ${userInfo.token}` },
+      };
+
+      const bookingCheck = await axios.get(`/api/bookings/${bookingId}`, config);
+      if (bookingCheck.data.status !== "confirmed" || bookingCheck.data.paymentStatus !== "paid") {
+        return { success: false, message: "Đặt phòng chưa đủ điều kiện để tích điểm" };
+      }
+
+      const response = await axios.post("/api/bookings/checkout", { bookingId }, config);
+      return {
+        success: true,
+        pointsEarned: response.data.pointsEarned,
+        totalPoints: response.data.totalPoints,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Lỗi khi tích điểm",
+      };
+    }
+  }, []);
+
+  const fetchSuggestions = useCallback(async (roomId, roomType) => {
+    try {
+      setLoadingSuggestions(true);
+      const response = await axios.get("/api/rooms/suggestions", {
+        params: { roomId, roomType },
+      });
+      setSuggestions(response.data);
+    } catch (error) {
+      console.error("Lỗi khi lấy phòng gợi ý:", error);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, []);
   const accumulatePoints = useCallback(async (bookingId) => {
     try {
       const userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -134,7 +176,6 @@ function Bookingscreen() {
       };
     }
   }, []);
-
   useEffect(() => {
     fetchRoomData();
   }, [fetchRoomData]);
@@ -225,7 +266,6 @@ function Bookingscreen() {
         } else {
           throw new Error(momoResponse.data.message || "Lỗi khi tạo hóa đơn MoMo");
         }
-<<<<<<< HEAD
       } else if (data.paymentMethod === "vnpay") {
         setBookingStatus({
           type: "info",
@@ -253,8 +293,6 @@ function Bookingscreen() {
         } else {
           throw new Error(vnpayResponse.data.message || "Lỗi khi tạo hóa đơn VNPay");
         }
-=======
->>>>>>> 38d826bb57e67fd2111d6b2e57e75f7805e6d69f
       } else {
         setBookingStatus({
           type: "success",
@@ -534,7 +572,6 @@ function Bookingscreen() {
               {renderPaymentStatus()}
               {renderBankInfo()}
               <div className="booking-screen-wrapper">
-<<<<<<< HEAD
                 <form className="booking-screen" onSubmit={handleSubmit(onSubmit)}>
                   <div className="row">
                     <div className="col-md-6">
@@ -687,7 +724,6 @@ function Bookingscreen() {
                       onClick={handleOpenCancelModal}
                     >
                       Hủy Đặt Phòng
-=======
                 <h3 className="mb-4">Thông tin đặt phòng</h3>
               <form onSubmit={handleSubmit(onSubmit)}>
   <div className="mb-3">
@@ -826,7 +862,6 @@ function Bookingscreen() {
                   <div className="mt-3 text-end">
                     <button className="btn btn-danger" onClick={handleOpenCancelModal} disabled={paymentStatus === "paid"}>
                       Hủy đặt phòng
->>>>>>> 38d826bb57e67fd2111d6b2e57e75f7805e6d69f
                     </button>
                   </div>
                 )}

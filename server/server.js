@@ -55,12 +55,8 @@ const dashboardRoute = require('./routes/dashboardRoutes');
 const revenueRoute = require('./routes/revenueRoutes');
 const regionsRoute = require('./routes/regionsRoutes');
 const momoRoutes = require('./routes/momoRoutes');
-<<<<<<< HEAD
 const vnpayRoutes = require('./routes/vnpayRoutes');
-=======
 
-
->>>>>>> 38d826bb57e67fd2111d6b2e57e75f7805e6d69f
 // Debug routes
 console.log('roomsRoute:', roomsRoute);
 console.log('bookingRoute:', bookingRoute);
