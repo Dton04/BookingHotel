@@ -101,7 +101,7 @@ function RoomsContent() {
             <div key={hotel._id} className="hotel-section mb-5">
               <div className="hotel-card card shadow-sm">
                 {hotel.imageurls?.[0] && (
-                  <div className="hotel-image-container">
+                  <div className="hotel-image-container" style={{ height: '300px' }}>
                     <img
                       src={hotel.imageurls[0]}
                       alt={hotel.name}

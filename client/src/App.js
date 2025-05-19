@@ -33,6 +33,8 @@ import HotelRoomManagement from "./components/HotelRoomManagement";
 import Rewards from "./components/Rewards";
 
 import PointsPage from './components/PointsPage';
+import ReviewManagement from './components/ReviewManagement';
+
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -88,6 +90,9 @@ function App() {
 
 
           <Route path="/points" element={<PointsPage />} />
+          <Route path="/admin/reviews" element={<ReviewManagement />} />
+
+
           <Route
             path="/admin/staffmanagement"
             element={

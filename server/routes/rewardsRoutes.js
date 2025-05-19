@@ -160,8 +160,8 @@ router.get('/', protect, async (req, res) => {
 
     // Tính toán membershipLevel dựa trên points
     let membershipLevel;
-    if (user.points >= 250000) membershipLevel = 'Diamond';
-    else if (user.points >= 150000) membershipLevel = 'Platinum';
+    if (user.points >= 350000) membershipLevel = 'Diamond';
+    else if (user.points >= 200000) membershipLevel = 'Platinum';
     else if (user.points >= 100000) membershipLevel = 'Gold';
     else if (user.points >= 50000) membershipLevel = 'Silver';
     else membershipLevel = 'Bronze';
@@ -204,7 +204,7 @@ router.post('/redeem', protect, async (req, res) => {
 
     // Tính toán membershipLevel dựa trên points
     let userMembershipLevel;
-    if (user.points >= 300000) userMembershipLevel = 'Diamond';
+    if (user.points >= 350000) userMembershipLevel = 'Diamond';
     else if (user.points >= 200000) userMembershipLevel = 'Platinum';
     else if (user.points >= 100000) userMembershipLevel = 'Gold';
     else if (user.points >= 50000) userMembershipLevel = 'Silver';
@@ -229,7 +229,6 @@ router.post('/redeem', protect, async (req, res) => {
       description: `Đổi ưu đãi: ${reward.name}`,
       points: -reward.pointsRequired,
       createdAt: new Date(),
-      // Không cần bookingId, paymentMethod, amount vì đây là giao dịch đổi ưu đãi
     });
 
     await transaction.save({ session });
@@ -259,7 +258,9 @@ router.get('/history', protect, async (req, res) => {
     const transactions = await Transaction.find({
       userId: req.user.id,
       type: 'reward_redemption',
-    }).sort({ createdAt: -1 });
+    })
+    .sort({ createdAt: -1 })
+    .select('createdAt description points');
 
     res.status(200).json(transactions);
   } catch (error) {

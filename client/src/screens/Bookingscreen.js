@@ -505,138 +505,114 @@ function Bookingscreen() {
               {renderBankInfo()}
               <div className="booking-screen-wrapper">
                 <h3 className="mb-4">Thông tin đặt phòng</h3>
-              <form onSubmit={handleSubmit(onSubmit)}>
-  <div className="mb-3">
-    <label htmlFor="name" className="form-label">Họ và tên</label>
-    <input
-      type="text"
-      className={`form-control ${errors.name ? "is-invalid" : ""}`}
-      id="name"
-      placeholder="Nhập họ và tên"
-      {...register("name")}
-    />
-    {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
+  <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
+  <div className="row">
+    {/* Họ và tên */}
+    <div className="col-md-6 mb-3">
+      <label className="form-label">Họ và tên</label>
+      <input type="text" className="form-control" {...register("name")} />
+      {errors.name && <div className="text-danger small">{errors.name.message}</div>}
+    </div>
+
+    {/* Email */}
+    <div className="col-md-6 mb-3">
+      <label className="form-label">Email</label>
+      <input type="email" className="form-control" {...register("email")} />
+      {errors.email && <div className="text-danger small">{errors.email.message}</div>}
+    </div>
+
+    {/* Số điện thoại */}
+    <div className="col-md-6 mb-3">
+      <label className="form-label">Số điện thoại</label>
+      <input type="text" className="form-control" {...register("phone")} />
+      {errors.phone && <div className="text-danger small">{errors.phone.message}</div>}
+    </div>
+
+    {/* Ngày nhận phòng */}
+    <div className="col-md-3 mb-3">
+      <label className="form-label">Nhận phòng</label>
+      <input type="date" className="form-control" {...register("checkin")} />
+      {errors.checkin && <div className="text-danger small">{errors.checkin.message}</div>}
+    </div>
+
+    {/* Ngày trả phòng */}
+    <div className="col-md-3 mb-3">
+      <label className="form-label">Trả phòng</label>
+      <input type="date" className="form-control" {...register("checkout")} />
+      {errors.checkout && <div className="text-danger small">{errors.checkout.message}</div>}
+    </div>
+
+    {/* Người lớn */}
+    <div className="col-md-3 mb-3">
+      <label className="form-label">Người lớn</label>
+      <input type="number" className="form-control" {...register("adults")} />
+      {errors.adults && <div className="text-danger small">{errors.adults.message}</div>}
+    </div>
+
+    {/* Trẻ em */}
+    <div className="col-md-3 mb-3">
+      <label className="form-label">Trẻ em</label>
+      <input type="number" className="form-control" {...register("children")} />
+      {errors.children && <div className="text-danger small">{errors.children.message}</div>}
+    </div>
+
+    {/* Phương thức thanh toán */}
+    <div className="col-md-6 mb-3">
+      <label className="form-label">Phương thức thanh toán</label>
+      <select className="form-select" {...register("paymentMethod")}>
+        <option value="cash">Tiền mặt</option>
+        <option value="credit_card">Thẻ tín dụng</option>
+        <option value="bank_transfer">Chuyển khoản</option>
+        <option value="mobile_payment">Ví điện tử</option>
+      </select>
+      {errors.paymentMethod && <div className="text-danger small">{errors.paymentMethod.message}</div>}
+    </div>
+
+    {/* Ghi chú đặc biệt */}
+    <div className="col-md-6 mb-3">
+      <label className="form-label">Yêu cầu đặc biệt (nếu có)</label>
+      <textarea className="form-control" rows={3} {...register("specialRequest")}></textarea>
+    </div>
   </div>
 
-  <div className="mb-3">
-    <label htmlFor="email" className="form-label">Email</label>
-    <input
-      type="email"
-      className={`form-control ${errors.email ? "is-invalid" : ""}`}
-      id="email"
-      placeholder="Nhập email của bạn"
-      {...register("email")}
-    />
-    {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
-  </div>
+  {/* Trường ẩn roomType */}
+  <input type="hidden" {...register("roomType")} />
 
-  <div className="mb-3">
-    <label htmlFor="phone" className="form-label">Số điện thoại</label>
-    <input
-      type="text"
-      className={`form-control ${errors.phone ? "is-invalid" : ""}`}
-      id="phone"
-      placeholder="Nhập số điện thoại"
-      {...register("phone")}
-    />
-    {errors.phone && <div className="invalid-feedback">{errors.phone.message}</div>}
+  {/* Nút submit */}
+  <div className="text-center">
+    <button type="submit" className="btn btn-book-now px-5">
+      Đặt phòng
+    </button>
   </div>
-
-  <div className="mb-3">
-    <label htmlFor="checkin" className="form-label">Ngày nhận phòng</label>
-    <input
-      type="date"
-      className={`form-control ${errors.checkin ? "is-invalid" : ""}`}
-      id="checkin"
-      placeholder="dd/mm/yyyy"
-      {...register("checkin")}
-    />
-    {errors.checkin && <div className="invalid-feedback">{errors.checkin.message}</div>}
-  </div>
-
-  <div className="mb-3">
-    <label htmlFor="checkout" className="form-label">Ngày trả phòng</label>
-    <input
-      type="date"
-      className={`form-control ${errors.checkout ? "is-invalid" : ""}`}
-      id="checkout"
-      placeholder="dd/mm/yyyy"
-      {...register("checkout")}
-    />
-    {errors.checkout && <div className="invalid-feedback">{errors.checkout.message}</div>}
-  </div>
-
-  <div className="mb-3">
-    <label htmlFor="adults" className="form-label">Số người lớn</label>
-    <input
-      type="number"
-      className={`form-control ${errors.adults ? "is-invalid" : ""}`}
-      id="adults"
-      placeholder="Nhập số người lớn"
-      min="1"
-      {...register("adults")}
-    />
-    {errors.adults && <div className="invalid-feedback">{errors.adults.message}</div>}
-  </div>
-
-  <div className="mb-3">
-    <label htmlFor="children" className="form-label">Số trẻ em</label>
-    <input
-      type="number"
-      className={`form-control ${errors.children ? "is-invalid" : ""}`}
-      id="children"
-      placeholder="Nhập số trẻ em"
-      min="0"
-      {...register("children")}
-    />
-    {errors.children && <div className="invalid-feedback">{errors.children.message}</div>}
-  </div>
-
-  <div className="mb-3">
-    <label htmlFor="roomType" className="form-label">Loại phòng</label>
-    <select
-      className={`form-control ${errors.roomType ? "is-invalid" : ""}`}
-      id="roomType"
-      {...register("roomType")}
-    >
-      <option value="">Chọn loại phòng</option>
-      <option value="standard">Standard</option>
-      <option value="deluxe">Deluxe</option>
-      <option value="suite">Suite</option>
-    </select>
-    {errors.roomType && <div className="invalid-feedback">{errors.roomType.message}</div>}
-  </div>
-
-  <div className="mb-3">
-    <label htmlFor="paymentMethod" className="form-label">Phương thức thanh toán</label>
-    <select
-      className={`form-control ${errors.paymentMethod ? "is-invalid" : ""}`}
-      id="paymentMethod"
-      {...register("paymentMethod")}
-    >
-      <option value="cash">Tiền mặt</option>
-      <option value="credit_card">Thẻ tín dụng</option>
-      <option value="bank_transfer">Chuyển khoản ngân hàng</option>
-      <option value="mobile_payment">Thanh toán MoMo</option>
-    </select>
-    {errors.paymentMethod && <div className="invalid-feedback">{errors.paymentMethod.message}</div>}
-  </div>
-
-  <div className="mb-3">
-    <label htmlFor="specialRequest" className="form-label">Yêu cầu đặc biệt</label>
-    <textarea
-      className="form-control"
-      id="specialRequest"
-      placeholder="Ghi chú thêm (nếu có)"
-      rows="4"
-      {...register("specialRequest")}
-    ></textarea>
-  </div>
-
-  <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-    {loading ? "Đang xử lý..." : "Đặt phòng ngay"}
-  </button>
 </form>
+
+{room && (
+  <div className="room-preview mb-4 p-3 border rounded shadow-sm bg-light">
+    <div className="row align-items-center">
+      {/* Hình ảnh phòng */}
+      <div className="col-md-4">
+        <img
+          src={room.imageurls[0]}
+          alt={room.name}
+          className="img-fluid rounded"
+          style={{ maxHeight: "200px", objectFit: "cover", width: "100%" }}
+        />
+      </div>
+
+      {/* Thông tin phòng */}
+      <div className="col-md-8">
+        <h5 className="fw-bold mb-2">{room.name}</h5>
+        <p className="mb-1">Loại phòng: <strong>{room.type}</strong></p>
+        <p className="mb-1">Giá thuê mỗi ngày: <strong>{room.rentperday.toLocaleString()} VND</strong></p>
+        <p className="mb-0 text-muted small">
+          Sức chứa tối đa: {room.maxcount} người | {room.beds} giường | {room.baths} phòng tắm
+        </p>
+      </div>
+    </div>
+  </div>
+)}
+
+
 
                 {newBookingId && (
                   <div className="mt-3 text-end">

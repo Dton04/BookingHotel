@@ -14,6 +14,11 @@
   z-index: 500;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
+
+.dropdown-menu.show {
+  right: 0px;
+}
+
 /* Animation vào từ trên xuống */
 @keyframes slideDown {
   to {

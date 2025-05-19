@@ -166,7 +166,7 @@ function StaffManagement() {
   return (
     <div>
       <Navbar />
-      <div className="staff-management" style={{ marginTop: '120px' }}>
+      <div className="staff-management" style={{ marginTop: '100px' }}>
         <div>
           <h2>Staff List</h2>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>

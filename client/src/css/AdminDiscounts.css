@@ -1,6 +1,8 @@
 .admin-discounts-container {
-  padding: 30px;
+  padding: 20px;
   background-color: #f8f9fc;
+  max-width: 1400px;
+  margin: 0 auto;
   border-radius: 12px;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
   font-family: 'Segoe UI', sans-serif;

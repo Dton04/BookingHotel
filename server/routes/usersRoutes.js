@@ -302,7 +302,7 @@ router.get('/points', protect, async (req, res) => {
 
     // Lấy lịch sử giao dịch liên quan đến điểm
     const transactions = await Transaction.find({ userId: req.user.id })
-      .select('pointsEarned amount bookingId createdAt')
+      .select('points amount bookingId createdAt')
       .populate('bookingId', 'checkin checkout')
       .sort({ createdAt: -1 })
       .limit(10); // Giới hạn 10 giao dịch gần nhất
@@ -339,7 +339,7 @@ router.get('/:id/points/history', protect, async (req, res) => {
 
     // Lấy lịch sử giao dịch liên quan đến điểm
     const transactions = await Transaction.find({ userId })
-      .select('pointsEarned amount bookingId paymentMethod status createdAt')
+      .select('points amount bookingId paymentMethod status createdAt')
       .populate('bookingId', 'checkin checkout roomid')
       .sort({ createdAt: -1 });
 
@@ -476,7 +476,7 @@ router.get('/points/:phone', protect, async (req, res) => {
     }
 
     const transactions = await Transaction.find({ userId: user._id })
-      .select('pointsEarned amount bookingId createdAt')
+      .select('points amount bookingId createdAt')
       .populate('bookingId', 'checkin checkout')
       .sort({ createdAt: -1 })
       .limit(10);
@@ -524,7 +524,7 @@ router.get('/spending-history/:userId', protect, async (req, res) => {
     }
 
     const transactions = await Transaction.find({ userId })
-      .select('amount bookingId paymentMethod status createdAt pointsEarned')
+      .select('amount bookingId paymentMethod status createdAt points')
       .populate('bookingId', 'checkin checkout roomid')
       .sort({ createdAt: -1 });
 
@@ -1116,7 +1116,7 @@ router.get('/membership/benefits/:userId', protect, async (req, res) => {
     }
 
     let membershipLevel;
-    if (user.points >= 300000) membershipLevel = 'Diamond';
+    if (user.points >= 350000) membershipLevel = 'Diamond';
     else if (user.points >= 200000) membershipLevel = 'Platinum';
     else if (user.points >= 100000) membershipLevel = 'Gold';
     else if (user.points >= 50000) membershipLevel = 'Silver';

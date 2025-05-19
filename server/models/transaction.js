@@ -9,11 +9,15 @@ const transactionSchema = new mongoose.Schema({
   bookingId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Booking',
-    required: true,
+    required: function() {
+      return this.type === 'earn'; // Chỉ bắt buộc với type 'earn'
+    },
   },
   amount: {
     type: Number,
-    required: true, // Số tiền giao dịch (từ booking)
+    required: function() {
+    return this.type === 'earn';
+    },
   },
   points: {
     type: Number,
@@ -21,7 +25,7 @@ const transactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['earn', 'redeem'],
+    enum: ['earn', 'redeem', 'reward_redemption'],
     default: 'earn', // Loại giao dịch: tích điểm hoặc đổi điểm
   },
   status: {

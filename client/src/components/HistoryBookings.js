@@ -213,8 +213,8 @@ function HistoryBookings() {
               {filteredBookings.map((booking) => (
                 <tr key={booking._id}>
                   <td>{booking.roomid?.name || "Không xác định"}</td>
-                  <td>{new Date(booking.checkin).toLocaleDateString()}</td>
-                  <td>{new Date(booking.checkout).toLocaleDateString()}</td>
+                  <td>{new Date(booking.checkin).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</td>
+                  <td>{new Date(booking.checkout).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</td>
                   <td>{booking.adults}</td>
                   <td>{booking.children}</td>
                   <td>{booking.roomType || "Không xác định"}</td>

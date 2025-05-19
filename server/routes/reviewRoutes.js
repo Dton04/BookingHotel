@@ -22,45 +22,66 @@ router.post("/", async (req, res) => {
   try {
     console.log("Request body:", req.body);
 
-    if (!hotelId || !mongoose.Types.ObjectId.isValid(hotelId)) {
-      return res.status(400).json({ message: "ID khách sạn không hợp lệ hoặc thiếu" });
-    }
-
-    if (roomId && !mongoose.Types.ObjectId.isValid(roomId)) {
-      return res.status(400).json({ message: "ID phòng không hợp lệ" });
-    }
-
-    if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ message: "Điểm đánh giá phải từ 1 đến 5" });
-    }
-
-    if (!comment || comment.trim() === "") {
-      return res.status(400).json({ message: "Bình luận là bắt buộc" });
-    }
-
-    if (!email || email.trim() === "") {
-      return res.status(400).json({ message: "Email là bắt buộc để gửi đánh giá" });
-    }
-
+    // Kiểm tra kết nối database
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
     }
 
+    // Kiểm tra dữ liệu đầu vào
+    if (!hotelId || !mongoose.Types.ObjectId.isValid(hotelId)) {
+      return res.status(400).json({ message: "ID khách sạn không hợp lệ hoặc thiếu" });
+    }
+    if (roomId && !mongoose.Types.ObjectId.isValid(roomId)) {
+      return res.status(400).json({ message: "ID phòng không hợp lệ" });
+    }
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: "Điểm đánh giá phải từ 1 đến 5" });
+    }
+    if (!comment || comment.trim() === "") {
+      return res.status(400).json({ message: "Bình luận là bắt buộc" });
+    }
+    if (!email || email.trim() === "") {
+      return res.status(400).json({ message: "Email là bắt buộc để gửi đánh giá" });
+    }
+
     // Kiểm tra khách sạn tồn tại
-    const hotel = await Hotel.findById(hotelId);
+    const hotel = await Hotel.findById(hotelId).populate('rooms');
     if (!hotel) {
       return res.status(404).json({ message: "Không tìm thấy khách sạn" });
     }
 
-    // Kiểm tra đặt phòng
+    // Kiểm tra roomId thuộc khách sạn (nếu có)
+    if (roomId) {
+      const roomExists = hotel.rooms.some(room => room._id.toString() === roomId);
+      if (!roomExists) {
+        return res.status(400).json({ message: "Phòng không thuộc khách sạn này" });
+      }
+    }
+
+    // Kiểm tra mảng hotel.rooms hợp lệ
+    const validRoomIds = hotel.rooms
+      .filter(room => mongoose.Types.ObjectId.isValid(room._id))
+      .map(room => room._id);
+    if (validRoomIds.length === 0) {
+      return res.status(400).json({ message: "Khách sạn không có phòng hợp lệ để kiểm tra đặt phòng" });
+    }
+
+    // Kiểm tra đặt phòng và trạng thái thanh toán
     console.log("Checking booking for email:", email, "and hotelId:", hotelId);
-    const bookingQuery = { email: email.toLowerCase(), roomid: { $in: hotel.rooms } };
+    const bookingQuery = { 
+      email: email.toLowerCase(), 
+      roomid: { $in: validRoomIds },
+      paymentStatus: "paid",
+      status: "confirmed"
+    };
     if (roomId) {
       bookingQuery.roomid = roomId;
     }
     const booking = await Booking.findOne(bookingQuery);
     if (!booking) {
-      return res.status(403).json({ message: "Bạn phải đặt phòng trong khách sạn này để gửi đánh giá" });
+      return res.status(403).json({ 
+        message: "Bạn phải có đặt phòng đã thanh toán thành công trong khách sạn này để gửi đánh giá" 
+      });
     }
 
     // Kiểm tra đánh giá đã tồn tại
@@ -74,11 +95,12 @@ router.post("/", async (req, res) => {
       return res.status(403).json({ message: "Bạn đã gửi đánh giá cho khách sạn/phòng này rồi" });
     }
 
+    // Tạo và lưu đánh giá mới
     const newReview = new Review({
       hotelId,
       roomId: roomId || null,
       userName: userName || "Ẩn danh",
-      rating,
+      rating: parseInt(rating, 10),
       comment,
       email: email.toLowerCase(),
       bookingId: booking._id,
@@ -126,13 +148,18 @@ router.get("/", async (req, res) => {
     if (status) {
       if (status === "active") {
         query.isDeleted = false;
+        query.isVisible = true;
+      } else if (status === "hidden") {
+        query.isDeleted = false;
+        query.isVisible = false;
       } else if (status === "deleted") {
         query.isDeleted = true;
       } else {
-        return res.status(400).json({ message: "Trạng thái không hợp lệ, chỉ chấp nhận 'active' hoặc 'deleted'" });
+        return res.status(400).json({ message: "Trạng thái không hợp lệ, chỉ chấp nhận 'active', 'hidden', hoặc 'deleted'" });
       }
     } else {
       query.isDeleted = false;
+      query.isVisible = true;
     }
 
     if (mongoose.connection.readyState !== 1) {
@@ -175,7 +202,7 @@ router.get("/average", async (req, res) => {
       return res.status(400).json({ message: "ID khách sạn không hợp lệ hoặc thiếu" });
     }
 
-    const reviews = await Review.find({ hotelId, isDeleted: false });
+    const reviews = await Review.find({ hotelId, isDeleted: false, isVisible: true });
     const totalReviews = reviews.length;
     const average = totalReviews > 0 ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews : 0;
 
@@ -199,7 +226,7 @@ router.get("/by-email", async (req, res) => {
       return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
     }
 
-    const reviews = await Review.find({ email: email.toLowerCase(), isDeleted: false })
+    const reviews = await Review.find({ email: email.toLowerCase(), isDeleted: false, isVisible: true })
       .populate("hotelId", "name")
       .populate("roomId", "name type");
     res.status(200).json(reviews);

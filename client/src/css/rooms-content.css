@@ -536,3 +536,19 @@
   gap: 20px;
 }
 
+.hotel-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px; /* Giữ chiều cao cố định cho container */
+  overflow: hidden;
+  background-color: #f8f9fa; /* Màu nền nhẹ để che phần trống */
+  border-radius: 8px; /* Bo góc cho thẩm mỹ */
+}
+
+.hotel-image {
+  max-width: 80%; /* Giới hạn chiều rộng ảnh tối đa 80% container */
+  max-height: 100%; /* Đảm bảo ảnh không vượt quá chiều cao container */
+  object-fit: contain; /* Giữ tỷ lệ ảnh, không cắt */
+  border-radius: 8px; /* Bo góc ảnh */
+}

@@ -60,6 +60,7 @@
   border-radius: 8px;
   font-size: 1rem;
   transition: all 0.3s ease;
+  color: white;
 }
 
 .status-filter .dropdown-toggle:hover {
@@ -90,9 +91,9 @@
   padding: 16px;
   font-size: 0.95rem;
 }
-
+  
 .bookings-table th {
-  background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(90deg, #3dab31 0%, #317150 100%);
   color: #ffffff;
   font-weight: 600;
   text-transform: uppercase;

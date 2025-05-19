@@ -5,6 +5,8 @@ import axios from "axios";
 import Rating from "react-rating";
 import ReviewChart from "./ReviewChart";
 import SuggestionCard from "../components/SuggestionCard";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function Room({ room }) {
   const [show, setShow] = useState(false);
@@ -16,6 +18,10 @@ function Room({ room }) {
   const [reviewPage, setReviewPage] = useState(1);
   const reviewsPerPage = 5;
   const navigate = useNavigate();
+
+  // Kiểm tra vai trò người dùng
+  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+  const isAdminOrStaff = userInfo && (userInfo.role === 'admin' || userInfo.role === 'staff');
 
   const handleClose = () => setShow(false);
   const handleImageClick = async () => {
@@ -50,14 +56,39 @@ function Room({ room }) {
   const fetchReviews = async () => {
     try {
       setLoadingReviews(true);
-      const response = await axios.get("/api/reviews", {
-        params: { hotelId: room.hotelId, roomId: room._id, limit: 50 },
-      });
+      const config = {
+        params: { 
+          hotelId: room.hotelId, 
+          roomId: room._id, 
+          limit: 50,
+          status: isAdminOrStaff ? undefined : "active" // Chỉ lấy đánhრ:Admin/staff thấy tất cả, người dùng thường chỉ thấy active
+        },
+      };
+      if (isAdminOrStaff) {
+        config.headers = { Authorization: `Bearer ${userInfo.token}` };
+      }
+      const response = await axios.get("/api/reviews", config);
       setReviews(response.data.reviews || []);
     } catch (error) {
       console.error("Lỗi khi lấy đánh giá:", error);
+      toast.error(error.response?.data?.message || 'Không thể tải đánh giá');
     } finally {
       setLoadingReviews(false);
+    }
+  };
+
+  // Ẩn/Hiển thị đánh giá
+  const toggleReviewVisibility = async (reviewId, isVisible) => {
+    try {
+      const config = {
+        headers: { Authorization: `Bearer ${userInfo.token}` },
+      };
+      const response = await axios.patch(`/api/reviews/${reviewId}/toggle-hidden`, {}, config);
+      toast.success(response.data.message);
+      fetchReviews();
+    } catch (error) {
+      console.error('Lỗi khi thay đổi trạng thái hiển thị:', error);
+      toast.error(error.response?.data?.message || 'Không thể thay đổi trạng thái hiển thị');
     }
   };
 
@@ -250,7 +281,7 @@ function Room({ room }) {
             </div>
             <div className="room-reviews">
               <h5>Đánh giá ({averageRating.totalReviews})</h5>
-              <ReviewChart hotelId={room.hotelId} /> {/* Sửa để truyền hotelId */}
+              <ReviewChart hotelId={room.hotelId} />
               {loadingReviews ? (
                 <p>Đang tải đánh giá...</p>
               ) : reviews.length > 0 ? (
@@ -284,6 +315,17 @@ function Room({ room }) {
                                 e.target.src = "https://via.placeholder.com/400";
                               }}
                             />
+                          </div>
+                        )}
+                        {isAdminOrStaff && (
+                          <div className="review-actions" style={{ marginTop: "10px" }}>
+                            <Button
+                              variant={review.isVisible ? "warning" : "success"}
+                              size="sm"
+                              onClick={() => toggleReviewVisibility(review._id, review.isVisible)}
+                            >
+                              {review.isVisible ? "Ẩn" : "Hiển Thị"}
+                            </Button>
                           </div>
                         )}
                       </div>

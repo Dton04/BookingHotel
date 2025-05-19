@@ -3,6 +3,8 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../css/rewards.css';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaStar, FaGift, FaHistory } from 'react-icons/fa';
 
 const Rewards = () => {
   const [rewards, setRewards] = useState([]);
@@ -12,6 +14,7 @@ const Rewards = () => {
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState(null);
 
+  // Lấy danh sách ưu đãi
   const fetchRewards = async () => {
     try {
       const token = localStorage.getItem('userInfo')
@@ -31,6 +34,7 @@ const Rewards = () => {
     }
   };
 
+  // Lấy lịch sử đổi thưởng
   const fetchHistory = async () => {
     try {
       const token = localStorage.getItem('userInfo')
@@ -46,6 +50,7 @@ const Rewards = () => {
     }
   };
 
+  // Xử lý đổi ưu đãi
   const handleRedeem = async (rewardId) => {
     setRedeeming(rewardId);
     try {
@@ -72,66 +77,134 @@ const Rewards = () => {
     fetchHistory();
   }, []);
 
-  if (loading) return <div className="text-center py-10">Đang tải...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full"
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-10 px-4">
-      <h1 className="text-3xl font-bold mb-6 text-center">Ưu đãi thành viên</h1>
+    <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      {/* Tiêu đề */}
+      <motion.h1
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-4xl font-bold mb-8 text-center text-blue-900"
+      >
+        <FaGift className="inline-block mr-2 text-yellow-500" /> Ưu Đãi Thành Viên
+      </motion.h1>
 
-      <div className="bg-gray-100 p-6 rounded-lg mb-8 text-center user-info">
-        <p className="text-lg">Cấp độ thành viên: <span className="font-semibold">{membershipLevel}</span></p>
-        <p className="text-lg">Điểm hiện có: <span className="font-semibold">{userPoints}</span></p>
-      </div>
+      {/* Thông tin người dùng */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="user-info bg-gradient-to-r from-blue-50 to-green-50 p-8 rounded-2xl shadow-lg mb-10 text-center"
+      >
+        <p className="text-xl font-semibold text-gray-800">
+          <FaStar className="inline-block mr-2 text-yellow-400" />
+          Cấp độ thành viên: <span className="text-blue-600">{membershipLevel}</span>
+        </p>
+        <p className="text-xl font-semibold text-gray-800 mt-2">
+          Điểm hiện có: <span className="text-green-600">{userPoints}</span>
+        </p>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+      {/* Danh sách ưu đãi */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
+      >
         {rewards.length === 0 ? (
-          <p className="text-center col-span-full">Không có ưu đãi khả dụng</p>
+          <p className="col-span-full text-center text-gray-600">Không có ưu đãi khả dụng</p>
         ) : (
-          rewards.map((reward) => (
-            <div key={reward._id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition reward-card">
-              <h3 className="text-xl font-semibold mb-2">{reward.name}</h3>
-              <p className="text-gray-600 mb-4">{reward.description}</p>
-              <p className="text-sm mb-2">Cấp độ yêu cầu: <span className="font-medium">{reward.membershipLevel}</span></p>
-              <p className="text-sm mb-4">Điểm yêu cầu: <span className="font-medium">{reward.pointsRequired}</span></p>
-              <button
-                onClick={() => handleRedeem(reward._id)}
-                disabled={redeeming === reward._id}
-                className={`w-full py-2 rounded-lg text-white ${redeeming === reward._id ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+          <AnimatePresence>
+            {rewards.map((reward) => (
+              <motion.div
+                key={reward._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="reward-card bg-white p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300"
               >
-                {redeeming === reward._id ? 'Đang xử lý...' : 'Đổi ưu đãi'}
-              </button>
-            </div>
-          ))
+                <h3 className="text-xl font-bold text-gray-800 mb-3">{reward.name}</h3>
+                <p className="text-gray-600 mb-4">{reward.description}</p>
+                <p className="text-sm text-gray-500 mb-2">
+                  Cấp độ yêu cầu: <span className="font-medium text-blue-600">{reward.membershipLevel}</span>
+                </p>
+                <p className="text-sm text-gray-500 mb-4">
+                  Điểm yêu cầu: <span className="font-medium text-green-600">{reward.pointsRequired}</span>
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleRedeem(reward._id)}
+                  disabled={redeeming === reward._id || userPoints < reward.pointsRequired}
+                  className={`w-full py-3 rounded-lg text-white font-semibold transition-all duration-300 ${
+                    redeeming === reward._id || userPoints < reward.pointsRequired
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600'
+                  }`}
+                >
+                  {redeeming === reward._id ? 'Đang xử lý...' : 'Đổi ưu đãi'}
+                </motion.button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         )}
-      </div>
+      </motion.div>
 
-      <div className="bg-white p-6 rounded-lg shadow-md history-table">
-        <h2 className="text-2xl font-semibold mb-4">Lịch sử đổi thưởng</h2>
+      {/* Lịch sử đổi thưởng */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
+        className="history-table bg-white p-8 rounded-2xl shadow-lg"
+      >
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">
+          <FaHistory className="inline-block mr-2 text-blue-600" /> Lịch sử đổi thưởng
+        </h2>
         {history.length === 0 ? (
-          <p>Chưa có giao dịch đổi thưởng nào</p>
+          <p className="text-gray-600">Chưa có giao dịch đổi thưởng nào</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="p-3">Ngày</th>
-                  <th className="p-3">Mô tả</th>
-                  <th className="p-3">Điểm</th>
+                  <th className="p-4 font-semibold text-gray-700">Ngày</th>
+                  <th className="p-4 font-semibold text-gray-700">Mô tả</th>
+                  <th className="p-4 font-semibold text-gray-700">Điểm</th>
                 </tr>
               </thead>
               <tbody>
                 {history.map((transaction) => (
-                  <tr key={transaction._id} className="border-t">
-                    <td className="p-3">{new Date(transaction.createdAt).toLocaleDateString('vi-VN')}</td>
-                    <td className="p-3">{transaction.description}</td>
-                    <td className="p-3 text-red-600">{transaction.points}</td>
-                  </tr>
+                  <motion.tr
+                    key={transaction._id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="border-t hover:bg-gray-50 transition-colors duration-200"
+                  >
+                    <td className="p-4">{new Date(transaction.createdAt).toLocaleDateString('vi-VN')}</td>
+                    <td className="p-4">{transaction.description}</td>
+                    <td className="p-4 text-red-600 font-medium">{transaction.points}</td>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };

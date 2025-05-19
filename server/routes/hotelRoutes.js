@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
@@ -36,6 +35,48 @@ const upload = multer({
   storage,
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 }, // Giới hạn 5MB
+});
+
+// GET /api/hotels/:id - Lấy chi tiết khách sạn
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'ID khách sạn không hợp lệ' });
+    }
+
+    const hotel = await Hotel.findById(id)
+      .populate('region', 'name')
+      .populate('rooms', '_id name maxcount beds baths rentperday type description imageurls availabilityStatus currentbookings');
+    
+    if (!hotel) {
+      return res.status(404).json({ message: 'Không tìm thấy khách sạn' });
+    }
+
+    res.status(200).json({
+      hotel: {
+        _id: hotel._id,
+        name: hotel.name,
+        address: hotel.address,
+        region: hotel.region,
+        contactNumber: hotel.contactNumber,
+        email: hotel.email,
+        description: hotel.description,
+        imageurls: hotel.imageurls,
+        rooms: hotel.rooms,
+        createdAt: hotel.createdAt,
+        updatedAt: hotel.updatedAt,
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy chi tiết khách sạn:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi lấy chi tiết khách sạn', error: error.message });
+  }
 });
 
 // POST /api/hotels/:id/images - Tải ảnh khách sạn
@@ -215,7 +256,7 @@ router.get('/:id/rooms', async (req, res) => {
         name: hotel.name,
         address: hotel.address,
         region: hotel.region,
-        imageurls: hotel.imageurls, // Thêm imageurls
+        imageurls: hotel.imageurls,
       },
       rooms: hotel.rooms,
     });

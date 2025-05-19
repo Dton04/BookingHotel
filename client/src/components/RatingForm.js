@@ -1,177 +1,239 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Rate, Input, Select, Button, Alert, Spin } from "antd";
 
-function RatingForm({ onSubmit, hasBooked, rooms, selectedRoom, setSelectedRoom, submitStatus }) {
+const { Option } = Select;
+const { TextArea } = Input;
+
+const RatingForm = ({ hotels, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     userName: "",
-    rating: "",
+    rating: 0,
     comment: "",
-    image: null,
-    userEmail: localStorage.getItem("userEmail") || "",
+    userEmail: "",
   });
-  const [formLoading, setFormLoading] = useState(false);
+  const [selectedHotel, setSelectedHotel] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [rooms, setRooms] = useState([]);
   const [ratingError, setRatingError] = useState(null);
+  const [formLoading, setFormLoading] = useState(false);
+
+  useEffect(() => {
+    if (selectedHotel) {
+      const fetchRooms = async () => {
+        try {
+          setFormLoading(true);
+          const response = await axios.get(`/api/hotels/${selectedHotel}/rooms`);
+          const roomsData = response.data.rooms || response.data || [];
+          if (Array.isArray(roomsData)) {
+            setRooms(roomsData);
+          } else {
+            console.warn("Dữ liệu phòng không phải là mảng:", roomsData);
+            setRooms([]);
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy danh sách phòng:", error);
+          setRatingError("Không thể tải danh sách phòng. Vui lòng thử lại!");
+          setRooms([]);
+        } finally {
+          setFormLoading(false);
+        }
+      };
+      fetchRooms();
+    } else {
+      setRooms([]);
+      setSelectedRoom(null);
+    }
+  }, [selectedHotel]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name === "rating") {
-      const ratingValue = parseInt(value, 10);
-      if (value === "" || (ratingValue >= 1 && ratingValue <= 5)) {
-        setRatingError(null);
-      } else {
-        setRatingError("Điểm đánh giá phải từ 1 đến 5");
-      }
-    }
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [name]: value });
   };
 
-  const handleFileChange = (e) => {
-    setFormData((prev) => ({ ...prev, image: e.target.files[0] }));
+  const handleRatingChange = (value) => {
+    setFormData({ ...formData, rating: value });
+  };
+
+  const handleHotelChange = (value) => {
+    setSelectedHotel(value);
+    setSelectedRoom(null);
+  };
+
+  const handleRoomChange = (value) => {
+    setSelectedRoom(value);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedRoom) {
-      alert("Vui lòng chọn một phòng để đánh giá!");
-      return;
-    }
-    if (!formData.userEmail) {
-      alert("Email không hợp lệ. Vui lòng đặt phòng trước khi gửi đánh giá.");
-      return;
-    }
+    try {
+      setFormLoading(true);
+      setRatingError(null);
 
-    const ratingValue = parseInt(formData.rating, 10);
-    if (isNaN(ratingValue) || ratingValue < 1 || ratingValue > 5) {
-      setRatingError("Điểm đánh giá phải từ 1 đến 5");
-      return;
-    }
+      if (!selectedHotel) {
+        setRatingError("Vui lòng chọn một khách sạn để đánh giá!");
+        return;
+      }
 
-    setFormLoading(true);
-    const data = {
-      roomId: selectedRoom,
-      userName: formData.userName,
-      rating: ratingValue, // Send as a number
-      comment: formData.comment,
-      email: formData.userEmail,
-      image: formData.image,
-    };
-    await onSubmit(data);
-    setFormLoading(false);
+      if (!formData.userEmail) {
+        setRatingError("Vui lòng nhập email đã dùng để đặt phòng.");
+        return;
+      }
+
+      const ratingValue = parseInt(formData.rating, 10);
+      if (isNaN(ratingValue) || ratingValue < 1 || ratingValue > 5) {
+        setRatingError("Điểm đánh giá phải từ 1 đến 5!");
+        return;
+      }
+
+      if (!formData.comment || formData.comment.trim() === "") {
+        setRatingError("Bình luận không được để trống!");
+        return;
+      }
+
+      const hotel = hotels.find((h) => h._id === selectedHotel);
+      if (!hotel) {
+        setRatingError("Không tìm thấy khách sạn được chọn!");
+        return;
+      }
+
+      let roomIds = hotel.rooms || [];
+      if (selectedRoom) {
+        roomIds = [selectedRoom];
+      }
+
+      const bookingCheckResponse = await axios.get(`/api/bookings/check`, {
+  params: {
+    email: formData.userEmail.toLowerCase(),
+    roomId: selectedRoom || undefined, // truyền roomId trực tiếp
+  },
+});
+
+
+      if (
+        !bookingCheckResponse.data.hasBooked ||
+        bookingCheckResponse.data.paymentStatus !== "paid" ||
+        bookingCheckResponse.data.booking.status !== "confirmed"
+      ) {
+        setRatingError(
+          "Bạn phải có đặt phòng đã thanh toán thành công tại khách sạn này để gửi đánh giá."
+        );
+        return;
+      }
+
+      const reviewData = {
+        hotelId: selectedHotel,
+        roomId: selectedRoom || null,
+        userName: formData.userName || "Ẩn danh",
+        rating: ratingValue,
+        comment: formData.comment,
+        email: formData.userEmail.toLowerCase(),
+      };
+
+      console.log("Gửi dữ liệu đánh giá:", reviewData);
+
+      await onSubmit(reviewData);
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.";
+      setRatingError(errorMessage);
+      console.error("Lỗi khi gửi đánh giá:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   return (
-    <div className="rating-form-container">
-      {submitStatus && (
-        <div className={`alert ${submitStatus.type === "success" ? "alert-success" : "alert-danger"}`}>
-          {submitStatus.message}
-        </div>
+    <div className="rating-form">
+      <h3>Gửi đánh giá của bạn</h3>
+      {ratingError && (
+        <Alert
+          message={ratingError}
+          type="error"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
       )}
-      <form className="rating-form" onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Chọn phòng:</label>
-          <select
-            className="form-control"
-            value={selectedRoom}
-            onChange={(e) => setSelectedRoom(e.target.value)}
-            required
-            disabled={rooms.length === 0 || formLoading}
+          <label>Khách sạn:</label>
+          <Select
+            placeholder="Chọn khách sạn"
+            value={selectedHotel}
+            onChange={handleHotelChange}
+            style={{ width: "100%" }}
           >
-            <option value="" disabled>
-              Chọn một phòng
-            </option>
-            {rooms.map((room) => (
-              <option key={room._id} value={room._id}>
-                {room.name}
-              </option>
+            {hotels.map((hotel) => (
+              <Option key={hotel._id} value={hotel._id}>
+                {hotel.name}
+              </Option>
             ))}
-          </select>
+          </Select>
         </div>
-
-        {hasBooked ? (
-          <>
-            <div className="form-group">
-              <label>Tên của bạn:</label>
-              <input
-                type="text"
-                className="form-control"
-                name="userName"
-                value={formData.userName}
-                onChange={handleInputChange}
-                placeholder="Nhập tên của bạn"
-                required
-                disabled={formLoading}
-              />
-            </div>
-            <div className="form-group">
-              <label>Email của bạn:</label>
-              <input
-                type="email"
-                className="form-control"
-                name="userEmail"
-                value={formData.userEmail}
-                onChange={handleInputChange}
-                placeholder="Email của bạn"
-                required
-                disabled
-              />
-              {!formData.userEmail && (
-                <p className="text-danger mt-1">
-                  Email không hợp lệ. Vui lòng đặt phòng trước khi gửi đánh giá.
-                </p>
-              )}
-            </div>
-            <div className="form-group">
-              <label>Đánh giá (1-5 sao):</label>
-              <input
-                type="number"
-                className="form-control"
-                name="rating"
-                min="1"
-                max="5"
-                value={formData.rating}
-                onChange={handleInputChange}
-                placeholder="Nhập số sao (1-5)"
-                required
-                disabled={formLoading}
-              />
-              {ratingError && <p className="text-danger mt-1">{ratingError}</p>}
-            </div>
-            <div className="form-group">
-              <label>Nội dung đánh giá:</label>
-              <textarea
-                className="form-control"
-                name="comment"
-                rows="3"
-                value={formData.comment}
-                onChange={handleInputChange}
-                placeholder="Nhập nội dung đánh giá của bạn"
-                required
-                disabled={formLoading}
-              ></textarea>
-            </div>
-            <div className="form-group">
-              <label>Ảnh minh họa (tùy chọn):</label>
-              <input
-                type="file"
-                className="form-control"
-                accept="image/*"
-                onChange={handleFileChange}
-                disabled={formLoading}
-              />
-            </div>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={formLoading || !formData.userEmail || ratingError}
-            >
-              {formLoading ? "Đang gửi..." : "Gửi đánh giá"}
-            </button>
-          </>
-        ) : (
-          <p className="text-danger">Bạn cần đặt phòng này trước khi gửi đánh giá.</p>
-        )}
+        <div className="form-group">
+          <label>Phòng (tùy chọn):</label>
+          <Select
+            placeholder="Chọn phòng"
+            value={selectedRoom}
+            onChange={handleRoomChange}
+            style={{ width: "100%" }}
+            disabled={!selectedHotel || formLoading}
+            notFoundContent={formLoading ? <Spin size="small" /> : "Không có phòng nào"}
+          >
+            {rooms.map((room) => (
+              <Option key={room._id} value={room._id}>
+                {room.name} ({room.type})
+              </Option>
+            ))}
+          </Select>
+        </div>
+        <div className="form-group">
+          <label>Tên của bạn (tùy chọn):</label>
+          <Input
+            name="userName"
+            value={formData.userName}
+            onChange={handleInputChange}
+            placeholder="Nhập tên hoặc để trống để ẩn danh"
+          />
+        </div>
+        <div className="form-group">
+          <label>Email của bạn:</label>
+          <Input
+            name="userEmail"
+            value={formData.userEmail}
+            onChange={handleInputChange}
+            placeholder="Nhập email đã dùng để đặt phòng"
+            type="email"
+          />
+        </div>
+        <div className="form-group">
+          <label>Điểm đánh giá:</label>
+          <Rate value={formData.rating} onChange={handleRatingChange} />
+        </div>
+        <div className="form-group">
+          <label>Bình luận:</label>
+          <TextArea
+            name="comment"
+            value={formData.comment}
+            onChange={handleInputChange}
+            placeholder="Chia sẻ trải nghiệm của bạn"
+            rows={4}
+          />
+        </div>
+        <div className="form-actions">
+          <Button type="primary" htmlType="submit" loading={formLoading}>
+            Gửi đánh giá
+          </Button>
+          <Button onClick={onCancel} style={{ marginLeft: 8 }}>
+            Hủy
+          </Button>
+        </div>
       </form>
     </div>
   );
-}
+};
 
 export default RatingForm;

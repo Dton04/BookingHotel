@@ -36,14 +36,26 @@ router.post('/', protect, admin, async (req, res) => {
       return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
     }
 
-    if (!['voucher', 'festival', 'member', 'accumulated'].includes(type)) {
+    // Kiểm tra các trường bắt buộc
+    if (!name || !type || !discountType || !discountValue || !startDate || !endDate) {
+      return res.status(400).json({ message: 'Thiếu các trường bắt buộc: name, type, discountType, discountValue, startDate, endDate' });
+    }
+    if (discountValue < 0) {
+      return res.status(400).json({ message: 'Giá trị giảm giá không thể âm' });
+    }
+
+    // Validate loại khuyến mãi
+    const validTypes = ['voucher', 'festival', 'member', 'accumulated'];
+    if (!validTypes.includes(type)) {
       return res.status(400).json({ message: 'Loại khuyến mãi không hợp lệ' });
     }
 
+    // Validate loại giảm giá
     if (!['percentage', 'fixed'].includes(discountType)) {
       return res.status(400).json({ message: 'Loại giảm giá không hợp lệ' });
     }
 
+    // Validate phòng áp dụng nếu có
     if (applicableHotels && applicableHotels.length > 0) {
       const rooms = await Room.find({ _id: { $in: applicableHotels } });
       if (rooms.length !== applicableHotels.length) {
@@ -51,23 +63,46 @@ router.post('/', protect, admin, async (req, res) => {
       }
     }
 
+    // Validate ngày bắt đầu và kết thúc
     const start = new Date(startDate);
     const end = new Date(endDate);
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
       return res.status(400).json({ message: 'Ngày bắt đầu hoặc kết thúc không hợp lệ' });
     }
 
-    if (membershipLevel && !['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'].includes(membershipLevel)) {
-      return res.status(400).json({ message: 'Cấp độ thành viên không hợp lệ' });
-    }
-
-    if (type === 'voucher' && code) {
+    // Kiểm tra mã voucher
+    if (type === 'voucher') {
+      if (!code) {
+        return res.status(400).json({ message: 'Mã voucher là bắt buộc cho loại voucher' });
+      }
       const discountExists = await Discount.findOne({ code });
       if (discountExists) {
         return res.status(400).json({ message: 'Mã voucher đã tồn tại' });
       }
+    } else if (code) {
+      return res.status(400).json({ message: 'Mã code chỉ được cung cấp cho loại voucher' });
     }
 
+    // Validate membershipLevel nếu là member
+    if (type === 'member') {
+      const validLevels = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+      if (!membershipLevel || !validLevels.includes(membershipLevel)) {
+        return res.status(400).json({ message: 'Cấp độ thành viên không hợp lệ hoặc thiếu' });
+      }
+    } else if (membershipLevel) {
+      return res.status(400).json({ message: 'Cấp độ thành viên chỉ được cung cấp cho loại member' });
+    }
+
+    // Validate minSpending nếu là accumulated
+    if (type === 'accumulated') {
+      if (!minSpending || minSpending < 0) {
+        return res.status(400).json({ message: 'Chi tiêu tối thiểu không hợp lệ hoặc thiếu' });
+      }
+    } else if (minSpending) {
+      return res.status(400).json({ message: 'Chi tiêu tối thiểu chỉ được cung cấp cho loại accumulated' });
+    }
+
+    // Tạo khuyến mãi
     const discount = new Discount({
       name,
       code: type === 'voucher' ? code : null,
@@ -76,20 +111,164 @@ router.post('/', protect, admin, async (req, res) => {
       discountType,
       discountValue,
       applicableHotels: applicableHotels || [],
-      startDate,
-      endDate,
+      startDate: start,
+      endDate: end,
       minBookingAmount: minBookingAmount || 0,
-      maxDiscount,
-      isStackable: isStackable || false,
-      membershipLevel: membershipLevel || null,
-      minSpending: minSpending || null,
+      maxDiscount: maxDiscount || null,
+      isStackable: !!isStackable,
+      membershipLevel: type === 'member' ? membershipLevel : null,
+      minSpending: type === 'accumulated' ? minSpending : null,
     });
 
+    console.log('Dữ liệu khuyến mãi trước khi lưu:', discount);
     await discount.save();
     res.status(201).json({ message: 'Tạo khuyến mãi thành công', discount });
   } catch (error) {
-    console.error('Lỗi khi tạo khuyến mãi:', error.message, error.stack);
-    res.status(500).json({ message: 'Lỗi khi tạo khuyến mãi', error: error.message });
+    console.error('Lỗi khi tạo khuyến mãi:', {
+      message: error.message,
+      stack: error.stack,
+      errors: error.errors,
+      code: error.code,
+    });
+    res.status(500).json({
+      message: 'Lỗi khi tạo khuyến mãi',
+      error: error.message,
+      details: error.errors || error.code,
+    });
+  }
+});
+
+/**
+ * @route   PUT /api/discounts/:id
+ * @desc    Cập nhật khuyến mãi
+ * @access  Riêng tư (yêu cầu token, chỉ admin)
+ */
+router.put('/:id', protect, admin, async (req, res) => {
+  const { id } = req.params;
+  const {
+    name,
+    code,
+    description,
+    discountType,
+    discountValue,
+    applicableHotels,
+    startDate,
+    endDate,
+    minBookingAmount,
+    maxDiscount,
+    isStackable,
+    membershipLevel,
+    minSpending,
+  } = req.body;
+
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'ID khuyến mãi không hợp lệ' });
+    }
+
+    const discount = await Discount.findById(id);
+    if (!discount) {
+      return res.status(404).json({ message: 'Không tìm thấy khuyến mãi' });
+    }
+
+    // Validate discountType nếu được cung cấp
+    if (discountType && !['percentage', 'fixed'].includes(discountType)) {
+      return res.status(400).json({ message: 'Loại giảm giá không hợp lệ' });
+    }
+
+    // Validate discountValue nếu được cung cấp
+    if (discountValue !== undefined && discountValue < 0) {
+      return res.status(400).json({ message: 'Giá trị giảm giá không thể âm' });
+    }
+
+    // Validate phòng áp dụng nếu được cung cấp
+    if (applicableHotels && applicableHotels.length > 0) {
+      const rooms = await Room.find({ _id: { $in: applicableHotels } });
+      if (rooms.length !== applicableHotels.length) {
+        return res.status(400).json({ message: 'Một hoặc nhiều phòng không tồn tại' });
+      }
+    }
+
+    // Validate ngày nếu được cung cấp
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
+        return res.status(400).json({ message: 'Ngày bắt đầu hoặc kết thúc không hợp lệ' });
+      }
+    }
+
+    // Validate code nếu được cung cấp
+    if (code !== undefined && discount.type === 'voucher') {
+      if (!code) {
+        return res.status(400).json({ message: 'Mã voucher là bắt buộc cho loại voucher' });
+      }
+      const discountExists = await Discount.findOne({ code, _id: { $ne: id } });
+      if (discountExists) {
+        return res.status(400).json({ message: 'Mã voucher đã tồn tại' });
+      }
+    } else if (code && discount.type !== 'voucher') {
+      return res.status(400).json({ message: 'Mã code chỉ được cung cấp cho loại voucher' });
+    }
+
+    // Validate membershipLevel nếu được cung cấp
+    if (discount.type === 'member') {
+      const validLevels = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+      if (membershipLevel && !validLevels.includes(membershipLevel)) {
+        return res.status(400).json({ message: 'Cấp độ thành viên không hợp lệ' });
+      }
+      if (!membershipLevel && !discount.membershipLevel) {
+        return res.status(400).json({ message: 'Cấp độ thành viên là bắt buộc cho loại member' });
+      }
+    } else if (membershipLevel) {
+      return res.status(400).json({ message: 'Cấp độ thành viên chỉ được cung cấp cho loại member' });
+    }
+
+    // Validate minSpending nếu được cung cấp
+    if (discount.type === 'accumulated') {
+      if (minSpending !== undefined && (minSpending === null || minSpending < 0)) {
+        return res.status(400).json({ message: 'Chi tiêu tối thiểu không hợp lệ' });
+      }
+      if (minSpending === undefined && !discount.minSpending) {
+        return res.status(400).json({ message: 'Chi tiêu tối thiểu là bắt buộc cho loại accumulated' });
+      }
+    } else if (minSpending !== undefined) {
+      return res.status(400).json({ message: 'Chi tiêu tối thiểu chỉ được cung cấp cho loại accumulated' });
+    }
+
+    // Cập nhật các trường
+    discount.name = name || discount.name;
+    discount.code = code !== undefined && discount.type === 'voucher' ? code : discount.code;
+    discount.description = description || discount.description;
+    discount.discountType = discountType || discount.discountType;
+    discount.discountValue = discountValue !== undefined ? discountValue : discount.discountValue;
+    discount.applicableHotels = applicableHotels !== undefined ? applicableHotels : discount.applicableHotels;
+    discount.startDate = startDate || discount.startDate;
+    discount.endDate = endDate || discount.endDate;
+    discount.minBookingAmount = minBookingAmount !== undefined ? minBookingAmount : discount.minBookingAmount;
+    discount.maxDiscount = maxDiscount !== undefined ? maxDiscount : discount.maxDiscount;
+    discount.isStackable = isStackable !== undefined ? isStackable : discount.isStackable;
+    discount.membershipLevel = membershipLevel !== undefined && discount.type === 'member' ? membershipLevel : discount.membershipLevel;
+    discount.minSpending = minSpending !== undefined && discount.type === 'accumulated' ? minSpending : discount.minSpending;
+
+    const updatedDiscount = await discount.save();
+    res.status(200).json({ message: 'Cập nhật khuyến mãi thành công', discount: updatedDiscount });
+  } catch (error) {
+    console.error('Lỗi khi cập nhật khuyến mãi:', {
+      message: error.message,
+      stack: error.stack,
+      errors: error.errors,
+      code: error.code,
+    });
+    res.status(500).json({
+      message: 'Lỗi khi cập nhật khuyến mãi',
+      error: error.message,
+      details: error.errors || error.code,
+    });
   }
 });
 
@@ -222,95 +401,6 @@ router.get('/accumulated', protect, async (req, res) => {
 });
 
 /**
- * @route   PUT /api/discounts/:id
- * @desc    Cập nhật khuyến mãi
- * @access  Riêng tư (yêu cầu token, chỉ admin)
- */
-router.put('/:id', protect, admin, async (req, res) => {
-  const { id } = req.params;
-  const {
-    name,
-    code,
-    description,
-    discountType,
-    discountValue,
-    applicableHotels,
-    startDate,
-    endDate,
-    minBookingAmount,
-    maxDiscount,
-    isStackable,
-    membershipLevel,
-    minSpending,
-  } = req.body;
-
-  try {
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'ID khuyến mãi không hợp lệ' });
-    }
-
-    const discount = await Discount.findById(id);
-    if (!discount) {
-      return res.status(404).json({ message: 'Không tìm thấy khuyến mãi' });
-    }
-
-    if (discountType && !['percentage', 'fixed'].includes(discountType)) {
-      return res.status(400).json({ message: 'Loại giảm giá không hợp lệ' });
-    }
-
-    if (applicableHotels && applicableHotels.length > 0) {
-      const rooms = await Room.find({ _id: { $in: applicableHotels } });
-      if (rooms.length !== applicableHotels.length) {
-        return res.status(400).json({ message: 'Một hoặc nhiều phòng không tồn tại' });
-      }
-    }
-
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
-        return res.status(400).json({ message: 'Ngày bắt đầu hoặc kết thúc không hợp lệ' });
-      }
-    }
-
-    if (membershipLevel && !['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'].includes(membershipLevel)) {
-      return res.status(400).json({ message: 'Cấp độ thành viên không hợp lệ' });
-    }
-
-    if (code && discount.type === 'voucher') {
-      const discountExists = await Discount.findOne({ code, _id: { $ne: id } });
-      if (discountExists) {
-        return res.status(400).json({ message: 'Mã voucher đã tồn tại' });
-      }
-    }
-
-    discount.name = name || discount.name;
-    discount.code = code !== undefined ? (discount.type === 'voucher' ? code : null) : discount.code;
-    discount.description = description || discount.description;
-    discount.discountType = discountType || discount.discountType;
-    discount.discountValue = discountValue !== undefined ? discountValue : discount.discountValue;
-    discount.applicableHotels = applicableHotels || discount.applicableHotels;
-    discount.startDate = startDate || discount.startDate;
-    discount.endDate = endDate || discount.endDate;
-    discount.minBookingAmount = minBookingAmount !== undefined ? minBookingAmount : discount.minBookingAmount;
-    discount.maxDiscount = maxDiscount !== undefined ? maxDiscount : discount.maxDiscount;
-    discount.isStackable = isStackable !== undefined ? isStackable : discount.isStackable;
-    discount.membershipLevel = membershipLevel || discount.membershipLevel;
-    discount.minSpending = minSpending !== undefined ? minSpending : discount.minSpending;
-
-    const updatedDiscount = await discount.save();
-    res.status(200).json({ message: 'Cập nhật khuyến mãi thành công', discount: updatedDiscount });
-  } catch (error) {
-    console.error('Lỗi khi cập nhật khuyến mãi:', error.message, error.stack);
-    res.status(500).json({ message: 'Lỗi khi cập nhật khuyến mãi', error: error.message });
-  }
-});
-
-/**
  * @route   DELETE /api/discounts/:id
  * @desc    Xóa khuyến mãi (soft delete)
  * @access  Riêng tư (yêu cầu token, chỉ admin)
@@ -347,7 +437,7 @@ router.delete('/:id', protect, admin, async (req, res) => {
  * @access  Công khai
  */
 router.post('/apply', async (req, res) => {
-  const { bookingData, identifiers } = req.body; // identifiers: code (voucher) hoặc _id (khuyến mãi khác)
+  const { bookingData, identifiers } = req.body;
 
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -390,8 +480,8 @@ router.post('/apply', async (req, res) => {
     // Tìm khuyến mãi theo code hoặc _id
     const discounts = await Discount.find({
       $or: [
-        { code: { $in: identifiers } }, // Tìm voucher theo code
-        { _id: { $in: identifiers.filter((id) => mongoose.Types.ObjectId.isValid(id)) } }, // Tìm khuyến mãi theo _id
+        { code: { $in: identifiers } },
+        { _id: { $in: identifiers.filter((id) => mongoose.Types.ObjectId.isValid(id)) } },
       ],
       isDeleted: false,
     });
@@ -472,10 +562,8 @@ router.post('/apply', async (req, res) => {
 
         // Kiểm tra khuyến mãi accumulated
         if (discount.type === 'accumulated' && user) {
-          const transactions = await Transaction.find({ userId: user._id, status: 'completed' }).session(
-            session
-          );
-          const totalSpending = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+          const transactions = await Transaction.find({ userId: user._id, status: 'completed' }).session(session);
+          const totalSpending = transactions.reduce((sum, transaction) => sum + (transaction.amount || 0), 0);
           if (discount.minSpending && totalSpending < discount.minSpending) {
             continue;
           }

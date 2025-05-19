@@ -510,7 +510,7 @@ router.post("/momo/verify-payment", async (req, res) => {
             const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
             const room = await Room.findById(booking.roomid).session(session);
             const totalAmount = room.rentperday * days - (booking.voucherDiscount || 0);
-            const pointsEarned = Math.floor(totalAmount / 100000);
+            const pointsEarned = Math.floor(totalAmount * 0.01);
 
             const transaction = new Transaction({
               userId: user._id,
@@ -616,7 +616,7 @@ router.get("/:id/payment-deadline", async (req, res) => {
 
         const room = await Room.findById(booking.roomid).session(session);
         if (room) {
-          room.currentbookings = room.currentbookings.filter((b) => bVYbookingId && b.bookingId.toString() !== id);
+          room.currentbookings = room.currentbookings.filter((b) => b.bookingId && b.bookingId.toString() !== id);
           await room.save({ session });
         }
 
@@ -797,20 +797,54 @@ router.get("/check", async (req, res) => {
       return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
     }
 
-    if (!email || !roomId) {
-      return res.status(400).json({ message: "Email và roomId là bắt buộc" });
+    if (!email) {
+      return res.status(400).json({ message: "Email là bắt buộc" });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(roomId)) {
-      return res.status(400).json({ message: "roomId không hợp lệ" });
+    let query = { email: email.toLowerCase(), paymentStatus: "paid", status: "confirmed" };
+    
+    if (roomId) {
+      try {
+       let roomIds = roomId;
+if (typeof roomId === 'string' && roomId.includes('$in')) {
+  try {
+    roomIds = JSON.parse(roomId).$in;
+  } catch (error) {
+    console.error("Lỗi khi parse roomId:", error.message);
+    return res.status(400).json({ message: "Định dạng roomId không hợp lệ" });
+  }
+} else if (typeof roomId === 'string') {
+  roomIds = [roomId];
+}
+
+        const validRoomIds = roomIds.filter(id => mongoose.Types.ObjectId.isValid(id));
+        if (validRoomIds.length === 0) {
+          return res.status(400).json({ message: "Không có roomId hợp lệ" });
+        }
+
+        query.roomid = { $in: validRoomIds };
+        console.log("Checking bookings with email:", email, "and roomIds:", validRoomIds); // Thêm log
+      } catch (error) {
+        console.error("Lỗi khi parse roomId:", error.message);
+        return res.status(400).json({ message: "Định dạng roomId không hợp lệ" });
+      }
     }
 
-    const booking = await Booking.findOne({ email, roomid: roomId }).lean();
+    const booking = await Booking.findOne(query).lean();
     if (!booking) {
-      return res.status(404).json({ hasBooked: false, message: "Không tìm thấy đặt phòng với email và roomId này" });
+      console.log("No booking found for query:", query); // Thêm log
+      return res.status(404).json({ 
+        hasBooked: false, 
+        message: "Không tìm thấy đặt phòng với email và roomId này" 
+      });
     }
 
-    res.status(200).json({ hasBooked: true, booking, paymentStatus: booking.paymentStatus });
+    console.log("Found booking:", booking); // Thêm log
+    res.status(200).json({ 
+      hasBooked: true, 
+      booking, 
+      paymentStatus: booking.paymentStatus 
+    });
   } catch (error) {
     console.error("Lỗi khi kiểm tra đặt phòng:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi kiểm tra đặt phòng", error: error.message });
@@ -932,7 +966,7 @@ router.put("/:id/confirm", async (req, res) => {
         const checkoutDate = new Date(booking.checkout);
         const days = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
         const totalAmount = room.rentperday * days - (booking.voucherDiscount || 0);
-        const pointsEarned = Math.floor(totalAmount / 100000);
+        const pointsEarned = Math.floor(totalAmount * 0.01);
 
         const existingTransaction = await Transaction.findOne({ bookingId: id }).session(session);
         if (!existingTransaction) {
