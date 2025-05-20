@@ -31,7 +31,6 @@ import RoomResults from "./components/RoomResults";
 import HotelManagement from "./components/HotelManagement";
 import HotelRoomManagement from "./components/HotelRoomManagement";
 import Rewards from "./components/Rewards";
-import PointsPage from "./components/PointsPage";
 import VNPaySuccess from "./components/VNPaySuccess";
 
 

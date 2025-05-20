@@ -496,6 +496,8 @@ function Bookingscreen() {
           </h1>
         </div>
 
+
+
         {bookingStatus && (
           <AlertMessage
             type={bookingStatus?.type}
@@ -568,6 +570,23 @@ function Bookingscreen() {
                     </div>
                     <div className="col-md-6">
                       <div className="form-group">
+                        <select
+                          className={`form-control ${errors.roomType ? "is-invalid" : ""}`}
+                          {...register("roomType")}
+                        >
+                          <option value="" disabled>
+                            Chọn loại phòng
+                          </option>
+                          <option value={room.type}>{room.type}</option>
+                        </select>
+                        {errors.roomType && <div className="invalid-feedback">{errors.roomType.message}</div>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <label className="form-label">Nhận phòng</label>
                         <input
                           type="date"
                           className={`form-control ${errors.checkin ? "is-invalid" : ""}`}
@@ -578,10 +597,11 @@ function Bookingscreen() {
                         {errors.checkin && <div className="invalid-feedback">{errors.checkin.message}</div>}
                       </div>
                     </div>
-                  </div>
-                  <div className="row">
+
+
                     <div className="col-md-6">
                       <div className="form-group">
+                        <label className="form-label">Trả phòng</label>
                         <input
                           type="date"
                           className={`form-control ${errors.checkout ? "is-invalid" : ""}`}
@@ -591,6 +611,8 @@ function Bookingscreen() {
                         {errors.checkout && <div className="invalid-feedback">{errors.checkout.message}</div>}
                       </div>
                     </div>
+                  </div>
+                  <div className="row">
                     <div className="col-md-6">
                       <div className="form-group">
                         <select
@@ -609,8 +631,8 @@ function Bookingscreen() {
                         {errors.adults && <div className="invalid-feedback">{errors.adults.message}</div>}
                       </div>
                     </div>
-                  </div>
-                  <div className="row">
+
+
                     <div className="col-md-6">
                       <div className="form-group">
                         <select
@@ -629,20 +651,7 @@ function Bookingscreen() {
                         {errors.children && <div className="invalid-feedback">{errors.children.message}</div>}
                       </div>
                     </div>
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <select
-                          className={`form-control ${errors.roomType ? "is-invalid" : ""}`}
-                          {...register("roomType")}
-                        >
-                          <option value="" disabled>
-                            Chọn loại phòng
-                          </option>
-                          <option value={room.type}>{room.type}</option>
-                        </select>
-                        {errors.roomType && <div className="invalid-feedback">{errors.roomType.message}</div>}
-                      </div>
-                    </div>
+
                   </div>
                   <div className="form-group">
                     <label htmlFor="paymentMethod">Phương thức thanh toán</label>
@@ -674,7 +683,7 @@ function Bookingscreen() {
                   >
                     {loading ? "Đang xử lý..." : "ĐẶT PHÒNG NGAY"}
                   </button>
-                  
+
                   {bookingStatus?.type === "success" && newBookingId && (
                     <button
                       type="button"
@@ -685,10 +694,38 @@ function Bookingscreen() {
                     </button>
                   )}
                 </form>
+
+                {room && (
+                  <div className="room-preview mb-4 p-3 border rounded shadow-sm bg-light">
+                    <div className="row align-items-center">
+                      {/* Hình ảnh phòng */}
+                      <div className="col-md-4">
+                        <img
+                          src={room.imageurls[0]}
+                          alt={room.name}
+                          className="img-fluid rounded"
+                          style={{ maxHeight: "200px", objectFit: "cover", width: "100%" }}
+                        />
+                      </div>
+
+                      {/* Thông tin phòng */}
+                      <div className="col-md-8">
+                        <h5 className="fw-bold mb-2">{room.name}</h5>
+                        <p className="mb-1">Loại phòng: <strong>{room.type}</strong></p>
+                        <p className="mb-1">Giá thuê mỗi ngày: <strong>{room.rentperday.toLocaleString()} VND</strong></p>
+                        <p className="mb-0 text-muted small">
+                          Sức chứa tối đa: {room.maxcount} người | {room.beds} giường | {room.baths} phòng tắm
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
               </div>
             </div>
           </div>
         )}
+
 
         {room && room.availabilityStatus !== "available" && (
           <div className="suggestions-container">
