@@ -28,7 +28,7 @@ const bookingSchema = yup.object().shape({
   paymentMethod: yup
     .string()
     .required("Vui lòng chọn phương thức thanh toán")
-    .oneOf(["cash", "credit_card", "bank_transfer", "mobile_payment"], "Phương thức thanh toán không hợp lệ"),
+    .oneOf(["cash", "credit_card", "bank_transfer", "mobile_payment", "vnpay"], "Phương thức thanh toán không hợp lệ"), // Thêm "vnpay" vào đây
 });
 
 function Bookingscreen() {
@@ -103,7 +103,6 @@ function Bookingscreen() {
     }
   }, []);
 
-  // Hàm tích điểm
   const accumulatePoints = useCallback(async (bookingId) => {
     try {
       const userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -115,7 +114,6 @@ function Bookingscreen() {
         headers: { Authorization: `Bearer ${userInfo.token}` },
       };
 
-      // Kiểm tra trạng thái booking trước khi tích điểm
       const bookingCheck = await axios.get(`/api/bookings/${bookingId}`, config);
       if (bookingCheck.data.status !== "confirmed" || bookingCheck.data.paymentStatus !== "paid") {
         return { success: false, message: "Đặt phòng chưa đủ điều kiện để tích điểm" };
@@ -225,6 +223,33 @@ function Bookingscreen() {
         } else {
           throw new Error(momoResponse.data.message || "Lỗi khi tạo hóa đơn MoMo");
         }
+      } else if (data.paymentMethod === "vnpay") {
+        setBookingStatus({
+          type: "info",
+          message: "Đang tạo hóa đơn thanh toán VNPay...",
+        });
+
+        const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
+        const orderInfo = `Thanh toán đặt phòng ${room.name}`;
+        const amount = room.rentperday || 50000;
+
+        const vnpayResponse = await axios.post("/api/vnpay/create-payment", {
+          amount: amount.toString(),
+          orderId,
+          orderInfo,
+          bookingId: bookingResponse.data.booking._id,
+        });
+
+        if (vnpayResponse.data.payUrl) {
+          setBookingStatus({
+            type: "success",
+            message: "Đang chuyển hướng đến trang thanh toán VNPay. Vui lòng hoàn tất thanh toán.",
+          });
+          setPaymentStatus("pending");
+          window.location.href = vnpayResponse.data.payUrl;
+        } else {
+          throw new Error(vnpayResponse.data.message || "Lỗi khi tạo hóa đơn VNPay");
+        }
       } else {
         setBookingStatus({
           type: "success",
@@ -272,7 +297,7 @@ function Bookingscreen() {
         }
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Lỗi khi đặt phòng hoặc tạo hóa đơn MoMo. Vui lòng thử lại.";
+      const errorMessage = error.response?.data?.message || "Lỗi khi đặt phòng hoặc tạo hóa đơn thanh toán. Vui lòng thử lại.";
       setBookingStatus({
         type: "error",
         message: errorMessage,
@@ -457,7 +482,7 @@ function Bookingscreen() {
     setBookingStatus(null);
   };
 
- return (
+  return (
     <div className="booking-page">
       <div className="container">
         <div className="booking-header text-center">
@@ -489,138 +514,177 @@ function Bookingscreen() {
           <div className="row">
             <div className="col-md-6">
               <div className="booking-images-vertical">
-  {room.imageurls?.slice(0, 4).map((url, idx) => (
-    <div key={idx} className="image-wrapper-vertical mb-3">
-      <img
-        src={url}
-        alt={`Phòng ${idx + 1}`}
-        className="img-fluid vertical-room-image"
-      />
-    </div>
-  ))}
-</div>
+                {room.imageurls?.slice(0, 4).map((url, idx) => (
+                  <div key={idx} className="image-wrapper-vertical mb-3">
+                    <img
+                      src={url}
+                      alt={`Phòng ${idx + 1}`}
+                      className="img-fluid vertical-room-image"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="col-md-6">
               {renderPaymentStatus()}
               {renderBankInfo()}
               <div className="booking-screen-wrapper">
-                <h3 className="mb-4">Thông tin đặt phòng</h3>
-  <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
-  <div className="row">
-    {/* Họ và tên */}
-    <div className="col-md-6 mb-3">
-      <label className="form-label">Họ và tên</label>
-      <input type="text" className="form-control" {...register("name")} />
-      {errors.name && <div className="text-danger small">{errors.name.message}</div>}
-    </div>
-
-    {/* Email */}
-    <div className="col-md-6 mb-3">
-      <label className="form-label">Email</label>
-      <input type="email" className="form-control" {...register("email")} />
-      {errors.email && <div className="text-danger small">{errors.email.message}</div>}
-    </div>
-
-    {/* Số điện thoại */}
-    <div className="col-md-6 mb-3">
-      <label className="form-label">Số điện thoại</label>
-      <input type="text" className="form-control" {...register("phone")} />
-      {errors.phone && <div className="text-danger small">{errors.phone.message}</div>}
-    </div>
-
-    {/* Ngày nhận phòng */}
-    <div className="col-md-3 mb-3">
-      <label className="form-label">Nhận phòng</label>
-      <input type="date" className="form-control" {...register("checkin")} />
-      {errors.checkin && <div className="text-danger small">{errors.checkin.message}</div>}
-    </div>
-
-    {/* Ngày trả phòng */}
-    <div className="col-md-3 mb-3">
-      <label className="form-label">Trả phòng</label>
-      <input type="date" className="form-control" {...register("checkout")} />
-      {errors.checkout && <div className="text-danger small">{errors.checkout.message}</div>}
-    </div>
-
-    {/* Người lớn */}
-    <div className="col-md-3 mb-3">
-      <label className="form-label">Người lớn</label>
-      <input type="number" className="form-control" {...register("adults")} />
-      {errors.adults && <div className="text-danger small">{errors.adults.message}</div>}
-    </div>
-
-    {/* Trẻ em */}
-    <div className="col-md-3 mb-3">
-      <label className="form-label">Trẻ em</label>
-      <input type="number" className="form-control" {...register("children")} />
-      {errors.children && <div className="text-danger small">{errors.children.message}</div>}
-    </div>
-
-    {/* Phương thức thanh toán */}
-    <div className="col-md-6 mb-3">
-      <label className="form-label">Phương thức thanh toán</label>
-      <select className="form-select" {...register("paymentMethod")}>
-        <option value="cash">Tiền mặt</option>
-        <option value="credit_card">Thẻ tín dụng</option>
-        <option value="bank_transfer">Chuyển khoản</option>
-        <option value="mobile_payment">Ví điện tử</option>
-      </select>
-      {errors.paymentMethod && <div className="text-danger small">{errors.paymentMethod.message}</div>}
-    </div>
-
-    {/* Ghi chú đặc biệt */}
-    <div className="col-md-6 mb-3">
-      <label className="form-label">Yêu cầu đặc biệt (nếu có)</label>
-      <textarea className="form-control" rows={3} {...register("specialRequest")}></textarea>
-    </div>
-  </div>
-
-  {/* Trường ẩn roomType */}
-  <input type="hidden" {...register("roomType")} />
-
-  {/* Nút submit */}
-  <div className="text-center">
-    <button type="submit" className="btn btn-book-now px-5">
-      Đặt phòng
-    </button>
-  </div>
-</form>
-
-{room && (
-  <div className="room-preview mb-4 p-3 border rounded shadow-sm bg-light">
-    <div className="row align-items-center">
-      {/* Hình ảnh phòng */}
-      <div className="col-md-4">
-        <img
-          src={room.imageurls[0]}
-          alt={room.name}
-          className="img-fluid rounded"
-          style={{ maxHeight: "200px", objectFit: "cover", width: "100%" }}
-        />
-      </div>
-
-      {/* Thông tin phòng */}
-      <div className="col-md-8">
-        <h5 className="fw-bold mb-2">{room.name}</h5>
-        <p className="mb-1">Loại phòng: <strong>{room.type}</strong></p>
-        <p className="mb-1">Giá thuê mỗi ngày: <strong>{room.rentperday.toLocaleString()} VND</strong></p>
-        <p className="mb-0 text-muted small">
-          Sức chứa tối đa: {room.maxcount} người | {room.beds} giường | {room.baths} phòng tắm
-        </p>
-      </div>
-    </div>
-  </div>
-)}
-
-
-
-                {newBookingId && (
-                  <div className="mt-3 text-end">
-                    <button className="btn btn-danger" onClick={handleOpenCancelModal} disabled={paymentStatus === "paid"}>
-                      Hủy đặt phòng
-                    </button>
+                <form className="booking-screen" onSubmit={handleSubmit(onSubmit)}>
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <input
+                          type="text"
+                          className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                          {...register("name")}
+                          placeholder="Họ và tên"
+                        />
+                        {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <input
+                          type="email"
+                          className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                          {...register("email")}
+                          placeholder="Email của bạn"
+                        />
+                        {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
+                      </div>
+                    </div>
                   </div>
-                )}
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <input
+                          type="tel"
+                          className={`form-control ${errors.phone ? "is-invalid" : ""}`}
+                          {...register("phone")}
+                          placeholder="Số điện thoại"
+                        />
+                        {errors.phone && <div className="invalid-feedback">{errors.phone.message}</div>}
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <input
+                          type="date"
+                          className={`form-control ${errors.checkin ? "is-invalid" : ""}`}
+                          {...register("checkin")}
+                          placeholder="Ngày nhận phòng"
+                          min={new Date().toISOString().split("T")[0]}
+                        />
+                        {errors.checkin && <div className="invalid-feedback">{errors.checkin.message}</div>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <input
+                          type="date"
+                          className={`form-control ${errors.checkout ? "is-invalid" : ""}`}
+                          {...register("checkout")}
+                          placeholder="Ngày trả phòng"
+                        />
+                        {errors.checkout && <div className="invalid-feedback">{errors.checkout.message}</div>}
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <select
+                          className={`form-control ${errors.adults ? "is-invalid" : ""}`}
+                          {...register("adults")}
+                        >
+                          <option value="" disabled>
+                            Chọn số người lớn
+                          </option>
+                          {[1, 2, 3, 4].map((num) => (
+                            <option key={num} value={num}>
+                              {num} Người lớn
+                            </option>
+                          ))}
+                        </select>
+                        {errors.adults && <div className="invalid-feedback">{errors.adults.message}</div>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <select
+                          className={`form-control ${errors.children ? "is-invalid" : ""}`}
+                          {...register("children")}
+                        >
+                          <option value="" disabled>
+                            Chọn số trẻ em
+                          </option>
+                          {[0, 1, 2, 3].map((num) => (
+                            <option key={num} value={num}>
+                              {num} Trẻ em
+                            </option>
+                          ))}
+                        </select>
+                        {errors.children && <div className="invalid-feedback">{errors.children.message}</div>}
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <select
+                          className={`form-control ${errors.roomType ? "is-invalid" : ""}`}
+                          {...register("roomType")}
+                        >
+                          <option value="" disabled>
+                            Chọn loại phòng
+                          </option>
+                          <option value={room.type}>{room.type}</option>
+                        </select>
+                        {errors.roomType && <div className="invalid-feedback">{errors.roomType.message}</div>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="paymentMethod">Phương thức thanh toán</label>
+                    <select
+                      className={`form-control ${errors.paymentMethod ? "is-invalid" : ""}`}
+                      {...register("paymentMethod")}
+                    >
+                      <option value="cash">Tiền mặt</option>
+                      <option value="credit_card">Thẻ tín dụng</option>
+                      <option value="bank_transfer">Tài khoản ngân hàng</option>
+                      <option value="mobile_payment">MoMo</option>
+                      <option value="vnpay">VNPay</option>
+                    </select>
+                    {errors.paymentMethod && <div className="invalid-feedback">{errors.paymentMethod.message}</div>}
+                  </div>
+                  <div className="form-group">
+                    <textarea
+                      className={`form-control ${errors.specialRequest ? "is-invalid" : ""}`}
+                      {...register("specialRequest")}
+                      placeholder="Yêu cầu đặc biệt"
+                      rows="3"
+                    />
+                    {errors.specialRequest && <div className="invalid-feedback">{errors.specialRequest.message}</div>}
+                  </div>
+                  <button
+                    type="submit"
+                    className="btn btn-book-now"
+                    disabled={loading || room.availabilityStatus !== "available"}
+                  >
+                    {loading ? "Đang xử lý..." : "ĐẶT PHÒNG NGAY"}
+                  </button>
+                  
+                  {bookingStatus?.type === "success" && newBookingId && (
+                    <button
+                      type="button"
+                      className="btn btn-danger mt-2"
+                      onClick={handleOpenCancelModal}
+                    >
+                      Hủy Đặt Phòng
+                    </button>
+                  )}
+                </form>
               </div>
             </div>
           </div>

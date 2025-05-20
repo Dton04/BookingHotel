@@ -55,7 +55,7 @@ const dashboardRoute = require('./routes/dashboardRoutes');
 const revenueRoute = require('./routes/revenueRoutes');
 const regionsRoute = require('./routes/regionsRoutes');
 const momoRoutes = require('./routes/momoRoutes');
-
+const vnpayRoutes = require('./routes/vnpayRoutes');
 
 // Debug routes
 console.log('roomsRoute:', roomsRoute);
@@ -106,6 +106,6 @@ app.use((err, req, res, next) => {
   });
 });
 app.use('/api/momo', momoRoutes);
-
+app.use('/api/vnpay', vnpayRoutes);
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server is running on port ${port}`));
