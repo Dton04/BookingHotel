@@ -19,6 +19,11 @@ const userSchema = mongoose.Schema({
       unique: true,
       sparse: true 
    },
+   facebookId: {
+      type: String,
+      unique: true,
+      sparse: true // Cho phép nhiều user không có facebookId
+   },
    isAdmin: {
       type: Boolean,
       default: false
