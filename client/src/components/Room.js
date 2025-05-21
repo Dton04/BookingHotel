@@ -1,3 +1,4 @@
+// Room.js
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Carousel, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +17,7 @@ function Room({ room }) {
   const [suggestions, setSuggestions] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [reviewPage, setReviewPage] = useState(1);
+  const [isFavorite, setIsFavorite] = useState(false); // Trạng thái yêu thích
   const reviewsPerPage = 5;
   const navigate = useNavigate();
 
@@ -36,6 +38,47 @@ function Room({ room }) {
 
   const handleViewAllReviews = () => {
     navigate(`/testimonial?hotelId=${room.hotelId}&roomId=${room._id}`);
+  };
+
+  // Kiểm tra phòng có trong danh sách yêu thích
+  const checkFavoriteStatus = async () => {
+    if (!userInfo || !userInfo.token) return;
+    try {
+      const config = {
+        headers: { Authorization: `Bearer ${userInfo.token}` },
+      };
+      const response = await axios.get('/api/favorites', config);
+      const isFav = response.data.some((favRoom) => favRoom._id.toString() === room._id);
+      setIsFavorite(isFav);
+    } catch (error) {
+      console.error('Lỗi khi kiểm tra trạng thái yêu thích:', error);
+    }
+  };
+
+  // Thêm/xóa phòng khỏi danh sách yêu thích
+  const toggleFavorite = async () => {
+    if (!userInfo || !userInfo.token) {
+      toast.error('Vui lòng đăng nhập để thêm phòng vào danh sách yêu thích');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const config = {
+        headers: { Authorization: `Bearer ${userInfo.token}` },
+      };
+      if (isFavorite) {
+        await axios.delete(`/api/favorites/${room._id}`, config);
+        toast.success('Đã xóa phòng khỏi danh sách yêu thích');
+        setIsFavorite(false);
+      } else {
+        await axios.post('/api/favorites', { roomId: room._id }, config);
+        toast.success('Đã thêm phòng vào danh sách yêu thích');
+        setIsFavorite(true);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Lỗi khi cập nhật danh sách yêu thích');
+    }
   };
 
   const formatPriceVND = (price) => {
@@ -61,7 +104,7 @@ function Room({ room }) {
           hotelId: room.hotelId, 
           roomId: room._id, 
           limit: 50,
-          status: isAdminOrStaff ? undefined : "active" // Chỉ lấy đánhრ:Admin/staff thấy tất cả, người dùng thường chỉ thấy active
+          status: isAdminOrStaff ? undefined : "active"
         },
       };
       if (isAdminOrStaff) {
@@ -77,7 +120,6 @@ function Room({ room }) {
     }
   };
 
-  // Ẩn/Hiển thị đánh giá
   const toggleReviewVisibility = async (reviewId, isVisible) => {
     try {
       const config = {
@@ -94,6 +136,7 @@ function Room({ room }) {
 
   useEffect(() => {
     fetchReviews();
+    checkFavoriteStatus();
   }, [room._id, room.hotelId]);
 
   const fetchSuggestions = async () => {
@@ -187,6 +230,22 @@ function Room({ room }) {
         <Alert variant={status.variant} className="room-status-alert">
           {status.message}
         </Alert>
+        <Button
+          variant={isFavorite ? "danger" : "outline-primary"}
+          className="favorite-btn"
+          style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            zIndex: 10,
+          }}
+          onClick={(e) => {
+            e.stopPropagation(); // Ngăn sự kiện click ảnh
+            toggleFavorite();
+          }}
+        >
+          <i className={isFavorite ? "fas fa-heart" : "far fa-heart"}></i>
+        </Button>
       </div>
 
       <div className="room-content">
@@ -411,6 +470,12 @@ function Room({ room }) {
             disabled={!status.bookable}
           >
             Đặt phòng ngay
+          </Button>
+          <Button
+            variant={isFavorite ? "danger" : "outline-primary"}
+            onClick={toggleFavorite}
+          >
+            {isFavorite ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
           </Button>
         </Modal.Footer>
       </Modal>

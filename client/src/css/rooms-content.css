@@ -111,8 +111,8 @@
 
 .room-badge {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 30px;
+  right: 80px;
   background: var(--primary-color);
   color: white;
   padding: 5px 15px;
@@ -137,7 +137,7 @@
 .room-status-alert {
   position: absolute;
   top: 20px;
-  left: 20px;
+  left: 10px;
   right: auto;
   padding: 8px 20px;
   font-size: 0.85rem;
@@ -551,4 +551,16 @@
   max-height: 100%; /* Đảm bảo ảnh không vượt quá chiều cao container */
   object-fit: contain; /* Giữ tỷ lệ ảnh, không cắt */
   border-radius: 8px; /* Bo góc ảnh */
+}
+
+/* rooms-content.css */
+.favorite-btn {
+  border-radius: 50%;
+  padding: 8px;
+  font-size: 1.2em;
+  margin-top: 10px;
+}
+
+.favorite-btn i {
+  margin: 0;
 }

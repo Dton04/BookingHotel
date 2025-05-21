@@ -28,7 +28,8 @@ const bookingSchema = yup.object().shape({
   paymentMethod: yup
     .string()
     .required("Vui lòng chọn phương thức thanh toán")
-    .oneOf(["cash", "credit_card", "bank_transfer", "mobile_payment", "vnpay"], "Phương thức thanh toán không hợp lệ"), // Thêm "vnpay" vào đây
+    .oneOf(["cash", "credit_card", "bank_transfer", "mobile_payment", "vnpay"], "Phương thức thanh toán không hợp lệ"),
+  discountCode: yup.string().nullable(), // Thêm trường mã giảm giá
 });
 
 function Bookingscreen() {
@@ -52,6 +53,7 @@ function Bookingscreen() {
       roomType: "",
       specialRequest: "",
       paymentMethod: "cash",
+      discountCode: "", // Giá trị mặc định cho mã giảm giá
     },
   });
 
@@ -70,6 +72,9 @@ function Bookingscreen() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [bookingDetails, setBookingDetails] = useState(null);
   const [pointsEarned, setPointsEarned] = useState(null);
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountResult, setDiscountResult] = useState(null); // Lưu kết quả áp dụng mã giảm giá
+  const [totalAmount, setTotalAmount] = useState(null); // Tổng tiền sau giảm giá
 
   // Hàm lấy dữ liệu phòng
   const fetchRoomData = useCallback(async () => {
@@ -81,6 +86,11 @@ function Bookingscreen() {
       if (data.availabilityStatus !== "available") {
         await fetchSuggestions(data._id, data.type);
       }
+      // Tính tổng tiền ban đầu
+      const checkin = new Date(data.checkin || new Date());
+      const checkout = new Date(data.checkout || new Date());
+      const days = Math.ceil((checkout - checkin) / (1000 * 60 * 60 * 24));
+      setTotalAmount(data.rentperday * days);
     } catch (error) {
       setError(true);
     } finally {
@@ -133,6 +143,46 @@ function Bookingscreen() {
     }
   }, []);
 
+  // Hàm áp dụng mã giảm giá
+  const applyDiscountCode = async () => {
+    try {
+      setLoading(true);
+      setBookingStatus(null);
+
+      const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+      const bookingData = {
+        roomid,
+        checkin: new Date(document.getElementById("checkin").value),
+        checkout: new Date(document.getElementById("checkout").value),
+        userId: userInfo?.id,
+      };
+      const identifiers = [discountCode];
+
+      const response = await axios.post("/api/discounts/apply", {
+        bookingData,
+        identifiers,
+      });
+
+      setDiscountResult(response.data);
+      setTotalAmount(response.data.totalAmount);
+      setBookingStatus({
+        type: "success",
+        message: `Áp dụng mã giảm giá thành công! Tổng giảm: ${response.data.appliedDiscounts.reduce(
+          (sum, d) => sum + d.discount,
+          0
+        ).toLocaleString()} VND`,
+      });
+    } catch (error) {
+      setDiscountResult(null);
+      setBookingStatus({
+        type: "error",
+        message: error.response?.data?.message || "Lỗi khi áp dụng mã giảm giá. Vui lòng kiểm tra lại mã.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchRoomData();
   }, [fetchRoomData]);
@@ -182,6 +232,11 @@ function Bookingscreen() {
       const bookingResponse = await axios.post("/api/bookings/bookroom", {
         roomid,
         ...data,
+        appliedVouchers: discountResult?.appliedDiscounts?.map((d) => ({
+          code: d.code || d.id,
+          discount: d.discount,
+        })) || [],
+        voucherDiscount: discountResult?.appliedDiscounts?.reduce((sum, d) => sum + d.discount, 0) || 0,
       });
 
       setBookingId(bookingResponse.data.booking._id);
@@ -204,7 +259,7 @@ function Bookingscreen() {
 
         const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
         const orderInfo = `Thanh toán đặt phòng ${room.name}`;
-        const amount = room.rentperday || 50000;
+        const amount = (discountResult?.totalAmount || room.rentperday || 50000);
 
         const momoResponse = await axios.post("/api/momo/create-payment", {
           amount: amount.toString(),
@@ -231,7 +286,7 @@ function Bookingscreen() {
 
         const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
         const orderInfo = `Thanh toán đặt phòng ${room.name}`;
-        const amount = room.rentperday || 50000;
+        const amount = (discountResult?.totalAmount || room.rentperday || 50000);
 
         const vnpayResponse = await axios.post("/api/vnpay/create-payment", {
           amount: amount.toString(),
@@ -422,7 +477,7 @@ function Bookingscreen() {
         <p><strong>Ngân hàng:</strong> {bankInfo.bankName}</p>
         <p><strong>Số tài khoản:</strong> {bankInfo.accountNumber}</p>
         <p><strong>Chủ tài khoản:</strong> {bankInfo.accountHolder}</p>
-        <p><strong>Số tiền:</strong> {bankInfo.amount.toLocaleString()} VND</p>
+        <p><strong>Số tiền:</strong> {(discountResult?.totalAmount || bankInfo.amount).toLocaleString()} VND</p>
         <p><strong>Nội dung chuyển khoản:</strong> {bankInfo.content}</p>
         {timeRemaining !== null && !paymentExpired && (
           <p>
@@ -495,8 +550,6 @@ function Bookingscreen() {
             Trải nghiệm <span>NGHỈ DƯỠNG CAO CẤP</span>
           </h1>
         </div>
-
-
 
         {bookingStatus && (
           <AlertMessage
@@ -589,6 +642,7 @@ function Bookingscreen() {
                         <label className="form-label">Nhận phòng</label>
                         <input
                           type="date"
+                          id="checkin"
                           className={`form-control ${errors.checkin ? "is-invalid" : ""}`}
                           {...register("checkin")}
                           placeholder="Ngày nhận phòng"
@@ -597,13 +651,12 @@ function Bookingscreen() {
                         {errors.checkin && <div className="invalid-feedback">{errors.checkin.message}</div>}
                       </div>
                     </div>
-
-
                     <div className="col-md-6">
                       <div className="form-group">
                         <label className="form-label">Trả phòng</label>
                         <input
                           type="date"
+                          id="checkout"
                           className={`form-control ${errors.checkout ? "is-invalid" : ""}`}
                           {...register("checkout")}
                           placeholder="Ngày trả phòng"
@@ -631,8 +684,6 @@ function Bookingscreen() {
                         {errors.adults && <div className="invalid-feedback">{errors.adults.message}</div>}
                       </div>
                     </div>
-
-
                     <div className="col-md-6">
                       <div className="form-group">
                         <select
@@ -651,7 +702,6 @@ function Bookingscreen() {
                         {errors.children && <div className="invalid-feedback">{errors.children.message}</div>}
                       </div>
                     </div>
-
                   </div>
                   <div className="form-group">
                     <label htmlFor="paymentMethod">Phương thức thanh toán</label>
@@ -666,6 +716,43 @@ function Bookingscreen() {
                       <option value="vnpay">VNPay</option>
                     </select>
                     {errors.paymentMethod && <div className="invalid-feedback">{errors.paymentMethod.message}</div>}
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="discountCode">Mã giảm giá</label>
+                    <div className="input-group">
+                      <input
+                        type="text"
+                        className={`form-control ${errors.discountCode ? "is-invalid" : ""}`}
+                        {...register("discountCode")}
+                        placeholder="Nhập mã giảm giá"
+                        value={discountCode}
+                        onChange={(e) => setDiscountCode(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary"
+                        onClick={applyDiscountCode}
+                        disabled={loading || !discountCode}
+                      >
+                        {loading ? "Đang áp dụng..." : "Áp dụng"}
+                      </button>
+                    </div>
+                    {errors.discountCode && <div className="invalid-feedback">{errors.discountCode.message}</div>}
+                    {discountResult && (
+                      <div className="mt-2">
+                        <p>
+                          <strong>Tổng tiền trước giảm giá:</strong>{" "}
+                          {(room.rentperday * Math.ceil((new Date(document.getElementById("checkout")?.value || new Date()) - new Date(document.getElementById("checkin")?.value || new Date())) / (1000 * 60 * 60 * 24))).toLocaleString()} VND
+                        </p>
+                        <p>
+                          <strong>Giảm giá:</strong>{" "}
+                          {discountResult.appliedDiscounts.reduce((sum, d) => sum + d.discount, 0).toLocaleString()} VND
+                        </p>
+                        <p>
+                          <strong>Tổng tiền sau giảm giá:</strong> {discountResult.totalAmount.toLocaleString()} VND
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="form-group">
                     <textarea
@@ -720,12 +807,10 @@ function Bookingscreen() {
                     </div>
                   </div>
                 )}
-
               </div>
             </div>
           </div>
         )}
-
 
         {room && room.availabilityStatus !== "available" && (
           <div className="suggestions-container">

@@ -274,7 +274,7 @@ function AdminDashboard() {
                       <i className="fas fa-dollar-sign me-2"></i> Tổng doanh thu
                     </Card.Title>
                     <Card.Text className="stat-value">
-                      {(stats.totalRevenue || 0).toLocaleString('vi-VN')} VNĐ
+                      {(stats.totalRevenue || 0).toLocaleString('vi-VN')}VNĐ
                     </Card.Text>
                   </Card.Body>
                 </Card>

@@ -57,6 +57,8 @@ const regionsRoute = require('./routes/regionsRoutes');
 const momoRoutes = require('./routes/momoRoutes');
 const vnpayRoutes = require('./routes/vnpayRoutes');
 
+
+
 // Debug routes
 console.log('roomsRoute:', roomsRoute);
 console.log('bookingRoute:', bookingRoute);
@@ -75,6 +77,7 @@ const rewardsRoutes = require('./routes/rewardsRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const discountRoutes = require('./routes/discountRoutes')
 
+const favoriteRoutes = require('./routes/favoriteRoutes')
 
 // Routes
 app.use('/api', contactRoutes);
@@ -90,7 +93,7 @@ app.use('/api/hotels', hotelRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/discounts',discountRoutes)
-
+app.use('/api/favorites',favoriteRoutes)
 
 // Xử lý lỗi không được bắt
 app.use((err, req, res, next) => {

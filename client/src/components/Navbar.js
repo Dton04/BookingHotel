@@ -1,3 +1,4 @@
+// Navbar.js
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import '../css/navbar.css';
@@ -98,8 +99,8 @@ function Navbar() {
                   {user.role === 'admin' ? (
                     <>
                       <li><Link className="dropdown-item" to="/admin/dashboard" onClick={closeNav}><i className="fas fa-tachometer-alt me-2"></i>Bảng điều khiển</Link></li>
-                      <li><Link className="dropdown-item" to="/admin/staffmanagement" onClick={closeNav}><i className="fas fa-users-cog me-2"></i>Quản lý nhân viên</Link></li>
                       <li><Link className="dropdown-item" to="/admin/bookings" onClick={closeNav}><i className="fas fa-book me-2"></i>Tất cả đặt phòng</Link></li>
+                      <li><Link className="dropdown-item" to="/admin/staffmanagement" onClick={closeNav}><i className="fas fa-users-cog me-2"></i>Quản lý nhân viên</Link></li>
                       <li><Link className="dropdown-item" to="/admin/users" onClick={closeNav}><i className="fas fa-user-cog me-2"></i>Quản lý người dùng</Link></li>
                       <li><Link className="dropdown-item" to="/admin/hotels" onClick={closeNav}><i className="fas fa-hotel me-2"></i>Quản lý khách sạn</Link></li>
                       <li><Link className="dropdown-item" to="/admin/createroom" onClick={closeNav}><i className="fas fa-plus me-2"></i>Tạo phòng</Link></li>
@@ -109,8 +110,8 @@ function Navbar() {
                     </>
                   ) : user.role === 'staff' ? (
                     <>
-                      <li><Link className="dropdown-item" to="/admin/users" onClick={closeNav}><i className="fas fa-user-cog me-2"></i>Quản lý người dùng</Link></li>
                       <li><Link className="dropdown-item" to="/stats" onClick={closeNav}>Thống kê</Link></li>
+                      <li><Link className="dropdown-item" to="/admin/users" onClick={closeNav}><i className="fas fa-user-cog me-2"></i>Quản lý người dùng</Link></li>
                       <li><Link className="dropdown-item" to="/admin/reviews" onClick={closeNav}><i className="fas fa-star me-2"></i>Quản lý đánh giá</Link></li>
                     </>
                   ) : (
@@ -119,6 +120,7 @@ function Navbar() {
                       <li><Link className="dropdown-item" to="/stats" onClick={closeNav}>Thống kê</Link></li>
                       <li><Link className="dropdown-item" to="/rewards" onClick={closeNav}><i className="fa fa-gift me-2"></i>Ưu đãi</Link></li>
                       <li><Link className="dropdown-item" to="/membership" onClick={closeNav}><i className="fas fa-star me-2"></i>Thành viên</Link></li>
+                      <li><Link className="dropdown-item" to="/favorites" onClick={closeNav}><i className="fas fa-heart me-2"></i>Yêu thích</Link></li>
                       <li><button className="dropdown-item" onClick={handlePointsClick}><i className="fas fa-coins me-2"></i>Điểm thưởng ({points})</button></li>
                     </>
                   )}

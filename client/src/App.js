@@ -36,7 +36,7 @@ import VNPaySuccess from "./components/VNPaySuccess";
 
 import PointsPage from './components/PointsPage';
 import ReviewManagement from './components/ReviewManagement';
-
+import Favorites from './components/Favorites';
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -91,9 +91,10 @@ function App() {
           <Route path="/rewards" element={<UserRoute><Rewards /></UserRoute>} />
           <Route path="/points" element={<PointsPage />} />
           <Route path="/admin/reviews" element={<ReviewManagement />} />
-
+          <Route path="/favorites" element={<Favorites />} />
 
           <Route path="/booking-success" element={<VNPaySuccess />} />
+          
           <Route
             path="/admin/staffmanagement"
             element={

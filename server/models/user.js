@@ -55,7 +55,11 @@ const userSchema = mongoose.Schema({
       ref: 'Region',
       default: null,
       // Khu vực quản lý (cho admin)
-   }
+   },
+   favorites: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Room',
+  }],
 },
 
    {
