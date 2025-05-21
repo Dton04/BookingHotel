@@ -9,13 +9,13 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const FacebookStrategy = require('passport-facebook').Strategy;
 const { protect, admin, staff } = require('../middleware/auth');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const otpGenerator = require('otp-generator');
-
 // Tạo thư mục uploads nếu chưa tồn tại
 const uploadDir = path.join(__dirname, '../Uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -52,17 +52,6 @@ const adminOrStaff = (req, res, next) => {
   }
 };
 
-// Cấu hình nodemailer với Brevo SMTP
-const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USERNAME,
-    pass: process.env.SMTP_PASSWORD
-  }
-});
-
 // Cấu hình Passport cho Google OAuth
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
@@ -81,6 +70,41 @@ passport.use(new GoogleStrategy({
           name: profile.displayName,
           email: profile.emails[0].value.toLowerCase(),
           googleId: profile.id,
+          role: 'user',
+          isAdmin: false,
+          isDeleted: false
+        });
+        await user.save();
+      }
+    }
+    if (user.isDeleted) {
+      return done(null, false, { message: 'Tài khoản của bạn đã bị xóa' });
+    }
+    return done(null, user);
+  } catch (error) {
+    return done(error, null);
+  }
+}));
+
+// Cấu hình Passport cho Facebook OAuth
+passport.use(new FacebookStrategy({
+  clientID: process.env.FACEBOOK_APP_ID,
+  clientSecret: process.env.FACEBOOK_APP_SECRET,
+  callbackURL: process.env.FACEBOOK_REDIRECT_URI,
+  profileFields: ['id', 'displayName', 'emails']
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    let user = await User.findOne({ facebookId: profile.id });
+    if (!user) {
+      user = await User.findOne({ email: profile.emails?.[0]?.value });
+      if (user) {
+        user.facebookId = profile.id;
+        await user.save();
+      } else {
+        user = new User({
+          name: profile.displayName,
+          email: profile.emails?.[0]?.value?.toLowerCase() || `${profile.id}@facebook.com`,
+          facebookId: profile.id,
           role: 'user',
           isAdmin: false,
           isDeleted: false
@@ -232,61 +256,88 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
  * @desc    Xử lý callback từ Google OAuth
  * @access  Công khai
  */
-router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: '/login' }), async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: 'http://localhost:3000/login?error=Google authentication failed' }), async (req, res) => {
+    try {
+      const user = await User.findById(req.user.id).select('-password');
+      if (!user) {
+        return res.redirect('http://localhost:3000/login?error=User not found');
+      }
+
+      // Tạo JWT token
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: '1d',
+      });
+
+      // Chuẩn bị dữ liệu người dùng
+      const userData = {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        role: user.role,
+        phone: user.phone,
+        token,
+        bookingsCount: await Booking.countDocuments({ email: user.email.toLowerCase() }),
+      };
+
+      // Mã hóa dữ liệu người dùng vào URL query
+      const userDataParam = encodeURIComponent(JSON.stringify(userData));
+      res.redirect(`http://localhost:3000/auth/google/callback?user=${userDataParam}`);
+    } catch (error) {
+      console.error('Google callback error:', error.message);
+      res.redirect('http://localhost:3000/login?error=Google authentication failed');
     }
-    // Sử dụng email để đếm số lượng đặt phòng
-    const bookingsCount = await Booking.countDocuments({ email: user.email.toLowerCase() });
-    res.json({ ...user._doc, bookingsCount });
-  } catch (error) {
-    console.error('Google callback error:', error.message);
-    res.redirect('http://localhost:3000/login?error=Google authentication failed');
   }
-});
+);
 
 /**
- * @route   POST /api/users/verify-otp
- * @desc    Xác minh mã OTP
+ * @route   GET /api/users/facebook
+ * @desc    Chuyển hướng đến Facebook OAuth
  * @access  Công khai
  */
-router.post('/verify-otp', async (req, res) => {
-  const { userId, otp } = req.body;
+router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));
 
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'Người dùng không tồn tại' });
+/**
+ * @route   GET /api/users/facebook/callback
+ * @desc    Xử lý callback từ Facebook OAuth
+ * @access  Công khai
+ */
+router.get(
+  '/facebook/callback',
+  passport.authenticate('facebook', { session: false, failureRedirect: 'http://localhost:3000/login?error=Facebook authentication failed' }),
+  async (req, res) => {
+    try {
+      const user = await User.findById(req.user.id).select('-password');
+      if (!user) {
+        return res.redirect('http://localhost:3000/login?error=User not found');
+      }
+
+      // Tạo JWT token
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: '1d',
+      });
+
+      // Chuẩn bị dữ liệu người dùng
+      const userData = {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        role: user.role,
+        phone: user.phone,
+        token,
+        bookingsCount: await Booking.countDocuments({ email: user.email.toLowerCase() }),
+      };
+
+      // Mã hóa dữ liệu người dùng vào URL query
+      const userDataParam = encodeURIComponent(JSON.stringify(userData));
+      res.redirect(`http://localhost:3000/auth/facebook/callback?user=${userDataParam}`);
+    } catch (error) {
+      console.error('Facebook callback error:', error.message);
+      res.redirect('http://localhost:3000/login?error=Facebook authentication failed');
     }
-
-    if (user.otp !== otp) {
-      return res.status(400).json({ message: 'Mã OTP không đúng' });
-    }
-
-    // Xóa OTP sau khi xác minh thành công
-    user.otp = null;
-    await user.save();
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '1d',
-    });
-
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      isAdmin: user.isAdmin,
-      role: user.role,
-      phone: user.phone,
-      token,
-    });
-  } catch (error) {
-    console.error('Verify OTP error:', error.message);
-    res.status(400).json({ message: error.message });
   }
-});
+);
 
 /**
  * @route   GET /api/users/points

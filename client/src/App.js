@@ -25,6 +25,7 @@ import RoomManagement from "./components/RoomManagement";
 import EditRoomForm from "./components/EditRoomForm";
 import ProfileManagement from "./components/ProfileManagement";
 import GoogleCallBack from "./screens/Auth/GoogleCallBack";
+import FacebookCallBack from "./screens/Auth/FacebookCallBack";
 import Membership from "./components/Membership";
 import AdminDiscounts from "./components/AdminDiscounts";
 import RoomResults from "./components/RoomResults";
@@ -77,6 +78,7 @@ function App() {
           <Route path="/register" element={<Registerscreen />} />
           <Route path="/bookings" element={<UserRoute><HistoryBookings /></UserRoute>} />
           <Route path="/auth/google/callback" element={<GoogleCallBack />} />
+          <Route path="/auth/facebook/callback" element={<FacebookCallBack />} />
           <Route path="/stats" element={<UserRoute><UserStats /></UserRoute>} />
           <Route path="/booking-list" element={<UserRoute><BookingList /></UserRoute>} />
           <Route path="/booking-form" element={<BookingForm />} />
