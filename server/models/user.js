@@ -1,76 +1,74 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const userSchema = mongoose.Schema({
-   name: {
-      type: String,
-      required: true
-   },
-   email: {
+const userSchema = mongoose.Schema(
+  {
+    name: {
       type: String,
       required: true,
-      unique: true
-   },
-   password: {
-      type: String,
-      required: false // Không bắt buộc cho người dùng Google
-   },
-   googleId: {
-      type: String,
-      unique: true,
-      sparse: true 
-   },
-   facebookId: {
-      type: String,
-      unique: true,
-      sparse: true // Cho phép nhiều user không có facebookId
-   },
-   isAdmin: {
-      type: Boolean,
-      default: false
-   },
-   role: {
-      type: String,
-      enum: ['user', 'admin', 'staff'],
-      default: 'user'
-   },
-   otp: {
-      type: String,
-      default: null
     },
-   isDeleted: {
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: false, // Không bắt buộc cho người dùng Google
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    facebookId: {
+      type: String,
+      unique: true,
+      sparse: true, // Cho phép nhiều user không có facebookId
+    },
+    isAdmin: {
       type: Boolean,
-      default: false
-   },
-   phone: {
+      default: false,
+    },
+    role: {
       type: String,
-      maxlength: 10
-   },
-   avatar: {
+      enum: ["user", "admin", "staff"],
+      default: "user",
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    phone: {
       type: String,
-      default: ''
-   
-   },
-   points: {
+      maxlength: 10,
+    },
+    avatar: {
+      type: String,
+      default: "",
+    },
+    points: {
       type: Number,
       default: 0,
-
     },
     region: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Region',
+      ref: "Region",
       default: null,
       // Khu vực quản lý (cho admin)
-   },
-   favorites: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Room',
-  }],
-},
+    },
+    favorites: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Room",
+      },
+    ],
+  },
 
-   {
-   timestamps: true,
-});
+  {
+    timestamps: true,
+  }
+);
 
-const userModel = mongoose.model('users', userSchema);
+const userModel = mongoose.model("users", userSchema);
 
 module.exports = userModel;
