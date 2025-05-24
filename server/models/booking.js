@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const bookingSchema = new mongoose.Schema({
   roomid: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Room',
+    ref: "Room",
     required: true,
   },
   name: {
@@ -15,10 +15,10 @@ const bookingSchema = new mongoose.Schema({
     required: true,
     lowercase: true,
     validate: {
-      validator: function(v) {
+      validator: function (v) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
       },
-      message: props => `${props.value} không phải là email hợp lệ!`
+      message: (props) => `${props.value} không phải là email hợp lệ!`,
     },
   },
   phone: {
@@ -50,21 +50,22 @@ const bookingSchema = new mongoose.Schema({
   },
   specialRequest: {
     type: String,
+    default: null,
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'canceled'],
-    default: 'pending',
+    enum: ["pending", "confirmed", "canceled"],
+    default: "pending",
   },
   paymentMethod: {
     type: String,
-    enum: ['cash', 'credit_card', 'bank_transfer', 'mobile_payment', 'vnpay'], // Thêm 'vnpay'
+    enum: ["cash", "credit_card", "bank_transfer", "mobile_payment", "vnpay"], // Thêm 'vnpay'
     default: null,
   },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'paid', 'canceled'],
-    default: 'pending',
+    enum: ["pending", "paid", "canceled"],
+    default: "pending",
   },
   paymentDeadline: {
     type: Date,
@@ -78,10 +79,12 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     default: 0, // Tổng số tiền giảm giá từ voucher
   },
-  appliedVouchers: [{
-    code: String,
-    discount: Number, // Danh sách voucher đã áp dụng
-  }],
+  appliedVouchers: [
+    {
+      code: String,
+      discount: Number, // Danh sách voucher đã áp dụng
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,
@@ -117,4 +120,4 @@ bookingSchema.index({ roomid: 1, paymentStatus: 1 });
 bookingSchema.index({ email: 1, paymentStatus: 1 });
 bookingSchema.index({ roomid: 1, email: 1, paymentStatus: 1 });
 
-module.exports = mongoose.model('Booking', bookingSchema);
+module.exports = mongoose.model("Booking", bookingSchema);
