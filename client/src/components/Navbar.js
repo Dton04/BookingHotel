@@ -177,12 +177,7 @@ function Navbar() {
             <li className={`nav-item ${location.pathname === '/contact' ? 'active' : ''}`}>
               <Link className="nav-link" to="/contact" onClick={closeNav}>LIÊN HỆ</Link>
             </li>
-          </ul>
-          <div className="premium-button">
-            <Link to="/premium" className="btn btn-premium" onClick={closeNav}>
-              PHIÊN BẢN CAO CẤP <i className="fas fa-arrow-right"></i>
-            </Link>
-          </div>
+          </ul> 
         </div>
       </nav>
     </header>

@@ -267,19 +267,7 @@ function Room({ room }) {
           ...
         </p>
         <div className="room-footer">
-          <div className="room-rating">
-            <Rating
-              readonly
-              initialRating={averageRating.average}
-              emptySymbol={<i className="far fa-star"></i>}
-              fullSymbol={<i className="fas fa-star"></i>}
-            />
-            {averageRating.totalReviews > 0 && (
-              <span>
-                ({averageRating.average.toFixed(1)}/5)
-              </span>
-            )}
-          </div>
+     
           <div className="room-actions">
             <button
               className="btn-book"

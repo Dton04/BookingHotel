@@ -763,13 +763,16 @@ function Bookingscreen() {
                     />
                     {errors.specialRequest && <div className="invalid-feedback">{errors.specialRequest.message}</div>}
                   </div>
-                  <button
-                    type="submit"
-                    className="btn btn-book-now"
-                    disabled={loading || room.availabilityStatus !== "available"}
-                  >
-                    {loading ? "Đang xử lý..." : "ĐẶT PHÒNG NGAY"}
-                  </button>
+                  <div className="center-button">
+                    <button
+                      type="submit"
+                      className="btn btn-book-now"
+                      disabled={loading || room.availabilityStatus !== "available"}
+                    >
+                      {loading ? "Đang xử lý..." : "ĐẶT PHÒNG NGAY"}
+                    </button>
+                  </div>
+
 
                   {bookingStatus?.type === "success" && newBookingId && (
                     <button

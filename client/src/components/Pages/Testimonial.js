@@ -275,7 +275,7 @@ function Testimonial() {
       localStorage.removeItem("bookingId");
 
       setTimeout(() => {
-        navigate("/hotels");
+        navigate("/home");
       }, 2000);
     } catch (error) {
       console.error("Lỗi khi gửi đánh giá:", {

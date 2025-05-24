@@ -333,8 +333,8 @@ router.get('/member', protect, async (req, res) => {
     }
 
     let membershipLevel;
-    if (user.points >= 1000000) membershipLevel = 'Diamond';
-    else if (user.points >= 500000) membershipLevel = 'Platinum';
+    if (user.points >= 350000) membershipLevel = 'Diamond';
+    else if (user.points >= 200000) membershipLevel = 'Platinum';
     else if (user.points >= 100000) membershipLevel = 'Gold';
     else if (user.points >= 50000) membershipLevel = 'Silver';
     else membershipLevel = 'Bronze';

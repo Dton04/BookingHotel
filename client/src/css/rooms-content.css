@@ -314,6 +314,7 @@
 /* Modal Styles */
 .room-modal-content {
   padding: 20px 0;
+  color: white;
 }
 
 .room-highlights {
@@ -338,6 +339,7 @@
 
 .room-modal-description {
   margin-bottom: 20px;
+  color: rgb(142, 100, 21)
 }
 
 .room-modal-description h5 {

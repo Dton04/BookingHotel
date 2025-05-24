@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Form, Button, Container, Row, Col, Alert } from 'react-bootstrap';
@@ -17,9 +17,24 @@ const CreateRoomForm = () => {
     availabilityStatus: 'available',
     type: '',
     description: '',
+    hotelId: '', // Thêm hotelId vào formData
   });
+  const [hotels, setHotels] = useState([]); // Trạng thái lưu danh sách khách sạn
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Lấy danh sách khách sạn khi component mount
+  useEffect(() => {
+    const fetchHotels = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/hotels');
+        setHotels(response.data);
+      } catch (err) {
+        setError('Lỗi khi lấy danh sách khách sạn');
+      }
+    };
+    fetchHotels();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,6 +55,7 @@ const CreateRoomForm = () => {
       phonenumber: parseInt(formData.phonenumber),
       rentperday: parseInt(formData.rentperday),
       imageurls: formData.imageurls ? formData.imageurls.split(',').map(url => url.trim()) : [],
+      hotelId: formData.hotelId, // Thêm hotelId vào dữ liệu gửi đi
     };
 
     try {
@@ -69,6 +85,7 @@ const CreateRoomForm = () => {
         availabilityStatus: 'available',
         type: '',
         description: '',
+        hotelId: '', // Reset hotelId
       });
       setTimeout(() => navigate('/admin/rooms'), 2000); // Chuyển hướng sau 2 giây
     } catch (err) {
@@ -84,6 +101,23 @@ const CreateRoomForm = () => {
           {error && <Alert variant="danger">{error}</Alert>}
           {success && <Alert variant="success">{success}</Alert>}
           <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3" controlId="hotelId">
+              <Form.Label>Chọn Khách Sạn</Form.Label>
+              <Form.Select
+                name="hotelId"
+                value={formData.hotelId}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Chọn khách sạn</option>
+                {hotels.map((hotel) => (
+                  <option key={hotel._id} value={hotel._id}>
+                    {hotel.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+
             <Form.Group className="mb-3" controlId="name">
               <Form.Label>Tên Phòng</Form.Label>
               <Form.Control

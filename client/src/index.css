@@ -29,3 +29,7 @@ code {
 
 
 
+body.modal-open,
+body.modal-open .navbar {
+  padding-right: 0 !important;
+}

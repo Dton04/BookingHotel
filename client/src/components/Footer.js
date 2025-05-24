@@ -55,7 +55,7 @@ const Footer = () => {
       {/* Footer Bottom */}
       <div className="footer-bottom">
         <p>
-          © HOTELIER, ALL RIGHT RESERVED. DESIGNED BY <a href="https://htmlcodex.com" target="_blank" rel="noopener noreferrer">HTML CODEX</a>
+          © HOTELIER, ALL RIGHT RESERVED. DESIGNED BY <a href="https://hoterier.com" target="_blank" rel="noopener noreferrer">HOTELBOOKING</a>
         </p>
         <div className="footer-links">
           <Link to="/">Home</Link>

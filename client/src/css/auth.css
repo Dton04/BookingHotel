@@ -5,6 +5,8 @@
    min-height: 100vh;
    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
    padding: 20px;
+    max-width: 1400px;
+  margin: 0 auto;
  }
  
  .register-card {

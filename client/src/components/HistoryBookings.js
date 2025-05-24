@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
@@ -15,6 +14,14 @@ function HistoryBookings() {
   const [selectedBookingId, setSelectedBookingId] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelError, setCancelError] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editBooking, setEditBooking] = useState({
+    checkin: "",
+    checkout: "",
+    adults: "",
+    children: "",
+  });
+  const [editError, setEditError] = useState(null);
   const navigate = useNavigate();
 
   // Lấy email người dùng từ localStorage
@@ -94,12 +101,79 @@ function HistoryBookings() {
       await axios.put(`/api/bookings/${selectedBookingId}/cancel`, {
         cancelReason,
       });
-      await fetchBookings(); // Làm mới dữ liệu từ server
+      await fetchBookings();
       handleCloseCancelModal();
     } catch (err) {
       setCancelError(
         err.response?.data?.message ||
           "Lỗi khi hủy đặt phòng. Vui lòng thử lại."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mở modal chỉnh sửa
+  const handleOpenEditModal = (booking) => {
+    const createdAt = new Date(booking.createdAt);
+    const currentTime = new Date();
+    const timeDiff = (currentTime - createdAt) / (1000 * 60); // Tính thời gian chênh lệch (phút)
+    if (timeDiff > 60) {
+      setEditError("Không thể chỉnh sửa đặt phòng vì đã quá 60 phút kể từ khi tạo.");
+      return;
+    }
+    setSelectedBookingId(booking._id);
+    setEditBooking({
+      checkin: new Date(booking.checkin).toISOString().split("T")[0],
+      checkout: new Date(booking.checkout).toISOString().split("T")[0],
+      adults: booking.adults,
+      children: booking.children,
+    });
+    setEditError(null);
+    setShowEditModal(true);
+  };
+
+  // Đóng modal chỉnh sửa
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setSelectedBookingId(null);
+    setEditBooking({ checkin: "", checkout: "", adults: "", children: "" });
+    setEditError(null);
+  };
+
+  // Xử lý chỉnh sửa đặt phòng
+  const handleEditBooking = async () => {
+    try {
+      setLoading(true);
+      setEditError(null);
+
+      const checkinDate = new Date(editBooking.checkin);
+      const checkoutDate = new Date(editBooking.checkout);
+      if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime()) || checkinDate >= checkoutDate) {
+        setEditError("Ngày nhận phòng và trả phòng không hợp lệ.");
+        return;
+      }
+      if (!editBooking.adults || editBooking.adults < 1) {
+        setEditError("Số người lớn phải lớn hơn 0.");
+        return;
+      }
+      if (editBooking.children < 0) {
+        setEditError("Số trẻ em không được âm.");
+        return;
+      }
+
+      await axios.put(`/api/bookings/${selectedBookingId}/update`, {
+        checkin: editBooking.checkin,
+        checkout: editBooking.checkout,
+        adults: Number(editBooking.adults),
+        children: Number(editBooking.children),
+      });
+      await fetchBookings();
+      handleCloseEditModal();
+    } catch (err) {
+      setEditError(
+        err.response?.data?.message ||
+          "Lỗi khi chỉnh sửa đặt phòng. Vui lòng thử lại."
       );
     } finally {
       setLoading(false);
@@ -181,6 +255,11 @@ function HistoryBookings() {
         </button>
       </div>
 
+      {/* Thông báo lỗi chỉnh sửa */}
+      {editError && (
+        <div className="alert alert-danger text-center">{editError}</div>
+      )}
+
       {/* Bảng lịch sử đặt phòng */}
       {filteredBookings.length === 0 ? (
         <div className="alert alert-info text-center">
@@ -236,22 +315,41 @@ function HistoryBookings() {
                     </span>
                   </td>
                   <td>
-                    {booking.status === "pending" ? (
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleOpenCancelModal(booking._id)}
-                        disabled={loading}
-                      >
-                        Hủy
-                      </button>
-                    ) : booking.status === "canceled" ? (
-                      <button
-                        className="btn btn-info btn-sm"
-                        onClick={() => handleViewCancelReason(booking._id)}
-                      >
-                        Xem lý do hủy
-                      </button>
-                    ) : null}
+                    <div className="d-flex gap-2">
+                      {booking.status === "pending" ? (
+                        <>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleOpenCancelModal(booking._id)}
+                            disabled={loading}
+                          >
+                            Hủy
+                          </button>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => handleOpenEditModal(booking)}
+                            disabled={loading}
+                          >
+                            Chỉnh sửa
+                          </button>
+                        </>
+                      ) : booking.status === "confirmed" ? (
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => handleOpenEditModal(booking)}
+                          disabled={loading}
+                        >
+                          Chỉnh sửa
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-info btn-sm"
+                          onClick={() => handleViewCancelReason(booking._id)}
+                        >
+                          Xem lý do hủy
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -289,6 +387,72 @@ function HistoryBookings() {
             disabled={loading}
           >
             {loading ? "Đang xử lý..." : "Hủy đặt phòng"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal chỉnh sửa đặt phòng */}
+      <Modal show={showEditModal} onHide={handleCloseEditModal} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Chỉnh sửa đặt phòng</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {editError && <Alert variant="danger">{editError}</Alert>}
+          <Form>
+            <Form.Group controlId="checkin">
+              <Form.Label>Ngày nhận phòng:</Form.Label>
+              <Form.Control
+                type="date"
+                value={editBooking.checkin}
+                onChange={(e) =>
+                  setEditBooking({ ...editBooking, checkin: e.target.value })
+                }
+              />
+            </Form.Group>
+            <Form.Group controlId="checkout" className="mt-3">
+              <Form.Label>Ngày trả phòng:</Form.Label>
+              <Form.Control
+                type="date"
+                value={editBooking.checkout}
+                onChange={(e) =>
+                  setEditBooking({ ...editBooking, checkout: e.target.value })
+                }
+              />
+            </Form.Group>
+            <Form.Group controlId="adults" className="mt-3">
+              <Form.Label>Số người lớn:</Form.Label>
+              <Form.Control
+                type="number"
+                value={editBooking.adults}
+                onChange={(e) =>
+                  setEditBooking({ ...editBooking, adults: e.target.value })
+                }
+                min="1"
+              />
+            </Form.Group>
+            <Form.Group controlId="children" className="mt-3">
+              <Form.Label>Số trẻ em:</Form.Label>
+              <Form.Control
+                type="number"
+                value={editBooking.children}
+                onChange={(e) =>
+                  setEditBooking({ ...editBooking, children: e.target.value })
+                }
+                min="0"
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseEditModal}>
+            Đóng
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleEditBooking}
+            disabled={loading}
+          >
+            {loading ? "Đang xử lý..." : "Lưu thay đổi"}
           </Button>
         </Modal.Footer>
       </Modal>

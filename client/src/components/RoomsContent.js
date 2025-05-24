@@ -119,7 +119,7 @@ function RoomsContent() {
                   {averageRatings[hotel._id] && averageRatings[hotel._id].totalReviews > 0 && (
                     <p className="hotel-rating text-muted">
                       <i className="fas fa-star me-2"></i>
-                      {averageRatings[hotel._id].average.toFixed(1)}/5 ({averageRatings[hotel._id].totalReviews} lượt đánh giá)
+                      {averageRatings[hotel._id].average.toFixed(1)}/5
                     </p>
                   )}
                   <p className="hotel-description text-muted">

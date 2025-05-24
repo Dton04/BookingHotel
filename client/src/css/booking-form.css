@@ -537,3 +537,7 @@
     font-size: 0.75rem;
   }
 }
+.center-button {
+  display: flex;
+  justify-content: center;
+}
