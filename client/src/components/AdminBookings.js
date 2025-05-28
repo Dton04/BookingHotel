@@ -205,7 +205,7 @@ function AdminBookings() {
 
         {/* Trạng thái tải */}
         {loading ? (
-          <div className="loading-spinner">
+          <div className="loading">
             <Spinner animation="border" variant="primary" />
             <span>Đang tải danh sách đặt phòng...</span>
           </div>

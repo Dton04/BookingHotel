@@ -1,82 +1,154 @@
+/* Layout tổng */
 .membership-container {
-  max-width: 800px;
-  margin: 2rem auto;
-  padding: 1rem;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 1400px;
+  margin: 3rem auto;
+  padding: 2rem;
+  background: linear-gradient(to right, #f9fafb, #f0fdf4);
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  font-family: 'Inter', sans-serif;
+  color: #1f2937;
 }
 
+/* Tiêu đề chính */
+.membership-container h2 {
+  text-align: center;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #1d4ed8;
+  margin-bottom: 1.5rem;
+}
+
+/* Cấp độ thành viên */
 .membership-info {
   text-align: center;
   margin-bottom: 2rem;
+  background-color: #fff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
 }
 
 .membership-info h3 {
-  color: #007bff;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
+  color: #3b82f6;
+  margin-bottom: 0.5rem;
 }
 
-.points-history {
+/* Quyền lợi */
+.benefits-section {
+  background: #ffffff;
+  padding: 1.5rem;
   margin-bottom: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.benefits-section h4 {
+  font-size: 1.3rem;
+  color: #10b981;
+  margin-bottom: 1rem;
+}
+
+.benefits-section ul {
+  padding-left: 1.2rem;
+  list-style-type: disc;
+}
+
+/* Lịch sử điểm */
+.points-history {
+  background: #ffffff;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .points-history h4 {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
+  color: #6366f1;
   margin-bottom: 1rem;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  text-align: left;
+  font-size: 0.95rem;
 }
 
 .table th {
-  background-color: #007bff;
+  background: #1e40af;
   color: white;
+  padding: 12px;
+  text-align: left;
 }
 
-.rewards-section h4 {
-  font-size: 1.4rem;
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Voucher */
+.rewards-section,
+.accumulated-discounts-section {
+  background: #ffffff;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.rewards-section h4,
+.accumulated-discounts-section h4 {
+  font-size: 1.3rem;
+  color: #ef4444;
   margin-bottom: 1rem;
 }
 
-.rewards-list {
+.rewards-list,
+.discounts-list {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
 }
 
-.reward-item {
+.reward-item,
+.discount-item {
   flex: 1 1 45%;
+  background: #f9fafb;
   padding: 1rem;
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  text-align: center;
+  border-radius: 10px;
+  border-left: 5px solid #3b82f6;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
 }
 
-.reward-item p {
-  margin: 0.5rem 0;
+.reward-item p,
+.discount-item p {
+  margin: 0.3rem 0;
+  font-size: 0.95rem;
 }
 
+/* Nút hành động */
 .btn-primary {
-  background-color: #007bff;
+  background-color: #3b82f6;
   border: none;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.2rem;
   color: white;
-  border-radius: 4px;
+  border-radius: 9999px;
   cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary:hover {
+  background-color: #2563eb;
+  transform: scale(1.03);
 }
 
 .btn-primary:disabled {
-  background-color: #6c757d;
+  background-color: #d1d5db;
+  color: #6b7280;
   cursor: not-allowed;
+  box-shadow: none;
 }

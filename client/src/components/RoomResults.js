@@ -13,6 +13,7 @@ import {
   Tooltip,
   Modal,
   Form,
+  Pagination,
 } from "react-bootstrap";
 import { FaWifi, FaBed, FaBath, FaStar } from "react-icons/fa";
 import AlertMessage from "../components/AlertMessage";
@@ -20,13 +21,20 @@ import "../css/room-results.css";
 
 const RoomResults = () => {
   const [hotels, setHotels] = useState([]);
+  const [regions, setRegions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [alertStatus, setAlertStatus] = useState(null);
   const [bookingLoading, setBookingLoading] = useState({});
-  const [filters, setFilters] = useState({ priceRange: [0, Infinity], rating: 0 });
+  const [filters, setFilters] = useState({
+    priceRange: [0, Infinity],
+    rating: 0,
+    region: "", // Thêm region vào filters
+  });
   const [sortBy, setSortBy] = useState("priceLowToHigh");
   const [showModal, setShowModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1); // Trạng thái phân trang
+  const [hotelsPerPage] = useState(6); // Số khách sạn mỗi trang
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -40,6 +48,20 @@ const RoomResults = () => {
       children: params.get("children"),
       roomType: params.get("roomType"),
     };
+  };
+
+  // Gọi API để lấy danh sách khu vực
+  const fetchRegions = async () => {
+    try {
+      const response = await axios.get("/api/regions");
+      setRegions(response.data);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách khu vực:", error.message);
+      setAlertStatus({
+        type: "error",
+        message: "Lỗi khi lấy danh sách khu vực. Vui lòng thử lại.",
+      });
+    }
   };
 
   // Gọi API để lấy danh sách khách sạn và phòng
@@ -101,6 +123,7 @@ const RoomResults = () => {
   };
 
   useEffect(() => {
+    fetchRegions(); // Gọi API lấy danh sách khu vực
     fetchAvailableHotels();
   }, [location.search]);
 
@@ -200,12 +223,15 @@ const RoomResults = () => {
     }
   };
 
-  // Lọc và sắp xếp phòng
+  // Lọc và sắp xếp khách sạn
   const filteredAndSortedHotels = useMemo(() => {
     let result = [...hotels];
 
-    // Lọc theo giá và đánh giá
-    result = result.map((hotel) => ({
+    // Lọc theo giá, đánh giá và khu vực
+    result = result.filter((hotel) => {
+      const matchesRegion = filters.region ? hotel.region._id === filters.region : true;
+      return matchesRegion;
+    }).map((hotel) => ({
       ...hotel,
       rooms: hotel.rooms.filter(
         (room) =>
@@ -228,10 +254,22 @@ const RoomResults = () => {
     return result.filter((hotel) => hotel.rooms.length > 0);
   }, [hotels, filters, sortBy]);
 
+  // Logic phân trang
+  const indexOfLastHotel = currentPage * hotelsPerPage;
+  const indexOfFirstHotel = indexOfLastHotel - hotelsPerPage;
+  const currentHotels = filteredAndSortedHotels.slice(indexOfFirstHotel, indexOfLastHotel);
+  const totalPages = Math.ceil(filteredAndSortedHotels.length / hotelsPerPage);
+
   // Xử lý hiển thị modal chi tiết phòng
   const handleShowRoomDetails = (room) => {
     setSelectedRoom(room);
     setShowModal(true);
+  };
+
+  // Xử lý chuyển trang
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: "smooth" }); // Cuộn lên đầu trang
   };
 
   return (
@@ -279,6 +317,20 @@ const RoomResults = () => {
                 <option value="5">5 sao</option>
               </Form.Select>
             </Form.Group>
+            <Form.Group className="mt-3">
+              <Form.Label>Khu Vực</Form.Label>
+              <Form.Select
+                onChange={(e) => setFilters((prev) => ({ ...prev, region: e.target.value }))}
+                value={filters.region}
+              >
+                <option value="">Tất cả khu vực</option>
+                {regions.map((region) => (
+                  <option key={region._id} value={region._id}>
+                    {region.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
           </Col>
           <Col md={9}>
             <Form.Group className="mb-3">
@@ -296,8 +348,8 @@ const RoomResults = () => {
               </div>
             ) : (
               <div className="results">
-                <h2 className="mb-5 text-center fw-bold">Danh Sách Phòng</h2>
-                {filteredAndSortedHotels.length === 0 ? (
+                <h2 className="mb-5 text-center fw-bold">Danh Sách Phòng Khách Sạn</h2>
+                {currentHotels.length === 0 ? (
                   <div className="text-center py-5">
                     <p className="text-muted mb-4 fs-5">
                       {alertStatus?.message || "Không có phòng phù hợp với yêu cầu của bạn."}
@@ -312,166 +364,187 @@ const RoomResults = () => {
                     </Button>
                   </div>
                 ) : (
-                  filteredAndSortedHotels.map((hotel) => (
-                    <div key={hotel._id} className="hotel-item mb-5">
-                      <h3 className="hotel-name mb-4">
-                        {hotel.name}{" "}
-                        {hotel.rating && (
-                          <span className="ms-2">
-                            {[...Array(Math.floor(hotel.rating))].map((_, i) => (
-                              <FaStar key={i} className="text-warning" />
+                  <>
+                    {currentHotels.map((hotel) => (
+                      <div key={hotel._id} className="hotel-item mb-5">
+                        <h3 className="hotel-name mb-4">
+                          {hotel.name}{" "}
+                          {hotel.rating && (
+                            <span className="ms-2">
+                              {[...Array(Math.floor(hotel.rating))].map((_, i) => (
+                                <FaStar key={i} className="text-warning" />
+                              ))}
+                              <small className="ms-2">({hotel.reviews || 0} đánh giá)</small>
+                            </span>
+                          )}
+                        </h3>
+                        <div className="hotel-images mb-4">
+                          <Carousel
+                            indicators={true}
+                            controls={hotel.imageurls?.length > 1}
+                            className="hotel-carousel"
+                            interval={4000}
+                          >
+                            {(hotel.imageurls?.length > 0
+                              ? hotel.imageurls
+                              : ["/images/default-hotel.jpg"]
+                            ).map((img, index) => (
+                              <Carousel.Item key={index}>
+                                <img
+                                  className="d-block w-100"
+                                  src={img}
+                                  alt={`${hotel.name} - ${index + 1}`}
+                                  onError={(e) => {
+                                    e.target.src = "/images/default-hotel.jpg";
+                                  }}
+                                  style={{ height: "300px", objectFit: "cover" }}
+                                />
+                              </Carousel.Item>
                             ))}
-                            <small className="ms-2">({hotel.reviews || 0} đánh giá)</small>
-                          </span>
-                        )}
-                      </h3>
-                      {/* Thêm carousel cho ảnh khách sạn */}
-                      <div className="hotel-images mb-4">
-                        <Carousel
-                          indicators={true}
-                          controls={hotel.imageurls?.length > 1}
-                          className="hotel-carousel"
-                          interval={4000}
-                        >
-                          {(hotel.imageurls?.length > 0
-                            ? hotel.imageurls
-                            : ["/images/default-hotel.jpg"]
-                          ).map((img, index) => (
-                            <Carousel.Item key={index}>
-                              <img
-                                className="d-block w-100"
-                                src={img}
-                                alt={`${hotel.name} - ${index + 1}`}
-                                onError={(e) => {
-                                  e.target.src = "/images/default-hotel.jpg";
-                                }}
-                                style={{ height: "300px", objectFit: "cover" }}
-                              />
-                            </Carousel.Item>
-                          ))}
-                        </Carousel>
-                      </div>
-                      <div className="hotel-info mb-4">
-                        <p><strong>Địa chỉ:</strong> {hotel.address}</p>
-                        <p><strong>Email:</strong> {hotel.email}</p>
-                        <p><strong>Số điện thoại:</strong> {hotel.contactNumber}</p>
-                        <p><strong>Mô tả:</strong> {hotel.description || "Không có mô tả."}</p>
-                        {hotel.deal && (
-                          <p className="text-success">
-                            <strong>Ưu đãi:</strong> {hotel.deal}
-                          </p>
-                        )}
-                      </div>
-                      <h4 className="mb-4">Phòng:</h4>
-                      {hotel.rooms.length === 0 ? (
-                        <p className="text-muted">Không có phòng tại khách sạn này.</p>
-                      ) : (
-                        <Row>
-                          {hotel.rooms.map((room) => {
-                            const { text, bg, tooltip } = getRoomStatus(room.status);
-                            const isAvailable = room.status === "available";
+                          </Carousel>
+                        </div>
+                        <div className="hotel-info mb-4">
+                          <p><strong>Địa chỉ:</strong> {hotel.address}</p>
+                          <p><strong>Email:</strong> {hotel.email}</p>
+                          <p><strong>Số điện thoại:</strong> {hotel.contactNumber}</p>
+                          <p><strong>Mô tả:</strong> {hotel.description || "Không có mô tả."}</p>
+                          {hotel.deal && (
+                            <p className="text-success">
+                              <strong>Ưu đãi:</strong> {hotel.deal}
+                            </p>
+                          )}
+                        </div>
+                        <h4 className="mb-4">Phòng:</h4>
+                        {hotel.rooms.length === 0 ? (
+                          <p className="text-muted">Không có phòng tại khách sạn này.</p>
+                        ) : (
+                          <Row>
+                            {hotel.rooms.map((room) => {
+                              const { text, bg, tooltip } = getRoomStatus(room.status);
+                              const isAvailable = room.status === "available";
 
-                            return (
-                              <Col md={4} key={room._id} className="mb-4">
-                                <Card className="room-card h-100">
-                                  <div className="room-image-wrapper">
-                                    <div className="room-image-container">
-                                      <Carousel
-                                        indicators={true}
-                                        controls={room.imageurls?.length > 1}
-                                        className="room-carousel"
-                                        interval={4000}
+                              return (
+                                <Col md={4} key={room._id} className="mb-4">
+                                  <Card className="room-card h-100">
+                                    <div className="room-image-wrapper">
+                                      <div className="room-image-container">
+                                        <Carousel
+                                          indicators={true}
+                                          controls={room.imageurls?.length > 1}
+                                          className="room-carousel"
+                                          interval={4000}
+                                        >
+                                          {(room.imageurls?.length > 0
+                                            ? room.imageurls
+                                            : ["/images/default-room.jpg"]
+                                          ).map((img, index) => (
+                                            <Carousel.Item key={index}>
+                                              <img
+                                                className="d-block w-100"
+                                                src={img}
+                                                alt={`${room.name} - ${index + 1}`}
+                                                onError={(e) => {
+                                                  e.target.src = "/images/default-room.jpg";
+                                                }}
+                                              />
+                                            </Carousel.Item>
+                                          ))}
+                                        </Carousel>
+                                      </div>
+                                      <OverlayTrigger
+                                        placement="top"
+                                        overlay={<Tooltip>{tooltip}</Tooltip>}
                                       >
-                                        {(room.imageurls?.length > 0
-                                          ? room.imageurls
-                                          : ["/images/default-room.jpg"]
-                                        ).map((img, index) => (
-                                          <Carousel.Item key={index}>
-                                            <img
-                                              className="d-block w-100"
-                                              src={img}
-                                              alt={`${room.name} - ${index + 1}`}
-                                              onError={(e) => {
-                                                e.target.src = "/images/default-room.jpg";
-                                              }}
-                                            />
-                                          </Carousel.Item>
-                                        ))}
-                                      </Carousel>
+                                        <Badge bg={bg} className="room-status-badge">
+                                          {text}
+                                        </Badge>
+                                      </OverlayTrigger>
                                     </div>
-                                    <OverlayTrigger
-                                      placement="top"
-                                      overlay={<Tooltip>{tooltip}</Tooltip>}
-                                    >
-                                      <Badge bg={bg} className="room-status-badge">
-                                        {text}
-                                      </Badge>
-                                    </OverlayTrigger>
-                                  </div>
-                                  <Card.Body className="d-flex flex-column">
-                                    <Card.Title className="room-title">{room.name}</Card.Title>
-                                    <Card.Text className="flex-grow-1">
-                                      <div className="mb-2">
-                                        <strong>Loại:</strong> {room.type}
-                                      </div>
-                                      <div className="mb-2 price-highlight">
-                                        <strong>Giá:</strong> {formatPriceVND(room.rentperday)}/đêm
-                                      </div>
-                                      <div className="mb-2">
-                                        <strong>Sức chứa:</strong>{" "}
-                                        <FaBed className="me-1" /> {room.maxcount} người,{" "}
-                                        {room.beds} giường
-                                      </div>
-                                      <div className="mb-2">
-                                        <strong>Tiện nghi:</strong>{" "}
-                                        <FaBath className="me-1" /> {room.baths} phòng tắm,{" "}
-                                        <FaWifi className="me-1" /> WiFi
-                                      </div>
-                                      <div className="room-description mt-3">
-                                        {room.description?.slice(0, 80) || "Không có mô tả chi tiết."}
-                                        ...
-                                      </div>
-                                      {room.deal && (
-                                        <div className="text-success mt-2">
-                                          <strong>Ưu đãi:</strong> {room.deal}
+                                    <Card.Body className="d-flex flex-column">
+                                      <Card.Title className="room-title">{room.name}</Card.Title>
+                                      <Card.Text className="flex-grow-1">
+                                        <div className="mb-2">
+                                          <strong>Loại:</strong> {room.type}
                                         </div>
-                                      )}
-                                    </Card.Text>
-                                    <div className="mt-3 d-flex justify-content-between">
-                                      <Button
-                                        variant="outline-primary"
-                                        onClick={() => handleShowRoomDetails(room)}
-                                      >
-                                        Xem chi tiết
-                                      </Button>
-                                      <Button
-                                        variant="primary"
-                                        className="book-now-btn"
-                                        onClick={() => handleBooking(room._id)}
-                                        disabled={bookingLoading[room._id] || !isAvailable}
-                                        style={{ opacity: isAvailable ? 1 : 0.6 }}
-                                      >
-                                        {bookingLoading[room._id] ? (
-                                          <>
-                                            <Spinner as="span" animation="border" size="sm" className="me-2" />
-                                            Đang xử lý...
-                                          </>
-                                        ) : isAvailable ? (
-                                          "Đặt Phòng Ngay"
-                                        ) : (
-                                          "Không Thể Đặt"
+                                        <div className="mb-2 price-highlight">
+                                          <strong>Giá:</strong> {formatPriceVND(room.rentperday)}/đêm
+                                        </div>
+                                        <div className="mb-2">
+                                          <strong>Sức chứa:</strong>{" "}
+                                          <FaBed className="me-1" /> {room.maxcount} người,{" "}
+                                          {room.beds} giường
+                                        </div>
+                                        <div className="mb-2">
+                                          <strong>Tiện nghi:</strong>{" "}
+                                          <FaBath className="me-1" /> {room.baths} phòng tắm,{" "}
+                                          <FaWifi className="me-1" /> WiFi
+                                        </div>
+                                        <div className="room-description mt-3">
+                                          {room.description?.slice(0, 80) || "Không có mô tả chi tiết."}
+                                          ...
+                                        </div>
+                                        {room.deal && (
+                                          <div className="text-success mt-2">
+                                            <strong>Ưu đãi:</strong> {room.deal}
+                                          </div>
                                         )}
-                                      </Button>
-                                    </div>
-                                  </Card.Body>
-                                </Card>
-                              </Col>
-                            );
-                          })}
-                        </Row>
-                      )}
-                    </div>
-                  ))
+                                      </Card.Text>
+                                      <div className="mt-3 d-flex justify-content-between">
+                                        <Button
+                                          variant="outline-primary"
+                                          onClick={() => handleShowRoomDetails(room)}
+                                        >
+                                          Xem chi tiết
+                                        </Button>
+                                        <Button
+                                          variant="primary"
+                                          className="book-now-btn"
+                                          onClick={() => handleBooking(room._id)}
+                                          disabled={bookingLoading[room._id] || !isAvailable}
+                                          style={{ opacity: isAvailable ? 1 : 0.6 }}
+                                        >
+                                          {bookingLoading[room._id] ? (
+                                            <>
+                                              <Spinner as="span" animation="border" size="sm" className="me-2" />
+                                              Đang xử lý...
+                                            </>
+                                          ) : isAvailable ? (
+                                            "Đặt Phòng Ngay"
+                                          ) : (
+                                            "Không Thể Đặt"
+                                          )}
+                                        </Button>
+                                      </div>
+                                    </Card.Body>
+                                  </Card>
+                                </Col>
+                              );
+                            })}
+                          </Row>
+                        )}
+                      </div>
+                    ))}
+                    {/* Phân trang */}
+                    <Pagination className="justify-content-center mt-4">
+                      <Pagination.Prev
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                      />
+                      {[...Array(totalPages)].map((_, index) => (
+                        <Pagination.Item
+                          key={index + 1}
+                          active={index + 1 === currentPage}
+                          onClick={() => handlePageChange(index + 1)}
+                        >
+                          {index + 1}
+                        </Pagination.Item>
+                      ))}
+                      <Pagination.Next
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                      />
+                    </Pagination>
+                  </>
                 )}
               </div>
             )}

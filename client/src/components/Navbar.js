@@ -106,6 +106,9 @@ function Navbar() {
                       <li><Link className="dropdown-item" to="/admin/createroom" onClick={closeNav}><i className="fas fa-plus me-2"></i>Tạo phòng</Link></li>
                       <li><Link className="dropdown-item" to="/admin/rooms" onClick={closeNav}><i className="fas fa-bed me-2"></i>Quản lý phòng</Link></li>
                       <li><Link className="dropdown-item" to="/admin/discounts" onClick={closeNav}><i className="fas fa-tags me-2"></i>Quản lý giảm giá</Link></li>
+                      <li><Link className="dropdown-item" to="/admin/rewards" onClick={closeNav}>
+                        <i className="fas fa-gift me-2"></i>Quản lý ưu đãi
+                      </Link></li>
                       <li><Link className="dropdown-item" to="/admin/reviews" onClick={closeNav}><i className="fas fa-star me-2"></i>Quản lý đánh giá</Link></li>
                     </>
                   ) : user.role === 'staff' ? (
@@ -177,7 +180,7 @@ function Navbar() {
             <li className={`nav-item ${location.pathname === '/contact' ? 'active' : ''}`}>
               <Link className="nav-link" to="/contact" onClick={closeNav}>LIÊN HỆ</Link>
             </li>
-          </ul> 
+          </ul>
         </div>
       </nav>
     </header>

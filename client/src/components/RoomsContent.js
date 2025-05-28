@@ -87,7 +87,7 @@ function RoomsContent() {
         </div>
 
         {loading ? (
-          <div className="loading-spinner text-center">
+          <div className="loading">
             <i className="fas fa-spinner fa-spin fa-2x text-primary"></i>
             <p className="mt-2">Đang tải danh sách khách sạn...</p>
           </div>

@@ -4,15 +4,17 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../css/rewards.css';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaStar, FaGift, FaHistory } from 'react-icons/fa';
+import { FaStar, FaGift, FaHistory, FaTicketAlt } from 'react-icons/fa';
 
 const Rewards = () => {
   const [rewards, setRewards] = useState([]);
   const [userPoints, setUserPoints] = useState(0);
   const [membershipLevel, setMembershipLevel] = useState('');
   const [history, setHistory] = useState([]);
+  const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState(null);
+  const [showVouchers, setShowVouchers] = useState(false);
 
   // Lấy danh sách ưu đãi
   const fetchRewards = async () => {
@@ -50,6 +52,22 @@ const Rewards = () => {
     }
   };
 
+  // Lấy danh sách voucher đã đổi
+  const fetchVouchers = async () => {
+    try {
+      const token = localStorage.getItem('userInfo')
+        ? JSON.parse(localStorage.getItem('userInfo')).token
+        : null;
+      if (!token) return;
+
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const { data } = await axios.get('/api/rewards/vouchers', config);
+      setVouchers(data);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Lỗi khi tải danh sách voucher');
+    }
+  };
+
   // Xử lý đổi ưu đãi
   const handleRedeem = async (rewardId) => {
     setRedeeming(rewardId);
@@ -65,6 +83,7 @@ const Rewards = () => {
       setUserPoints(data.remainingPoints);
       fetchRewards();
       fetchHistory();
+      fetchVouchers();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Lỗi khi đổi ưu đãi');
     } finally {
@@ -75,6 +94,7 @@ const Rewards = () => {
   useEffect(() => {
     fetchRewards();
     fetchHistory();
+    fetchVouchers();
   }, []);
 
   if (loading) {
@@ -115,7 +135,60 @@ const Rewards = () => {
         <p className="text-xl font-semibold text-gray-800 mt-2">
           Điểm hiện có: <span className="text-green-600">{userPoints}</span>
         </p>
+      <motion.button
+  onClick={() => setShowVouchers(!showVouchers)}
+  className="voucher-toggle-btn mt-4 px-5 py-3 bg-yellow-400 text-black rounded-full font-semibold shadow-md transition duration-300"
+>
+  <FaTicketAlt className="inline-block mr-2" />
+  {showVouchers ? 'Ẩn Voucher' : 'Xem Voucher Đã Đổi'}
+</motion.button>
+
+
       </motion.div>
+
+      {/* Danh sách voucher đã đổi */}
+      {showVouchers && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="voucher-table bg-white p-8 rounded-2xl shadow-lg mb-12"
+        >
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            <FaTicketAlt className="inline-block mr-2 text-blue-600" /> Voucher Đã Đổi
+          </h2>
+          {vouchers.length === 0 ? (
+            <p className="text-gray-600">Chưa có voucher nào</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="p-4 font-semibold text-gray-700">Mã Voucher</th>
+                    <th className="p-4 font-semibold text-gray-700">Tên Ưu Đãi</th>
+                    <th className="p-4 font-semibold text-gray-700">Ngày Hết Hạn</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vouchers.map((voucher) => (
+                    <motion.tr
+                      key={voucher._id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                      className="border-t hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      <td className="p-4">{voucher.voucherCode}</td>
+                      <td className="p-4">{voucher.rewardId.name}</td>
+                      <td className="p-4">{new Date(voucher.expiryDate).toLocaleDateString('vi-VN')}</td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Danh sách ưu đãi */}
       <motion.div
@@ -145,19 +218,20 @@ const Rewards = () => {
                 <p className="text-sm text-gray-500 mb-4">
                   Điểm yêu cầu: <span className="font-medium text-green-600">{reward.pointsRequired}</span>
                 </p>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleRedeem(reward._id)}
-                  disabled={redeeming === reward._id || userPoints < reward.pointsRequired}
-                  className={`w-full py-3 rounded-lg text-white font-semibold transition-all duration-300 ${
-                    redeeming === reward._id || userPoints < reward.pointsRequired
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600'
-                  }`}
-                >
-                  {redeeming === reward._id ? 'Đang xử lý...' : 'Đổi ưu đãi'}
-                </motion.button>
+               <motion.button
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  onClick={() => handleRedeem(reward._id)}
+  disabled={redeeming === reward._id || userPoints < reward.pointsRequired}
+  className={`redeem-btn w-full py-3 px-4 rounded-full font-semibold transition-all duration-300 ${
+  redeeming === reward._id || userPoints < reward.pointsRequired
+      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+      : 'bg-blue-600 hover:bg-blue-700 text-white'
+  }`}
+>
+  {redeeming === reward._id ? 'Đang xử lý...' : '🎁 Đổi Ưu Đãi'}
+</motion.button>
+
               </motion.div>
             ))}
           </AnimatePresence>

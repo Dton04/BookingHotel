@@ -1,10 +1,10 @@
-// rewardsRoutes.js
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const User = require('../models/user');
 const Transaction = require('../models/transaction');
-const Discount = require('../models/discount'); // Thay Voucher bằng Discount
+const Discount = require('../models/discount');
+const UserVoucher = require('../models/userVouchers');
 const { protect, admin } = require('../middleware/auth');
 
 // Schema cho Reward
@@ -53,7 +53,6 @@ router.post('/', protect, admin, async (req, res) => {
       return res.status(400).json({ message: 'Cấp độ thành viên không hợp lệ' });
     }
 
-    // Kiểm tra xem mã voucher có tồn tại trong Discount với type là 'voucher'
     const discountExists = await Discount.findOne({ code: voucherCode, type: 'voucher' });
     if (!discountExists) {
       return res.status(404).json({ message: 'Không tìm thấy voucher với mã này trong danh sách khuyến mãi' });
@@ -99,7 +98,6 @@ router.put('/:id', protect, admin, async (req, res) => {
     }
 
     if (voucherCode) {
-      // Kiểm tra xem mã voucher mới có tồn tại trong Discount với type là 'voucher'
       const discountExists = await Discount.findOne({ code: voucherCode, type: 'voucher' });
       if (!discountExists) {
         return res.status(404).json({ message: 'Không tìm thấy voucher với mã này trong danh sách khuyến mãi' });
@@ -146,6 +144,21 @@ router.delete('/:id', protect, admin, async (req, res) => {
   }
 });
 
+// Route admin: Lấy tất cả ưu đãi
+router.get('/admin', protect, admin, async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
+    }
+
+    const rewards = await Reward.find({});
+    res.status(200).json({ rewards });
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách ưu đãi:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi lấy danh sách ưu đãi', error: error.message });
+  }
+});
+
 // Route người dùng: Lấy danh sách ưu đãi khả dụng
 router.get('/', protect, async (req, res) => {
   try {
@@ -158,7 +171,6 @@ router.get('/', protect, async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
 
-    // Tính toán membershipLevel dựa trên points
     let membershipLevel;
     if (user.points >= 350000) membershipLevel = 'Diamond';
     else if (user.points >= 200000) membershipLevel = 'Platinum';
@@ -181,6 +193,8 @@ router.get('/', protect, async (req, res) => {
     res.status(500).json({ message: 'Lỗi khi lấy danh sách ưu đãi', error: error.message });
   }
 });
+
+// Route người dùng: Đổi ưu đãi
 router.post('/redeem', protect, async (req, res) => {
   const { rewardId } = req.body;
   const session = await mongoose.startSession();
@@ -197,12 +211,11 @@ router.post('/redeem', protect, async (req, res) => {
       throw new Error('Không tìm thấy ưu đãi');
     }
 
-    const user = await User.findById(req.user.id).select('points').session(session);
+    const user = await User.findById(req.user.id).select('points vouchers').session(session);
     if (!user) {
       throw new Error('Không tìm thấy người dùng');
     }
 
-    // Tính toán membershipLevel dựa trên points
     let userMembershipLevel;
     if (user.points >= 350000) userMembershipLevel = 'Diamond';
     else if (user.points >= 200000) userMembershipLevel = 'Platinum';
@@ -218,11 +231,22 @@ router.post('/redeem', protect, async (req, res) => {
       throw new Error('Không đủ điểm để đổi ưu đãi này');
     }
 
-    // Trừ điểm người dùng
+    const existingVoucher = await UserVoucher.findOne({
+      userId: req.user.id,
+      voucherCode: reward.voucherCode,
+    }).session(session);
+    if (existingVoucher) {
+      throw new Error('Bạn đã đổi ưu đãi này rồi');
+    }
+
+    const discount = await Discount.findOne({ code: reward.voucherCode, type: 'voucher' }).session(session);
+    if (!discount) {
+      throw new Error('Không tìm thấy voucher tương ứng');
+    }
+
     user.points -= reward.pointsRequired;
     await user.save({ session });
 
-    // Tạo giao dịch
     const transaction = new Transaction({
       userId: req.user.id,
       type: 'reward_redemption',
@@ -230,13 +254,25 @@ router.post('/redeem', protect, async (req, res) => {
       points: -reward.pointsRequired,
       createdAt: new Date(),
     });
-
     await transaction.save({ session });
+
+    const userVoucher = new UserVoucher({
+      userId: req.user.id,
+      rewardId: reward._id,
+      voucherCode: reward.voucherCode,
+      isUsed: false,
+      expiryDate: discount.endDate,
+    });
+    await userVoucher.save({ session });
+
+    user.vouchers.push(userVoucher._id);
+    await user.save({ session });
 
     await session.commitTransaction();
     res.status(201).json({
       message: 'Đổi ưu đãi thành công',
       voucherCode: reward.voucherCode,
+      expiryDate: discount.endDate,
       remainingPoints: user.points,
     });
   } catch (error) {
@@ -259,13 +295,31 @@ router.get('/history', protect, async (req, res) => {
       userId: req.user.id,
       type: 'reward_redemption',
     })
-    .sort({ createdAt: -1 })
-    .select('createdAt description points');
+      .sort({ createdAt: -1 })
+      .select('createdAt description points');
 
     res.status(200).json(transactions);
   } catch (error) {
     console.error('Lỗi khi lấy lịch sử đổi thưởng:', error.message, error.stack);
     res.status(500).json({ message: 'Lỗi khi lấy lịch sử đổi thưởng', error: error.message });
+  }
+});
+
+// Route người dùng: Lấy danh sách voucher đã đổi
+router.get('/vouchers', protect, async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: 'Kết nối cơ sở dữ liệu chưa sẵn sàng' });
+    }
+
+    const vouchers = await UserVoucher.find({ userId: req.user.id, isUsed: false })
+      .populate('rewardId', 'name description pointsRequired')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(vouchers);
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách voucher:', error.message, error.stack);
+    res.status(500).json({ message: 'Lỗi khi lấy danh sách voucher', error: error.message });
   }
 });
 

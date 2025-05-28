@@ -361,7 +361,7 @@ function Testimonial() {
                         )}
                         <div className="testimonial-author">
                           <div className="author-info">
-                            <h4 className="author-name">{review.userName}</h4>
+                            <h4 className="author-name">{review.userName || "Khách ẩn danh"}</h4>
                             <p className="author-profession">
                               {review.profession || "Khách hàng"}
                             </p>

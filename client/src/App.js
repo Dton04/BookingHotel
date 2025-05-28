@@ -38,6 +38,8 @@ import VNPaySuccess from "./components/VNPaySuccess";
 import PointsPage from './components/PointsPage';
 import ReviewManagement from './components/ReviewManagement';
 import Favorites from './components/Favorites';
+import AdminRewards from "./components/AdminRewards";
+
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -96,6 +98,9 @@ function App() {
           <Route path="/favorites" element={<Favorites />} />
 
           <Route path="/booking-success" element={<VNPaySuccess />} />
+          <Route path="/admin/rewards" element={<AdminRewards />} />
+
+
           
           <Route
             path="/admin/staffmanagement"

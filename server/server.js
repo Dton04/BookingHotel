@@ -78,6 +78,8 @@ const statsRoutes = require('./routes/statsRoutes');
 const discountRoutes = require('./routes/discountRoutes')
 
 const favoriteRoutes = require('./routes/favoriteRoutes')
+const diningServiceRoutes = require('./routes/diningServiceRoutes');
+
 
 // Routes
 app.use('/api', contactRoutes);
@@ -94,6 +96,8 @@ app.use('/api/rewards', rewardsRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/discounts',discountRoutes)
 app.use('/api/favorites',favoriteRoutes)
+app.use('/api/dining-services', diningServiceRoutes);
+
 
 // Xử lý lỗi không được bắt
 app.use((err, req, res, next) => {

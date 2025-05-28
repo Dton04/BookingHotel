@@ -26,6 +26,7 @@ h1 {
 }
 
 /* Thẻ ưu đãi */
+
 .reward-card {
   border-radius: 16px;
   background: #ffffff;
@@ -121,4 +122,40 @@ h1 {
     padding: 12px;
     font-size: 14px;
   }
+}
+
+.voucher-toggle-btn {
+  background-color: #facc15 !important; /* yellow-400 */
+  color: #1f2937 !important; /* text-gray-800 */
+  border: none !important;
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: all 0.3s ease;
+}
+
+.voucher-toggle-btn:hover {
+  background-color: #fbbf24 !important; /* yellow-500 */
+  transform: scale(1.05);
+}
+
+/* Nút đổi ưu đãi */
+.redeem-btn {
+  background: linear-gradient(to right, #2563eb, #10b981) !important;
+  color: white !important;
+  border: none !important;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.02em;
+}
+
+.redeem-btn:hover {
+  background: linear-gradient(to right, #1d4ed8, #059669) !important;
+  transform: scale(1.03);
+}
+
+.redeem-btn.disabled {
+  background: #d1d5db !important;
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
 }

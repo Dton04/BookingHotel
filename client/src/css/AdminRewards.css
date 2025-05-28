@@ -1,0 +1,150 @@
+.admin-rewards {
+  padding: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.form-container {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.form-container h3 {
+  margin-bottom: 15px;
+}
+
+.form-container input,
+.form-container textarea,
+.form-container select {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.form-container button {
+  background: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.form-container button:hover {
+  background: #0056b3;
+}
+
+.rewards-list table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.rewards-list th,
+.rewards-list td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.rewards-list th {
+  background: #007bff;
+  color: white;
+}
+
+.rewards-list button {
+  margin-right: 10px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.rewards-list button:first-child {
+  background: #28a745;
+  color: white;
+}
+
+.rewards-list button:first-child:hover {
+  background: #218838;
+}
+
+.rewards-list button:last-child {
+  background: #dc3545;
+  color: white;
+}
+
+.rewards-list button:last-child:hover {
+  background: #c82333;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.modal-content h3 {
+  margin-bottom: 15px;
+}
+
+.modal-content input,
+.modal-content textarea,
+.modal-rewards select {
+  display: block;
+  width: 100%;
+  margin-bottom: 10000px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-buttons button:first-child {
+  background: #007bff;
+  color: white;
+}
+
+.modal-buttons button:first-child:hover {
+  background: #0056b3;
+}
+
+.modal-buttons button:last-child {
+  background: #6c757d;
+  color: white;
+}
+
+.modal-buttons button:last-child:hover {
+  background: #5a6268;
+}
+
+.error {
+  color: red;
+  margin-bottom: 10px;
+}
