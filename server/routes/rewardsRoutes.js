@@ -172,10 +172,10 @@ router.get('/', protect, async (req, res) => {
     }
 
     let membershipLevel;
-    if (user.points >= 350000) membershipLevel = 'Diamond';
-    else if (user.points >= 200000) membershipLevel = 'Platinum';
-    else if (user.points >= 100000) membershipLevel = 'Gold';
-    else if (user.points >= 50000) membershipLevel = 'Silver';
+    if (user.points >= 400000) membershipLevel = 'Diamond';
+    else if (user.points >= 300000) membershipLevel = 'Platinum';
+    else if (user.points >= 200000) membershipLevel = 'Gold';
+    else if (user.points >= 100000) membershipLevel = 'Silver';
     else membershipLevel = 'Bronze';
 
     const rewards = await Reward.find({
@@ -217,10 +217,10 @@ router.post('/redeem', protect, async (req, res) => {
     }
 
     let userMembershipLevel;
-    if (user.points >= 350000) userMembershipLevel = 'Diamond';
-    else if (user.points >= 200000) userMembershipLevel = 'Platinum';
-    else if (user.points >= 100000) userMembershipLevel = 'Gold';
-    else if (user.points >= 50000) userMembershipLevel = 'Silver';
+    if (user.points >= 400000) userMembershipLevel = 'Diamond';
+    else if (user.points >= 300000) userMembershipLevel = 'Platinum';
+    else if (user.points >= 200000) userMembershipLevel = 'Gold';
+    else if (user.points >= 100000) userMembershipLevel = 'Silver';
     else userMembershipLevel = 'Bronze';
 
     if (userMembershipLevel !== reward.membershipLevel) {

@@ -17,7 +17,7 @@ const Footer = () => {
         <FooterSection className="brand">
           <h2>HOTELIER</h2>
           <p>
-            Hotelier - Premium Version, built by professional website for your hotel business and grab the attention of new visitors upon your site's launch.
+            “Chạm đến kỳ nghỉ trong mơ – Đặt phòng đẳng cấp chỉ với một cú click.”
           </p>
         </FooterSection>
 
@@ -55,7 +55,7 @@ const Footer = () => {
       {/* Footer Bottom */}
       <div className="footer-bottom">
         <p>
-          © HOTELIER, ALL RIGHT RESERVED. DESIGNED BY <a href="https://hoterier.com" target="_blank" rel="noopener noreferrer">HOTELBOOKING</a>
+          © HOTELIER, ALL RIGHT RESERVED. DESIGNED BY <a href="https://facebook.com/tandat0811" target="_blank" rel="noopener noreferrer">DatTon</a>
         </p>
         <div className="footer-links">
           <Link to="/">Home</Link>

@@ -428,13 +428,13 @@ router.get('/membership/level/:userId', async (req, res) => {
     }
 
     let membershipLevel;
-    if (user.points >= 350000) {
+    if (user.points >= 400000) {
       membershipLevel = 'Diamond';   
-    } else if (user.points >= 200000) {
+    } else if (user.points >= 300000) {
       membershipLevel = 'Platinum';
-    } else if (user.points >= 100000) {
+    } else if (user.points >= 200000) {
       membershipLevel = 'Gold';
-    } else if (user.points >= 50000) {
+    } else if (user.points >= 100000) {
       membershipLevel = 'Silver';
     } else {
       membershipLevel = 'Bronze';
@@ -1167,10 +1167,10 @@ router.get('/membership/benefits/:userId', protect, async (req, res) => {
     }
 
     let membershipLevel;
-    if (user.points >= 350000) membershipLevel = 'Diamond';
-    else if (user.points >= 200000) membershipLevel = 'Platinum';
-    else if (user.points >= 100000) membershipLevel = 'Gold';
-    else if (user.points >= 50000) membershipLevel = 'Silver';
+    if (user.points >= 400000) membershipLevel = 'Diamond';
+    else if (user.points >= 300000) membershipLevel = 'Platinum';
+    else if (user.points >= 200000) membershipLevel = 'Gold';
+    else if (user.points >= 100000) membershipLevel = 'Silver';
     else membershipLevel = 'Bronze';
 
     // Quyền lợi mẫu cho từng cấp độ (có thể lưu trong database hoặc config)

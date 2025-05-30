@@ -375,6 +375,7 @@ router.post("/bookroom", async (req, res) => {
     paymentMethod,
     orderId,
     momoRequestId,
+    diningServices, // Thêm diningServices
   } = req.body;
   const session = await mongoose.startSession();
 
@@ -389,8 +390,13 @@ router.post("/bookroom", async (req, res) => {
       throw new Error("Thiếu các trường bắt buộc");
     }
 
-    if (!["cash", "credit_card", "bank_transfer", "mobile_payment", "vnpay"].includes(paymentMethod)) { // Thêm "vnpay" vào đây
+    if (!["cash", "credit_card", "bank_transfer", "mobile_payment", "vnpay"].includes(paymentMethod)) {
       throw new Error("Phương thức thanh toán không hợp lệ");
+    }
+
+    // Kiểm tra diningServices
+    if (diningServices && !Array.isArray(diningServices)) {
+      throw new Error("Danh sách dịch vụ không hợp lệ");
     }
 
     const checkinDate = new Date(checkin);
@@ -442,8 +448,9 @@ router.post("/bookroom", async (req, res) => {
       paymentDeadline: paymentMethod === "bank_transfer" ? new Date(Date.now() + 5 * 60 * 1000) : null,
       momoOrderId: paymentMethod === "mobile_payment" ? orderId : null,
       momoRequestId: paymentMethod === "mobile_payment" ? momoRequestId : null,
-      vnpOrderId: paymentMethod === "vnpay" ? orderId : null, // Thêm trường vnpOrderId cho VNPay
-      vnpRequestId: paymentMethod === "vnpay" ? orderId : null, // Thêm trường vnpRequestId cho VNPay
+      vnpOrderId: paymentMethod === "vnpay" ? orderId : null,
+      vnpRequestId: paymentMethod === "vnpay" ? orderId : null,
+      diningServices: diningServices || [], // Lưu danh sách dịch vụ
     });
 
     await newBooking.save({ session });

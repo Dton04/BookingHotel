@@ -11,6 +11,14 @@ import SuggestionCard from "../components/SuggestionCard";
 import AlertMessage from "../components/AlertMessage";
 import { Carousel } from "react-bootstrap";
 
+// Định nghĩa danh sách dịch vụ có sẵn
+const availableServices = [
+  { id: "breakfast", name: "Bữa sáng", price: 100000 },
+  { id: "airport_shuttle", name: "Đưa đón sân bay", price: 500000 },
+  { id: "spa", name: "Dịch vụ spa", price: 300000 },
+  { id: "room_service", name: "Dịch vụ phòng", price: 200000 },
+];
+
 // Định nghĩa schema xác thực
 const bookingSchema = yup.object().shape({
   name: yup.string().required("Vui lòng nhập họ và tên").min(2, "Tên phải có ít nhất 2 ký tự"),
@@ -29,7 +37,8 @@ const bookingSchema = yup.object().shape({
     .string()
     .required("Vui lòng chọn phương thức thanh toán")
     .oneOf(["cash", "credit_card", "bank_transfer", "mobile_payment", "vnpay"], "Phương thức thanh toán không hợp lệ"),
-  discountCode: yup.string().nullable(), // Thêm trường mã giảm giá
+  discountCode: yup.string().nullable(),
+  diningServices: yup.array().of(yup.string()).nullable(),
 });
 
 function Bookingscreen() {
@@ -53,7 +62,8 @@ function Bookingscreen() {
       roomType: "",
       specialRequest: "",
       paymentMethod: "cash",
-      discountCode: "", // Giá trị mặc định cho mã giảm giá
+      discountCode: "",
+      diningServices: [],
     },
   });
 
@@ -73,8 +83,26 @@ function Bookingscreen() {
   const [bookingDetails, setBookingDetails] = useState(null);
   const [pointsEarned, setPointsEarned] = useState(null);
   const [discountCode, setDiscountCode] = useState("");
-  const [discountResult, setDiscountResult] = useState(null); // Lưu kết quả áp dụng mã giảm giá
-  const [totalAmount, setTotalAmount] = useState(null); // Tổng tiền sau giảm giá
+  const [discountResult, setDiscountResult] = useState(null);
+  const [totalAmount, setTotalAmount] = useState(null);
+  const [selectedServices, setSelectedServices] = useState([]); // State để lưu dịch vụ được chọn
+
+  // Hàm xử lý chọn dịch vụ
+  const handleServiceChange = (serviceId) => {
+    setSelectedServices((prev) =>
+      prev.includes(serviceId)
+        ? prev.filter((id) => id !== serviceId)
+        : [...prev, serviceId]
+    );
+  };
+
+  // Hàm tính tổng chi phí dịch vụ
+  const calculateServiceCost = () => {
+    return selectedServices.reduce((total, serviceId) => {
+      const service = availableServices.find((s) => s.id === serviceId);
+      return total + (service ? service.price : 0);
+    }, 0);
+  };
 
   // Hàm lấy dữ liệu phòng
   const fetchRoomData = useCallback(async () => {
@@ -86,7 +114,7 @@ function Bookingscreen() {
       if (data.availabilityStatus !== "available") {
         await fetchSuggestions(data._id, data.type);
       }
-      // Tính tổng tiền ban đầu
+      // Tính tổng tiền ban đầu (chưa bao gồm dịch vụ)
       const checkin = new Date(data.checkin || new Date());
       const checkout = new Date(data.checkout || new Date());
       const days = Math.ceil((checkout - checkin) / (1000 * 60 * 60 * 24));
@@ -164,7 +192,7 @@ function Bookingscreen() {
       });
 
       setDiscountResult(response.data);
-      setTotalAmount(response.data.totalAmount);
+      setTotalAmount(response.data.totalAmount + calculateServiceCost()); // Cộng thêm chi phí dịch vụ
       setBookingStatus({
         type: "success",
         message: `Áp dụng mã giảm giá thành công! Tổng giảm: ${response.data.appliedDiscounts.reduce(
@@ -228,10 +256,11 @@ function Bookingscreen() {
       setPaymentExpired(false);
       setPointsEarned(null);
 
-      // Gửi yêu cầu đặt phòng
+      // Gửi yêu cầu đặt phòng với danh sách dịch vụ
       const bookingResponse = await axios.post("/api/bookings/bookroom", {
         roomid,
         ...data,
+        diningServices: selectedServices, // Gửi danh sách dịch vụ được chọn
         appliedVouchers: discountResult?.appliedDiscounts?.map((d) => ({
           code: d.code || d.id,
           discount: d.discount,
@@ -245,6 +274,7 @@ function Bookingscreen() {
         roomName: room.name,
         checkin: data.checkin,
         checkout: data.checkout,
+        diningServices: selectedServices, // Lưu dịch vụ vào bookingDetails
       });
 
       localStorage.setItem("userEmail", data.email);
@@ -259,7 +289,7 @@ function Bookingscreen() {
 
         const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
         const orderInfo = `Thanh toán đặt phòng ${room.name}`;
-        const amount = (discountResult?.totalAmount || room.rentperday || 50000);
+        const amount = (discountResult?.totalAmount || room.rentperday || 50000) + calculateServiceCost();
 
         const momoResponse = await axios.post("/api/momo/create-payment", {
           amount: amount.toString(),
@@ -286,7 +316,7 @@ function Bookingscreen() {
 
         const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
         const orderInfo = `Thanh toán đặt phòng ${room.name}`;
-        const amount = (discountResult?.totalAmount || room.rentperday || 50000);
+        const amount = (discountResult?.totalAmount || room.rentperday || 50000) + calculateServiceCost();
 
         const vnpayResponse = await axios.post("/api/vnpay/create-payment", {
           amount: amount.toString(),
@@ -313,7 +343,10 @@ function Bookingscreen() {
         setPaymentStatus(bookingResponse.data.booking.paymentStatus);
 
         if (data.paymentMethod === "bank_transfer" && bookingResponse.data.paymentResult?.bankInfo) {
-          setBankInfo(bookingResponse.data.paymentResult.bankInfo);
+          setBankInfo({
+            ...bookingResponse.data.paymentResult.bankInfo,
+            amount: (discountResult?.totalAmount || room.rentperday || 50000) + calculateServiceCost(),
+          });
         }
 
         // Kiểm tra và tích điểm nếu thanh toán hoàn tất
@@ -333,10 +366,7 @@ function Bookingscreen() {
                 );
               }, 5000);
             } else {
-              setBookingStatus({
-                type: "warning",
-                message: `Thanh toán thành công, nhưng không thể tích điểm: ${pointsResult.message}. Đang chuyển hướng đến trang đánh giá...`,
-              });
+
               setTimeout(() => {
                 navigate(
                   `/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingResponse.data.booking._id}`
@@ -477,7 +507,7 @@ function Bookingscreen() {
         <p><strong>Ngân hàng:</strong> {bankInfo.bankName}</p>
         <p><strong>Số tài khoản:</strong> {bankInfo.accountNumber}</p>
         <p><strong>Chủ tài khoản:</strong> {bankInfo.accountHolder}</p>
-        <p><strong>Số tiền:</strong> {(discountResult?.totalAmount || bankInfo.amount).toLocaleString()} VND</p>
+        <p><strong>Số tiền:</strong> {bankInfo.amount.toLocaleString()} VND</p>
         <p><strong>Nội dung chuyển khoản:</strong> {bankInfo.content}</p>
         {timeRemaining !== null && !paymentExpired && (
           <p>
@@ -749,10 +779,34 @@ function Bookingscreen() {
                           {discountResult.appliedDiscounts.reduce((sum, d) => sum + d.discount, 0).toLocaleString()} VND
                         </p>
                         <p>
-                          <strong>Tổng tiền sau giảm giá:</strong> {discountResult.totalAmount.toLocaleString()} VND
+                          <strong>Chi phí dịch vụ:</strong>{" "}
+                          {calculateServiceCost().toLocaleString()} VND
+                        </p>
+                        <p>
+                          <strong>Tổng tiền sau giảm giá:</strong> {(discountResult.totalAmount + calculateServiceCost()).toLocaleString()} VND
                         </p>
                       </div>
                     )}
+                  </div>
+                  <div className="form-group">
+                    <label>Dịch vụ bổ sung</label>
+                    <div className="services-list">
+                      {availableServices.map((service) => (
+                        <div key={service.id} className="form-check">
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            id={service.id}
+                            value={service.id}
+                            checked={selectedServices.includes(service.id)}
+                            onChange={() => handleServiceChange(service.id)}
+                          />
+                          <label className="form-check-label" htmlFor={service.id}>
+                            {service.name} ({service.price.toLocaleString()} VND)
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div className="form-group">
                     <textarea
@@ -773,7 +827,6 @@ function Bookingscreen() {
                     </button>
                   </div>
 
-
                   {bookingStatus?.type === "success" && newBookingId && (
                     <button
                       type="button"
@@ -788,7 +841,6 @@ function Bookingscreen() {
                 {room && (
                   <div className="room-preview mb-4 p-3 border rounded shadow-sm bg-light">
                     <div className="row align-items-center">
-                      {/* Hình ảnh phòng */}
                       <div className="col-md-4">
                         <img
                           src={room.imageurls[0]}
@@ -797,8 +849,6 @@ function Bookingscreen() {
                           style={{ maxHeight: "200px", objectFit: "cover", width: "100%" }}
                         />
                       </div>
-
-                      {/* Thông tin phòng */}
                       <div className="col-md-8">
                         <h5 className="fw-bold mb-2">{room.name}</h5>
                         <p className="mb-1">Loại phòng: <strong>{room.type}</strong></p>

@@ -85,6 +85,10 @@ const bookingSchema = new mongoose.Schema({
       discount: Number, // Danh sách voucher đã áp dụng
     },
   ],
+  diningServices: {
+  type: [String],
+  default: [],
+},
   createdAt: {
     type: Date,
     default: Date.now,

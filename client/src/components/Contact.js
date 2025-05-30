@@ -65,7 +65,7 @@ function Contact() {
             </div>
             <div className="info-box">
               <h4>Email</h4>
-              <p>info@luxuryhotel.com</p>
+              <p>Hotelier@gmail.com</p>
             </div>
           </div>
         </section>

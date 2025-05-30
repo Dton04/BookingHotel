@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Banner from "./Banner";
 import axios from "axios";
 import {
   Table,
@@ -160,8 +161,9 @@ function AdminBookings() {
 
   return (
     <section className="admin-bookings">
+        <Banner />
       <div className="container">
-        <h2 className="title">Quản lý đặt phòng</h2>
+
 
         {/* Thanh tìm kiếm và bộ lọc */}
         <div className="filter-section">

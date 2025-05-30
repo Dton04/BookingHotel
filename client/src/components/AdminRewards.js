@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../css/AdminRewards.css';
@@ -16,7 +15,6 @@ function AdminRewards() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState('');
 
-  // Lấy danh sách ưu đãi
   useEffect(() => {
     const fetchRewards = async () => {
       try {
@@ -33,7 +31,6 @@ function AdminRewards() {
     fetchRewards();
   }, []);
 
-  // Xử lý tạo ưu đãi
   const handleCreate = async () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -48,7 +45,6 @@ function AdminRewards() {
         pointsRequired: 0,
         voucherCode: '',
       });
-      // Cập nhật lại danh sách
       const response = await axios.get('/api/rewards/admin', {
         headers: { Authorization: `Bearer ${userInfo.token}` },
       });
@@ -59,7 +55,6 @@ function AdminRewards() {
     }
   };
 
-  // Xử lý chỉnh sửa ưu đãi
   const handleEdit = (reward) => {
     setFormData({
       name: reward.name,
@@ -72,7 +67,6 @@ function AdminRewards() {
     setIsModalOpen(true);
   };
 
-  // Xử lý cập nhật ưu đãi
   const handleUpdate = async () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -89,7 +83,6 @@ function AdminRewards() {
         voucherCode: '',
       });
       setEditId(null);
-      // Cập nhật lại danh sách
       const response = await axios.get('/api/rewards/admin', {
         headers: { Authorization: `Bearer ${userInfo.token}` },
       });
@@ -100,7 +93,6 @@ function AdminRewards() {
     }
   };
 
-  // Xử lý xóa ưu đãi
   const handleDelete = async (id) => {
     if (window.confirm('Bạn có chắc muốn xóa ưu đãi này?')) {
       try {
@@ -117,7 +109,6 @@ function AdminRewards() {
     }
   };
 
-  // Đóng modal
   const closeModal = () => {
     setIsModalOpen(false);
     setFormData({
@@ -138,40 +129,52 @@ function AdminRewards() {
       {/* Form tạo ưu đãi mới */}
       <div className="form-container">
         <h3>Tạo ưu đãi mới</h3>
-        <input
-          type="text"
-          placeholder="Tên ưu đãi"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-        />
-        <textarea
-          placeholder="Mô tả"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        />
-        <select
-          value={formData.membershipLevel}
-          onChange={(e) => setFormData({ ...formData, membershipLevel: e.target.value })}
-        >
-          <option value="Bronze">Bronze</option>
-          <option value="Silver">Silver</option>
-          <option value="Gold">Gold</option>
-          <option value="Platinum">Platinum</option>
-          <option value="Diamond">Diamond</option>
-        </select>
-        <input
-          type="number"
-          placeholder="Điểm yêu cầu"
-          value={formData.pointsRequired}
-          onChange={(e) => setFormData({ ...formData, pointsRequired: Number(e.target.value) })}
-        />
-        <input
-          type="text"
-          placeholder="Mã voucher"
-          value={formData.voucherCode}
-          onChange={(e) => setFormData({ ...formData, voucherCode: e.target.value })}
-        />
-        <button onClick={handleCreate}>Tạo</button>
+        <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+          <div className="form-group">
+            <input
+              type="text"
+              placeholder="Tên ưu đãi"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
+          <div className="form-group">
+            <textarea
+              placeholder="Mô tả"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+          </div>
+          <div className="form-group">
+            <select
+              value={formData.membershipLevel}
+              onChange={(e) => setFormData({ ...formData, membershipLevel: e.target.value })}
+            >
+              <option value="Bronze">Bronze</option>
+              <option value="Silver">Silver</option>
+              <option value="Gold">Gold</option>
+              <option value="Platinum">Platinum</option>
+              <option value="Diamond">Diamond</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <input
+              type="number"
+              placeholder="Điểm yêu cầu"
+              value={formData.pointsRequired}
+              onChange={(e) => setFormData({ ...formData, pointsRequired: Number(e.target.value) })}
+            />
+          </div>
+          <div className="form-group">
+            <input
+              type="text"
+              placeholder="Mã voucher"
+              value={formData.voucherCode}
+              onChange={(e) => setFormData({ ...formData, voucherCode: e.target.value })}
+            />
+          </div>
+          <button type="submit">Tạo</button>
+        </form>
       </div>
 
       {/* Danh sách ưu đãi */}
@@ -213,45 +216,57 @@ function AdminRewards() {
       {/* Modal chỉnh sửa ưu đãi */}
       {isModalOpen && (
         <div className="modal">
-          <div className="modal-rewards">
+          <div className="modal-content">
             <h3>Chỉnh sửa ưu đãi</h3>
-            <input
-              type="text"
-              placeholder="Tên ưu đãi"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
-            <textarea
-              placeholder="Mô tả"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            />
-            <select
-              value={formData.membershipLevel}
-              onChange={(e) => setFormData({ ...formData, membershipLevel: e.target.value })}
-            >
-              <option value="Bronze">Bronze</option>
-              <option value="Silver">Silver</option>
-              <option value="Gold">Gold</option>
-              <option value="Platinum">Platinum</option>
-              <option value="Diamond">Diamond</option>
-            </select>
-            <input
-              type="number"
-              placeholder="Điểm yêu cầu"
-              value={formData.pointsRequired}
-              onChange={(e) => setFormData({ ...formData, pointsRequired: Number(e.target.value) })}
-            />
-            <input
-              type="text"
-              placeholder="Mã voucher"
-              value={formData.voucherCode}
-              onChange={(e) => setFormData({ ...formData, voucherCode: e.target.value })}
-            />
-            <div className="modal-buttons">
-              <button onClick={handleUpdate}>Cập nhật</button>
-              <button onClick={closeModal}>Hủy</button>
-            </div>
+            <form onSubmit={(e) => { e.preventDefault(); handleUpdate(); }}>
+              <div className="form-group">
+                <input
+                  type="text"
+                  placeholder="Tên ưu đãi"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <textarea
+                  placeholder="Mô tả"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <select
+                  value={formData.membershipLevel}
+                  onChange={(e) => setFormData({ ...formData, membershipLevel: e.target.value })}
+                >
+                  <option value="Bronze">Bronze</option>
+                  <option value="Silver">Silver</option>
+                  <option value="Gold">Gold</option>
+                  <option value="Platinum">Platinum</option>
+                  <option value="Diamond">Diamond</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <input
+                  type="number"
+                  placeholder="Điểm yêu cầu"
+                  value={formData.pointsRequired}
+                  onChange={(e) => setFormData({ ...formData, pointsRequired: Number(e.target.value) })}
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  type="text"
+                  placeholder="Mã voucher"
+                  value={formData.voucherCode}
+                  onChange={(e) => setFormData({ ...formData, voucherCode: e.target.value })}
+                />
+              </div>
+              <div className="modal-buttons">
+                <button type="submit">Cập nhật</button>
+                <button type="button" onClick={closeModal}>Hủy</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

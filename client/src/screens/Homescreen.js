@@ -59,7 +59,7 @@ function Homescreen() {
           <div className="row">
             {[
               { title: "Spa & Fitness", icon: "🧘", description: "Thư giãn và năng lượng với spa cao cấp nhất 2025." },
-              { title: "Food & Restaurant", icon: "🍽️", description: "Ẩm thực đa dạng từ địa phương đến quốc tế." },
+              { title: "Food & Restaurant", icon: "🍽️", description: "Ẩm thực đa dạng phong phú từ địa phương đến quốc tế." },
               { title: "Event & Party", icon: "🎉", description: "Tổ chức sự kiện với không gian lý tưởng và sang trọng." },
             ].map((service, index) => (
               <div className="col-md-4 col-sm-6 mb-4" key={index}>

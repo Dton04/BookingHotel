@@ -239,3 +239,23 @@ textarea.form-control {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.services-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.services-list .form-check {
+  margin-bottom: 10px;
+}
+
+.services-list .form-check-label {
+  font-size: 16px;
+}
+
+.form-check-input{
+  max-width: 20px;
+}
