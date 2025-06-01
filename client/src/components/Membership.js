@@ -15,6 +15,7 @@ const Membership = () => {
   const navigate = useNavigate();
 
   const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+  const [showRewardHistory, setShowRewardHistory] = useState(false);
 
   useEffect(() => {
     if (!userInfo) {
@@ -94,10 +95,27 @@ const Membership = () => {
       alert(err.response?.data?.message || 'Lỗi khi áp dụng ưu đãi');
     }
   };
-
   if (!userInfo) return null;
-  if (loading) return <div>Đang tải...</div>;
-  if (error) return <div>Lỗi: {error}</div>;
+  if (loading) return (
+    <div className="loading-container">
+      <div className="loading-content">
+        <div className="loading-spinner"></div>
+        <div className="loading-text">
+          <h3>Đang tải thông tin thành viên...</h3>
+          <p>Vui lòng đợi trong giây lát</p>
+        </div>
+      </div>
+    </div>
+  );
+  if (error) return (
+    <div className="error-container">
+      <div className="error-content">
+        <i className="fas fa-exclamation-circle"></i>
+        <h3>Rất tiếc, đã có lỗi xảy ra</h3>
+        <p>{error}</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="membership-container">
@@ -121,42 +139,56 @@ const Membership = () => {
         )}
       </div>
 
-      <div className="points-history">
-        <h4>Lịch Sử Giao Dịch Điểm</h4>
-        {pointsData?.recentTransactions?.length > 0 ? (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Ngày</th>
-                <th>Số Điểm</th>
-                <th>Số Tiền</th>
-                <th>Đặt Phòng</th>
+    {showRewardHistory && (
+  <div className="modal-overlay" onClick={() => setShowRewardHistory(false)}>
+    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <h3>Lịch sử giao dịch điểm</h3>
+      <button className="modal-close" onClick={() => setShowRewardHistory(false)}>×</button>
+      {pointsData?.recentTransactions?.length > 0 ? (
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Ngày</th>
+              <th>Số Điểm</th>
+              <th>Số Tiền</th>
+              <th>Đặt Phòng</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pointsData.recentTransactions.map((transaction) => (
+              <tr key={transaction._id}>
+                <td>{new Date(transaction.createdAt).toLocaleDateString()}</td>
+                <td>{transaction.points || 0} điểm</td>
+                <td>{(transaction.amount || 0).toLocaleString()} VNĐ</td>
+                <td>
+                  {transaction.bookingId
+                    ? `Từ ${new Date(transaction.bookingId.checkin).toLocaleDateString()} đến ${new Date(
+                        transaction.bookingId.checkout
+                      ).toLocaleDateString()}`
+                    : 'N/A'}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {pointsData.recentTransactions.map((transaction) => (
-                <tr key={transaction._id}>
-                  <td>{new Date(transaction.createdAt).toLocaleDateString()}</td>
-                  <td>{transaction.points || 0} điểm</td>
-                  <td>{(transaction.amount || 0).toLocaleString()} VNĐ</td>
-                  <td>
-                    {transaction.bookingId
-                      ? `Từ ${new Date(transaction.bookingId.checkin).toLocaleDateString()} đến ${new Date(
-                          transaction.bookingId.checkout
-                        ).toLocaleDateString()}`
-                      : 'N/A'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p>Chưa có giao dịch nào.</p>
-        )}
-      </div>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>Chưa có giao dịch nào.</p>
+      )}
+    </div>
+    
+  </div>
+)}
+
 
       <div className="rewards-section">
-        <h4>Đổi Điểm Lấy Voucher</h4>
+        <div className="rewards-header">
+          <h4>Đổi Điểm Lấy Voucher</h4>
+          <button className="btn-history" onClick={() => setShowRewardHistory(true)}>
+            Xem Lịch Sử Giao Dịch
+          </button>
+        </div>
+
+
         {rewards.length > 0 ? (
           <div className="rewards-list">
             {rewards.map((reward) => (

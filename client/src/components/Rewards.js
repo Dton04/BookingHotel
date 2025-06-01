@@ -79,13 +79,127 @@ const Rewards = () => {
 
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const { data } = await axios.post('/api/rewards/redeem', { rewardId }, config);
-      toast.success(`Đổi ưu đãi thành công! Mã: ${data.voucherCode}`);
+      const reward = rewards.find(r => r._id === rewardId);
+      
+      // Enhanced success notification
+      toast.success(
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <FaGift className="text-2xl text-[#43a047]" />
+            <h3 className="font-bold text-lg">Đổi Ưu Đãi Thành Công!</h3>
+          </div>
+          <div className="border-t border-white/30 pt-2">
+            <p><span className="font-semibold">Tên ưu đãi:</span> {reward.name}</p>
+            <p><span className="font-semibold">Mô tả:</span> {reward.description}</p>
+            <p><span className="font-semibold">Mã Voucher:</span> <span className="font-mono bg-white/20 px-2 py-1 rounded">{data.voucherCode}</span></p>
+            <p><span className="font-semibold">Hạn sử dụng:</span> {new Date(data.expiryDate).toLocaleDateString('vi-VN')}</p>
+            <p><span className="font-semibold">Điểm đã dùng:</span> -{reward.pointsRequired}</p>
+            <p><span className="font-semibold">Điểm còn lại:</span> {data.remainingPoints}</p>
+            <p className="mt-2 italic text-[#e0f7fa]">Kiểm tra mã của bạn trong mục "Voucher Đã Đổi"</p>
+          </div>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: 8000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          style: {
+            background: 'linear-gradient(to right, #4ade80, #1e88e5)',
+            color: 'white',
+            fontSize: '14px',
+            borderRadius: '16px',
+            padding: '20px',
+            boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+          }
+        }
+      );
+      
       setUserPoints(data.remainingPoints);
       fetchRewards();
       fetchHistory();
       fetchVouchers();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Lỗi khi đổi ưu đãi');
+      const errorMessage = error.response?.data?.message || 'Đã có lỗi xảy ra khi đổi ưu đãi';
+      const reward = rewards.find(r => r._id === rewardId);
+      
+      // Enhanced error notification
+      let displayMessage;
+      if (errorMessage === 'Bạn đã đổi ưu đãi này rồi') {
+        displayMessage = (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <FaTicketAlt className="text-2xl text-[#d32f2f]" />
+              <h3 className="font-bold text-lg">Không Thể Đổi Ưu Đãi</h3>
+            </div>
+            <div className="border-t border-white/30 pt-2">
+              <p>Bạn đã đổi ưu đãi "<strong>{reward?.name}</strong>" rồi.</p>
+              <p className="mt-2 italic text-[#f6f9fc]">Vui lòng kiểm tra mục "Voucher Đã Đổi" hoặc chọn ưu đãi khác.</p>
+            </div>
+          </div>
+        );
+      } else if (errorMessage === 'Không đủ điểm để đổi ưu đãi này') {
+        displayMessage = (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <FaStar className="text-2xl text-[#d32f2f]" />
+              <h3 className="font-bold text-lg">Không Đủ Điểm</h3>
+            </div>
+            <div className="border-t border-white/30 pt-2">
+              <p><span className="font-semibold">Ưu đãi:</span> {reward?.name}</p>
+              <p><span className="font-semibold">Điểm cần:</span> {reward?.pointsRequired}</p>
+              <p><span className="font-semibold">Điểm hiện có:</span> {userPoints}</p>
+              <p><span className="font-semibold">Còn thiếu:</span> {reward?.pointsRequired - userPoints} điểm</p>
+              <p className="mt-2 italic text-[#f6f9fc]">Hãy tích thêm điểm qua các đơn đặt phòng!</p>
+            </div>
+          </div>
+        );
+      } else if (errorMessage === 'Cấp độ thành viên không đủ để đổi ưu đãi này') {
+        displayMessage = (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <FaStar className="text-2xl text-[#d32f2f]" />
+              <h3 className="font-bold text-lg">Cấp Độ Không Đủ</h3>
+            </div>
+            <div className="border-t border-white/30 pt-2">
+              <p><span className="font-semibold">Ưu đãi:</span> {reward?.name}</p>
+              <p><span className="font-semibold">Cấp độ yêu cầu:</span> {reward?.membershipLevel}</p>
+              <p><span className="font-semibold">Cấp độ hiện tại:</span> {membershipLevel}</p>
+              <p className="mt-2 italic text-[#f6f9fc]">Hãy tích điểm để nâng cấp thành viên!</p>
+            </div>
+          </div>
+        );
+      } else {
+        displayMessage = (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <FaTicketAlt className="text-2xl text-[#d32f2f]" />
+              <h3 className="font-bold text-lg">Lỗi Đổi Ưu Đãi</h3>
+            </div>
+            <div className="border-t border-white/30 pt-2">
+              <p>{errorMessage}</p>
+            </div>
+          </div>
+        );
+      }
+
+      toast.error(displayMessage, {
+        position: "top-right",
+        autoClose: 6000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: {
+          background: 'linear-gradient(to right, #ef4444, #d32f2f)',
+          color: 'white',
+          fontSize: '14px',
+          borderRadius: '16px',
+          padding: '20px',
+          boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+        }
+      });
     } finally {
       setRedeeming(null);
     }
@@ -110,175 +224,92 @@ const Rewards = () => {
   }
 
   return (
-    <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      {/* Tiêu đề */}
-      <motion.h1
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-4xl font-bold mb-8 text-center text-blue-900"
-      >
-        <FaGift className="inline-block mr-2 text-yellow-500" /> Ưu Đãi Thành Viên
-      </motion.h1>
+    <div className="rewards-container">
+      <h1 className="rewards-title">
+        <FaGift className="icon" /> Ưu Đãi Thành Viên
+      </h1>
 
-      {/* Thông tin người dùng */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="user-info bg-gradient-to-r from-blue-50 to-green-50 p-8 rounded-2xl shadow-lg mb-10 text-center"
-      >
-        <p className="text-xl font-semibold text-gray-800">
-          <FaStar className="inline-block mr-2 text-yellow-400" />
-          Cấp độ thành viên: <span className="text-blue-600">{membershipLevel}</span>
-        </p>
-        <p className="text-xl font-semibold text-gray-800 mt-2">
-          Điểm hiện có: <span className="text-green-600">{userPoints}</span>
-        </p>
-      <motion.button
-  onClick={() => setShowVouchers(!showVouchers)}
-  className="voucher-toggle-btn mt-4 px-5 py-3 bg-yellow-400 text-black rounded-full font-semibold shadow-md transition duration-300"
->
-  <FaTicketAlt className="inline-block mr-2" />
-  {showVouchers ? 'Ẩn Voucher' : 'Xem Voucher Đã Đổi'}
-</motion.button>
+      <div className="user-info-box">
+        <p><FaStar className="icon star" /> Cấp độ: <strong>{membershipLevel}</strong></p>
+        <p>💰 Điểm hiện có: <strong>{userPoints}</strong></p>
+        <button className="voucher-toggle-btn" onClick={() => setShowVouchers(!showVouchers)}>
+          <FaTicketAlt className="icon" />
+          {showVouchers ? 'Ẩn Voucher' : 'Xem Voucher Đã Đổi'}
+        </button>
+      </div>
 
-
-      </motion.div>
-
-      {/* Danh sách voucher đã đổi */}
       {showVouchers && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="voucher-table bg-white p-8 rounded-2xl shadow-lg mb-12"
-        >
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">
-            <FaTicketAlt className="inline-block mr-2 text-blue-600" /> Voucher Đã Đổi
-          </h2>
+        <div className="voucher-section">
+          <h2><FaTicketAlt className="icon blue" /> Voucher Đã Đổi</h2>
           {vouchers.length === 0 ? (
-            <p className="text-gray-600">Chưa có voucher nào</p>
+            <p>Chưa có voucher nào</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="p-4 font-semibold text-gray-700">Mã Voucher</th>
-                    <th className="p-4 font-semibold text-gray-700">Tên Ưu Đãi</th>
-                    <th className="p-4 font-semibold text-gray-700">Ngày Hết Hạn</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vouchers.map((voucher) => (
-                    <motion.tr
-                      key={voucher._id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="border-t hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      <td className="p-4">{voucher.voucherCode}</td>
-                      <td className="p-4">{voucher.rewardId.name}</td>
-                      <td className="p-4">{new Date(voucher.expiryDate).toLocaleDateString('vi-VN')}</td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </motion.div>
-      )}
-
-      {/* Danh sách ưu đãi */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
-      >
-        {rewards.length === 0 ? (
-          <p className="col-span-full text-center text-gray-600">Không có ưu đãi khả dụng</p>
-        ) : (
-          <AnimatePresence>
-            {rewards.map((reward) => (
-              <motion.div
-                key={reward._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="reward-card bg-white p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300"
-              >
-                <h3 className="text-xl font-bold text-gray-800 mb-3">{reward.name}</h3>
-                <p className="text-gray-600 mb-4">{reward.description}</p>
-                <p className="text-sm text-gray-500 mb-2">
-                  Cấp độ yêu cầu: <span className="font-medium text-blue-600">{reward.membershipLevel}</span>
-                </p>
-                <p className="text-sm text-gray-500 mb-4">
-                  Điểm yêu cầu: <span className="font-medium text-green-600">{reward.pointsRequired}</span>
-                </p>
-               <motion.button
-  whileHover={{ scale: 1.05 }}
-  whileTap={{ scale: 0.95 }}
-  onClick={() => handleRedeem(reward._id)}
-  disabled={redeeming === reward._id || userPoints < reward.pointsRequired}
-  className={`redeem-btn w-full py-3 px-4 rounded-full font-semibold transition-all duration-300 ${
-  redeeming === reward._id || userPoints < reward.pointsRequired
-      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-      : 'bg-blue-600 hover:bg-blue-700 text-white'
-  }`}
->
-  {redeeming === reward._id ? 'Đang xử lý...' : '🎁 Đổi Ưu Đãi'}
-</motion.button>
-
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        )}
-      </motion.div>
-
-      {/* Lịch sử đổi thưởng */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.6 }}
-        className="history-table bg-white p-8 rounded-2xl shadow-lg"
-      >
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">
-          <FaHistory className="inline-block mr-2 text-blue-600" /> Lịch sử đổi thưởng
-        </h2>
-        {history.length === 0 ? (
-          <p className="text-gray-600">Chưa có giao dịch đổi thưởng nào</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="styled-table">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-4 font-semibold text-gray-700">Ngày</th>
-                  <th className="p-4 font-semibold text-gray-700">Mô tả</th>
-                  <th className="p-4 font-semibold text-gray-700">Điểm</th>
+                <tr>
+                  <th>Mã Voucher</th>
+                  <th>Tên Ưu Đãi</th>
+                  <th>Hạn</th>
                 </tr>
               </thead>
               <tbody>
-                {history.map((transaction) => (
-                  <motion.tr
-                    key={transaction._id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="border-t hover:bg-gray-50 transition-colors duration-200"
-                  >
-                    <td className="p-4">{new Date(transaction.createdAt).toLocaleDateString('vi-VN')}</td>
-                    <td className="p-4">{transaction.description}</td>
-                    <td className="p-4 text-red-600 font-medium">{transaction.points}</td>
-                  </motion.tr>
+                {vouchers.map(v => (
+                  <tr key={v._id}>
+                    <td>{v.voucherCode}</td>
+                    <td>{v.rewardId.name}</td>
+                    <td>{new Date(v.expiryDate).toLocaleDateString('vi-VN')}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>
+          )}
+        </div>
+      )}
+
+      <div className="rewards-grid">
+        {rewards.map(reward => (
+          <div className="reward-card" key={reward._id}>
+            <h3>{reward.name}</h3>
+            <p className="desc">{reward.description}</p>
+            <p>Cấp độ: <span className="highlight">{reward.membershipLevel}</span></p>
+            <p>Điểm cần: <span className="highlight green">{reward.pointsRequired}</span></p>
+            <button
+              onClick={() => handleRedeem(reward._id)}
+              disabled={redeeming === reward._id || userPoints < reward.pointsRequired}
+              className={`redeem-btn ${redeeming === reward._id || userPoints < reward.pointsRequired ? 'disabled' : ''}`}
+              title={`Điểm hiện tại: ${userPoints}\nĐiểm cần: ${reward.pointsRequired}\n${reward.description}`}
+            >
+              {redeeming === reward._id ? 'Đang xử lý...' : '🎁 Đổi Ngay'}
+            </button>
           </div>
+        ))}
+      </div>
+
+      <div className="history-section">
+        <h2><FaHistory className="icon blue" /> Lịch Sử Đổi Thưởng</h2>
+        {history.length === 0 ? (
+          <p>Chưa có giao dịch nào</p>
+        ) : (
+          <table className="styled-table">
+            <thead>
+              <tr>
+                <th>Ngày</th>
+                <th>Mô tả</th>
+                <th>Điểm</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map(h => (
+                <tr key={h._id}>
+                  <td>{new Date(h.createdAt).toLocaleDateString('vi-VN')}</td>
+                  <td>{h.description || `Đổi ưu đãi: ${h.rewardId?.name || 'Không xác định'}`}</td>
+                  <td className="red">{h.points}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 };

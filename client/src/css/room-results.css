@@ -65,3 +65,10 @@
   max-height: 300px;
   object-fit: cover;
 }
+
+.modal-body .carousel-item img {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: 8px;
+}

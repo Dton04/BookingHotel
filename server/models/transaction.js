@@ -33,6 +33,11 @@ const transactionSchema = new mongoose.Schema({
     enum: ['pending', 'completed', 'failed'],
     default: 'pending',
   },
+  description: { 
+    type: String,
+    required: false, 
+    default: 'Không có mô tả', 
+  },
   createdAt: {
     type: Date,
     default: Date.now,

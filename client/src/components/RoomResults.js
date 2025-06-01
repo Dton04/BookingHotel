@@ -15,7 +15,8 @@ import {
   Form,
   Pagination,
 } from "react-bootstrap";
-import { FaWifi, FaBed, FaBath, FaStar } from "react-icons/fa";
+import { FaWifi, FaBed, FaBath, FaStar, FaHeart, FaRegHeart } from "react-icons/fa";
+import { toast } from 'react-toastify';
 import AlertMessage from "../components/AlertMessage";
 import "../css/room-results.css";
 
@@ -24,19 +25,70 @@ const RoomResults = () => {
   const [regions, setRegions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [alertStatus, setAlertStatus] = useState(null);
-  const [bookingLoading, setBookingLoading] = useState({});
-  const [filters, setFilters] = useState({
+  const [bookingLoading, setBookingLoading] = useState({});  const [filters, setFilters] = useState({
     priceRange: [0, Infinity],
     rating: 0,
-    region: "", // Thêm region vào filters
+    region: "",
   });
   const [sortBy, setSortBy] = useState("priceLowToHigh");
+  const [favoriteRooms, setFavoriteRooms] = useState([]);
+  const [favoriteLoading, setFavoriteLoading] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [currentPage, setCurrentPage] = useState(1); // Trạng thái phân trang
   const [hotelsPerPage] = useState(6); // Số khách sạn mỗi trang
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useNavigate();  // Lấy danh sách phòng yêu thích
+  const fetchFavorites = async () => {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+      if (!userInfo) return;
+
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+      const { data } = await axios.get('/api/favorites', config);
+      setFavoriteRooms(data.map(room => room._id));
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách yêu thích:', error);
+    }
+  };
+
+  // Thêm/xóa khỏi yêu thích
+  const toggleFavorite = async (roomId) => {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    if (!userInfo) {
+      setAlertStatus({
+        type: "warning",
+        message: "Vui lòng đăng nhập để thêm phòng vào danh sách yêu thích"
+      });
+      return;
+    }
+
+    setFavoriteLoading(prev => ({ ...prev, [roomId]: true }));
+    try {
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+      
+      if (favoriteRooms.includes(roomId)) {
+        // Xóa khỏi yêu thích
+        await axios.delete(`/api/favorites/${roomId}`, config);
+        setFavoriteRooms(prev => prev.filter(id => id !== roomId));
+        toast.success('Đã xóa phòng khỏi danh sách yêu thích');
+      } else {
+        // Thêm vào yêu thích
+        await axios.post('/api/favorites', { roomId }, config);
+        setFavoriteRooms(prev => [...prev, roomId]);
+        toast.success('Đã thêm phòng vào danh sách yêu thích');
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || 'Đã có lỗi xảy ra';
+      toast.error(message);
+    } finally {
+      setFavoriteLoading(prev => ({ ...prev, [roomId]: false }));
+    }
+  };
+
+  useEffect(() => {
+    fetchFavorites();
+  }, []);
 
   // Lấy tham số từ query string
   const getQueryParams = () => {
@@ -488,13 +540,25 @@ const RoomResults = () => {
                                             <strong>Ưu đãi:</strong> {room.deal}
                                           </div>
                                         )}
-                                      </Card.Text>
-                                      <div className="mt-3 d-flex justify-content-between">
+                                      </Card.Text>                                      <div className="mt-3 d-flex gap-2">
                                         <Button
                                           variant="outline-primary"
                                           onClick={() => handleShowRoomDetails(room)}
                                         >
                                           Xem chi tiết
+                                        </Button>
+                                        <Button
+                                          variant={favoriteRooms.includes(room._id) ? "danger" : "outline-danger"}
+                                          onClick={() => toggleFavorite(room._id)}
+                                          disabled={favoriteLoading[room._id]}
+                                        >
+                                          {favoriteLoading[room._id] ? (
+                                            <Spinner as="span" animation="border" size="sm" />
+                                          ) : favoriteRooms.includes(room._id) ? (
+                                            <><FaHeart /> Đã thích</>
+                                          ) : (
+                                            <><FaRegHeart /> Yêu thích</>
+                                          )}
                                         </Button>
                                         <Button
                                           variant="primary"
@@ -607,7 +671,19 @@ const RoomResults = () => {
               ) : (
                 "Đặt Phòng Ngay"
               )}
-            </Button>
+            </Button>               <Button
+                        variant={favoriteRooms.includes(selectedRoom?._id) ? "danger" : "outline-danger"}
+                        onClick={() => toggleFavorite(selectedRoom?._id)}
+                        disabled={favoriteLoading[selectedRoom?._id]}
+                      >
+                        {favoriteLoading[selectedRoom?._id] ? (
+                          <Spinner as="span" animation="border" size="sm" />
+                        ) : favoriteRooms.includes(selectedRoom?._id) ? (
+                          <><FaHeart /> Đã thích</>
+                        ) : (
+                          <><FaRegHeart /> Yêu thích</>
+                        )}
+                      </Button>
           </Modal.Footer>
         </Modal>
       </div>

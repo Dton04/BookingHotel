@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
-function ReviewChart({ roomId }) {
+function ReviewChart({ hotelId }) {
   const [chartData, setChartData] = useState([]);
   const [averageRating, setAverageRating] = useState({ average: 0, totalReviews: 0 });
   const [loading, setLoading] = useState(false);
@@ -50,20 +50,19 @@ function ReviewChart({ roomId }) {
   }, []);
 
   // Lấy dữ liệu đánh giá và điểm trung bình
-  useEffect(() => {
-    const fetchReviewData = async () => {
-      if (!roomId || !canViewChart) return;
+  useEffect(() => {    const fetchReviewData = async () => {
+      if (!hotelId || !canViewChart) return;
       try {
         setLoading(true);
         setError(null);
 
-        // Lấy điểm trung bình và tổng số đánh giá
-        const averageResponse = await axios.get("/api/reviews/average", { params: { roomId } });
+        // Lấy điểm trung bình và tổng số đánh giá của khách sạn
+        const averageResponse = await axios.get("/api/reviews/average", { params: { hotelId } });
         setAverageRating(averageResponse.data);
 
-        // Lấy danh sách đánh giá với isVisible: true
+        // Lấy tất cả đánh giá của khách sạn
         const reviewsResponse = await axios.get("/api/reviews", { 
-          params: { roomId, limit: 100, status: "active", isVisible: true }
+          params: { hotelId }
         });
         const reviews = reviewsResponse.data.reviews || [];
 
@@ -99,7 +98,7 @@ function ReviewChart({ roomId }) {
     if (!userLoading) {
       fetchReviewData();
     }
-  }, [roomId, canViewChart, userLoading]);
+  }, [hotelId, canViewChart, userLoading]);
 
   if (userLoading) {
     return <p className="text-center">Đang tải...</p>;

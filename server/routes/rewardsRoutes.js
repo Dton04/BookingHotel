@@ -210,6 +210,7 @@ router.post('/redeem', protect, async (req, res) => {
     if (!reward) {
       throw new Error('Không tìm thấy ưu đãi');
     }
+    console.log('Reward data:', reward); // Thêm log để kiểm tra
 
     const user = await User.findById(req.user.id).select('points vouchers').session(session);
     if (!user) {
@@ -250,7 +251,7 @@ router.post('/redeem', protect, async (req, res) => {
     const transaction = new Transaction({
       userId: req.user.id,
       type: 'reward_redemption',
-      description: `Đổi ưu đãi: ${reward.name}`,
+      description: `Đổi ưu đãi: ${reward.name} - ${reward.description || 'Không có mô tả'}`,
       points: -reward.pointsRequired,
       createdAt: new Date(),
     });
@@ -274,6 +275,7 @@ router.post('/redeem', protect, async (req, res) => {
       voucherCode: reward.voucherCode,
       expiryDate: discount.endDate,
       remainingPoints: user.points,
+      description: reward.description || 'Không có mô tả'
     });
   } catch (error) {
     await session.abortTransaction();
