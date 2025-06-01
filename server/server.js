@@ -36,7 +36,9 @@ app.use('/uploads', express.static('Uploads'));
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: [
+    'http://localhost:3000', 'https://bookinghotel-ll7c.onrender.com'
+  ],
   credentials: true
 }));
 app.use(express.json()); // Phân tích JSON body
