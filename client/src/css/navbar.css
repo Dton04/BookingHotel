@@ -302,6 +302,7 @@ body {
 
   .navbar-toggler-icon {
     color: #f5a623;
+    margin-top: 10px;
   }
 
   .navbar-collapse {
@@ -426,5 +427,12 @@ body {
     height: 10px;
   }
 }
+.logo {
+  text-decoration: none;
+}
+
+
+
+
 
 

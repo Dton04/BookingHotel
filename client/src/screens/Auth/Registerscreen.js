@@ -59,13 +59,6 @@ function Registerscreen() {
     }
   };
 
-  const handleGoogleRegister = () => {
-    // Gửi yêu cầu đến server để khởi động flow OAuth
-    window.location.href = `${process.env.REACT_APP_API_URL}/api/users/google`;
-    // Hoặc nếu dùng proxy trong package.json:
-    // window.location.href = '/api/users/google';
-  };
-
   return (
     <div className="register-container">
       <div className="register-card">
@@ -152,14 +145,6 @@ function Registerscreen() {
             {loading ? 'Đang đăng ký...' : 'Đăng Ký'}
           </button>
         </form>
-
-        <button
-          className="btn btn-google"
-          onClick={handleGoogleRegister}
-          disabled={loading}
-        >
-          Đăng Ký Bằng Google
-        </button>
 
         <div className="links">
           <p>

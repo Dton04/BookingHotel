@@ -14,6 +14,7 @@ import {
   Modal,
   Form,
   Pagination,
+  ListGroup,
 } from "react-bootstrap";
 import { FaWifi, FaBed, FaBath, FaStar, FaHeart, FaRegHeart } from "react-icons/fa";
 import { toast } from 'react-toastify';
@@ -25,7 +26,8 @@ const RoomResults = () => {
   const [regions, setRegions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [alertStatus, setAlertStatus] = useState(null);
-  const [bookingLoading, setBookingLoading] = useState({});  const [filters, setFilters] = useState({
+  const [bookingLoading, setBookingLoading] = useState({});
+  const [filters, setFilters] = useState({
     priceRange: [0, Infinity],
     rating: 0,
     region: "",
@@ -35,10 +37,12 @@ const RoomResults = () => {
   const [favoriteLoading, setFavoriteLoading] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1); // Trạng thái phân trang
-  const [hotelsPerPage] = useState(6); // Số khách sạn mỗi trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hotelsPerPage] = useState(4);
+  const [averageRatings, setAverageRatings] = useState({});
   const location = useLocation();
-  const navigate = useNavigate();  // Lấy danh sách phòng yêu thích
+  const navigate = useNavigate();
+
   const fetchFavorites = async () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -52,7 +56,6 @@ const RoomResults = () => {
     }
   };
 
-  // Thêm/xóa khỏi yêu thích
   const toggleFavorite = async (roomId) => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
     if (!userInfo) {
@@ -68,12 +71,10 @@ const RoomResults = () => {
       const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
       
       if (favoriteRooms.includes(roomId)) {
-        // Xóa khỏi yêu thích
         await axios.delete(`/api/favorites/${roomId}`, config);
         setFavoriteRooms(prev => prev.filter(id => id !== roomId));
         toast.success('Đã xóa phòng khỏi danh sách yêu thích');
       } else {
-        // Thêm vào yêu thích
         await axios.post('/api/favorites', { roomId }, config);
         setFavoriteRooms(prev => [...prev, roomId]);
         toast.success('Đã thêm phòng vào danh sách yêu thích');
@@ -86,11 +87,35 @@ const RoomResults = () => {
     }
   };
 
+  const fetchAverageRatings = async () => {
+    try {
+      const ratings = {};
+      await Promise.all(
+        hotels.map(async (hotel) => {
+          try {
+            const response = await axios.get("/api/reviews/average", {
+              params: { hotelId: hotel._id },
+            });
+            ratings[hotel._id] = response.data;
+          } catch (error) {
+            ratings[hotel._id] = { average: 0, totalReviews: 0 };
+          }
+        })
+      );
+      setAverageRatings(ratings);
+    } catch (error) {
+      console.error("Lỗi khi lấy điểm trung bình đánh giá:", error);
+      setAlertStatus({
+        type: "error",
+        message: "Lỗi khi lấy điểm trung bình đánh giá. Vui lòng thử lại.",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchFavorites();
   }, []);
 
-  // Lấy tham số từ query string
   const getQueryParams = () => {
     const params = new URLSearchParams(location.search);
     return {
@@ -102,7 +127,6 @@ const RoomResults = () => {
     };
   };
 
-  // Gọi API để lấy danh sách khu vực
   const fetchRegions = async () => {
     try {
       const response = await axios.get("/api/regions");
@@ -116,7 +140,6 @@ const RoomResults = () => {
     }
   };
 
-  // Gọi API để lấy danh sách khách sạn và phòng
   const fetchAvailableHotels = async () => {
     const { checkin, checkout, adults, children, roomType } = getQueryParams();
     if (!checkin || !checkout || !adults) {
@@ -175,16 +198,20 @@ const RoomResults = () => {
   };
 
   useEffect(() => {
-    fetchRegions(); // Gọi API lấy danh sách khu vực
+    fetchRegions();
     fetchAvailableHotels();
   }, [location.search]);
 
-  // Đóng alert
+  useEffect(() => {
+    if (hotels.length > 0) {
+      fetchAverageRatings();
+    }
+  }, [hotels]);
+
   const handleCloseAlert = () => {
     setAlertStatus(null);
   };
 
-  // Xử lý đặt phòng
   const handleBooking = async (roomId) => {
     const { checkin, checkout, adults, children } = getQueryParams();
     if (!checkin || !checkout || !adults) {
@@ -231,7 +258,6 @@ const RoomResults = () => {
     }
   };
 
-  // Định dạng giá tiền
   const formatPriceVND = (price) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -239,7 +265,6 @@ const RoomResults = () => {
     }).format(price || 1000000);
   };
 
-  // Xác định badge và tooltip dựa trên trạng thái phòng
   const getRoomStatus = (status) => {
     switch (status) {
       case "available":
@@ -275,11 +300,9 @@ const RoomResults = () => {
     }
   };
 
-  // Lọc và sắp xếp khách sạn
   const filteredAndSortedHotels = useMemo(() => {
     let result = [...hotels];
 
-    // Lọc theo giá, đánh giá và khu vực
     result = result.filter((hotel) => {
       const matchesRegion = filters.region ? hotel.region._id === filters.region : true;
       return matchesRegion;
@@ -289,39 +312,35 @@ const RoomResults = () => {
         (room) =>
           room.rentperday >= filters.priceRange[0] &&
           room.rentperday <= filters.priceRange[1] &&
-          (hotel.rating || 0) >= filters.rating
+          (averageRatings[hotel._id]?.average || 0) >= filters.rating
       ),
     }));
 
-    // Sắp xếp
     result.forEach((hotel) => {
       hotel.rooms.sort((a, b) => {
         if (sortBy === "priceLowToHigh") return a.rentperday - b.rentperday;
         if (sortBy === "priceHighToLow") return b.rentperday - a.rentperday;
-        if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
+        if (sortBy === "rating") return (averageRatings[hotel._id]?.average || 0) - (averageRatings[hotel._id]?.average || 0);
         return 0;
       });
     });
 
     return result.filter((hotel) => hotel.rooms.length > 0);
-  }, [hotels, filters, sortBy]);
+  }, [hotels, filters, sortBy, averageRatings]);
 
-  // Logic phân trang
   const indexOfLastHotel = currentPage * hotelsPerPage;
   const indexOfFirstHotel = indexOfLastHotel - hotelsPerPage;
   const currentHotels = filteredAndSortedHotels.slice(indexOfFirstHotel, indexOfLastHotel);
   const totalPages = Math.ceil(filteredAndSortedHotels.length / hotelsPerPage);
 
-  // Xử lý hiển thị modal chi tiết phòng
   const handleShowRoomDetails = (room) => {
     setSelectedRoom(room);
     setShowModal(true);
   };
 
-  // Xử lý chuyển trang
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
-    window.scrollTo({ top: 0, behavior: "smooth" }); // Cuộn lên đầu trang
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -419,17 +438,18 @@ const RoomResults = () => {
                   <>
                     {currentHotels.map((hotel) => (
                       <div key={hotel._id} className="hotel-item mb-5">
-                        <h3 className="hotel-name mb-4">
-                          {hotel.name}{" "}
-                          {hotel.rating && (
-                            <span className="ms-2">
-                              {[...Array(Math.floor(hotel.rating))].map((_, i) => (
-                                <FaStar key={i} className="text-warning" />
-                              ))}
-                              <small className="ms-2">({hotel.reviews || 0} đánh giá)</small>
-                            </span>
-                          )}
+                        <h3 className="hotel-name mb-2">
+                          {hotel.name}
                         </h3>
+                        {averageRatings[hotel._id] && averageRatings[hotel._id].totalReviews > 0 && (
+                          <p className="hotel-rating mb-3">
+                            <FaStar className="me-2 text-warning" />
+                            <span className="rating-value">{averageRatings[hotel._id].average.toFixed(1)}</span>
+                            <small className="ms-2 text-muted">
+                              ({averageRatings[hotel._id].totalReviews} đánh giá)
+                            </small>
+                          </p>
+                        )}
                         <div className="hotel-images mb-4">
                           <Carousel
                             indicators={true}
@@ -540,7 +560,8 @@ const RoomResults = () => {
                                             <strong>Ưu đãi:</strong> {room.deal}
                                           </div>
                                         )}
-                                      </Card.Text>                                      <div className="mt-3 d-flex gap-2">
+                                      </Card.Text>
+                                      <div className="mt-3 d-flex gap-2">
                                         <Button
                                           variant="outline-primary"
                                           onClick={() => handleShowRoomDetails(room)}
@@ -573,7 +594,7 @@ const RoomResults = () => {
                                               Đang xử lý...
                                             </>
                                           ) : isAvailable ? (
-                                            "Đặt Phòng Ngay"
+                                            "Đặt Ngay"
                                           ) : (
                                             "Không Thể Đặt"
                                           )}
@@ -588,7 +609,6 @@ const RoomResults = () => {
                         )}
                       </div>
                     ))}
-                    {/* Phân trang */}
                     <Pagination className="justify-content-center mt-4">
                       <Pagination.Prev
                         onClick={() => handlePageChange(currentPage - 1)}
@@ -615,7 +635,6 @@ const RoomResults = () => {
           </Col>
         </Row>
 
-        {/* Modal chi tiết phòng */}
         <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
           <Modal.Header closeButton>
             <Modal.Title>{selectedRoom?.name}</Modal.Title>
@@ -671,19 +690,20 @@ const RoomResults = () => {
               ) : (
                 "Đặt Phòng Ngay"
               )}
-            </Button>               <Button
-                        variant={favoriteRooms.includes(selectedRoom?._id) ? "danger" : "outline-danger"}
-                        onClick={() => toggleFavorite(selectedRoom?._id)}
-                        disabled={favoriteLoading[selectedRoom?._id]}
-                      >
-                        {favoriteLoading[selectedRoom?._id] ? (
-                          <Spinner as="span" animation="border" size="sm" />
-                        ) : favoriteRooms.includes(selectedRoom?._id) ? (
-                          <><FaHeart /> Đã thích</>
-                        ) : (
-                          <><FaRegHeart /> Yêu thích</>
-                        )}
-                      </Button>
+            </Button>
+            <Button
+              variant={favoriteRooms.includes(selectedRoom?._id) ? "danger" : "outline-danger"}
+              onClick={() => toggleFavorite(selectedRoom?._id)}
+              disabled={favoriteLoading[selectedRoom?._id]}
+            >
+              {favoriteLoading[selectedRoom?._id] ? (
+                <Spinner as="span" animation="border" size="sm" />
+              ) : favoriteRooms.includes(selectedRoom?._id) ? (
+                <><FaHeart /> Đã thích</>
+              ) : (
+                <><FaRegHeart /> Yêu thích</>
+              )}
+            </Button>
           </Modal.Footer>
         </Modal>
       </div>

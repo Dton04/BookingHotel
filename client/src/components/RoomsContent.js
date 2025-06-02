@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Room from "./Room";
-import { Pagination } from "react-bootstrap";
+import { Pagination, Modal } from "react-bootstrap";
 import "./../css/rooms-content.css";
 
 function RoomsContent() {
@@ -9,8 +9,20 @@ function RoomsContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [averageRatings, setAverageRatings] = useState({}); // Lưu điểm trung bình của từng khách sạn
-  const hotelsPerPage = 3;
+  const [averageRatings, setAverageRatings] = useState({});
+  const [selectedHotel, setSelectedHotel] = useState(null);
+  const [showRooms, setShowRooms] = useState(false);
+  const hotelsPerPage = 4;
+
+  const handleHotelClick = (hotel) => {
+    setSelectedHotel(hotel);
+    setShowRooms(true);
+  };
+
+  const handleCloseRooms = () => {
+    setShowRooms(false);
+    setSelectedHotel(null);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,45 +110,65 @@ function RoomsContent() {
           </div>
         ) : currentHotels.length > 0 ? (
           currentHotels.map((hotel) => (
-            <div key={hotel._id} className="hotel-section mb-5">
-              <div className="hotel-card card shadow-sm">
-                {hotel.imageurls?.[0] && (
-                  <div className="hotel-image-container" style={{ height: '300px' }}>
-                    <img
-                      src={hotel.imageurls[0]}
-                      alt={hotel.name}
-                      className="hotel-image img-fluid"
-                      onError={(e) => (e.target.src = "/images/default-hotel.jpg")}
-                    />
+            <div key={hotel._id} className="col-md-12 mb-4">
+              <div className="hotel-card card shadow hover-effect">
+                <div className="row g-0">
+                  <div className="col-md-4">
+                    <div 
+                      className="hotel-image-container cursor-pointer" 
+                      style={{ height: '300px' }}
+                      onClick={() => handleHotelClick(hotel)}
+                    >
+                      <img
+                        src={hotel.imageurls?.[0]}
+                        alt={hotel.name}
+                        className="hotel-image img-fluid h-100 w-100"
+                        style={{ objectFit: 'cover' }}
+                        onError={(e) => (e.target.src = "/images/default-hotel.jpg")}
+                      />
+                 
+                    </div>
                   </div>
-                )}
-                <div className="card-body">
-                  <h3 className="hotel-title">{hotel.name}</h3>
-                  <p className="hotel-address text-muted">
-                    <i className="fas fa-map-marker-alt me-2"></i>
-                    {hotel.address}
-                  </p>
-                  {averageRatings[hotel._id] && averageRatings[hotel._id].totalReviews > 0 && (
-                    <p className="hotel-rating text-muted">
-                      <i className="fas fa-star me-2"></i>
-                      {averageRatings[hotel._id].average.toFixed(1)}/5
-                    </p>
-                  )}
-                  <p className="hotel-description text-muted">
-                    {hotel.description || "Không có mô tả chi tiết."}
-                  </p>
+                  <div className="col-md-8">
+                    <div className="card-body">
+                      <h3 className="hotel-title">{hotel.name}</h3>
+                      <p className="hotel-address">
+                        <i className="fas fa-map-marker-alt me-2 text-primary"></i>
+                        {hotel.address}
+                      </p>
+                      {averageRatings[hotel._id] && averageRatings[hotel._id].totalReviews > 0 && (
+                        <p className="hotel-rating">
+                          <i className="fas fa-star me-2 text-warning"></i>
+                          <span className="rating-value">{averageRatings[hotel._id].average.toFixed(1)}</span>
+                          <span className="text-muted ms-2">
+                            ({averageRatings[hotel._id].totalReviews} đánh giá)
+                          </span>
+                        </p>
+                      )}
+                      <div className="hotel-features mb-3">
+                        <span className="badge bg-primary me-2">
+                          <i className="fas fa-wifi me-1"></i> Wifi miễn phí
+                        </span>
+                        <span className="badge bg-success me-2">
+                          <i className="fas fa-parking me-1"></i> Bãi đậu xe
+                        </span>
+                        <span className="badge bg-info">
+                          <i className="fas fa-concierge-bell me-1"></i> Phục vụ 24/7
+                        </span>
+                      </div>
+                      <p className="hotel-description">
+                        {hotel.description || "Không có mô tả chi tiết."}
+                      </p>
+                      <button 
+                        className="btn btn-outline-primary mt-2"
+                        onClick={() => handleHotelClick(hotel)}
+                      >
+                        <i className="fas fa-door-open me-2"></i>
+                        Xem các phòng có sẵn
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="room-grid mt-4">
-                {hotel.rooms.length > 0 ? (
-                  hotel.rooms.map((room) => (
-                    <Room key={room._id} room={{ ...room, hotelId: hotel._id }} />
-                  ))
-                ) : (
-                  <p className="text-muted text-center">
-                    Không có phòng nào trong khách sạn này.
-                  </p>
-                )}
               </div>
             </div>
           ))
@@ -159,8 +191,36 @@ function RoomsContent() {
                 disabled={currentPage === totalPages}
               />
             </Pagination>
-          </div>
-        )}
+          </div>        )}
+
+        <Modal 
+          show={showRooms} 
+          onHide={handleCloseRooms}
+          size="xl"
+          className="rooms-modal"
+        >
+          <Modal.Header closeButton>
+            <Modal.Title>
+              {selectedHotel?.name} - Danh sách phòng
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {selectedHotel?.rooms.length > 0 ? (
+              <div className="room-grid">
+                {selectedHotel.rooms.map((room) => (
+                  <Room 
+                    key={room._id} 
+                    room={{ ...room, hotelId: selectedHotel._id }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted">
+                Không có phòng nào trong khách sạn này.
+              </p>
+            )}
+          </Modal.Body>
+        </Modal>
       </div>
     </section>
   );

@@ -64,7 +64,8 @@ function Navbar() {
   return (
     <header className="header">
       <div className="top-bar">
-        <h1 className="logo">HOTELIER</h1>
+        <Link to="/home" className="logo" onClick={closeNav}>HOTELIER</Link>
+
         <div className="top-bar-right d-flex align-items-center">
           <div className="contact-info d-none d-lg-flex">
             <span><i className="fas fa-envelope"></i> Hotelier@gmail.com</span>
@@ -138,11 +139,25 @@ function Navbar() {
               </>
             )}
           </div>
+          <div className="auth-buttons-mobile d-md-none ms-2">
+            {isLoggedIn ? (
+              <button className="btn btn-outline-danger btn-sm" onClick={handleLogout}>
+                Đăng xuất
+              </button>
+            ) : (
+              <>
+                <Link to="/login" className="btn btn-outline-primary btn-sm me-2">Đăng nhập</Link>
+              </>
+            )}
+          </div>
           <button className="navbar-toggler d-md-none" type="button" onClick={() => setNavOpen(!isNavOpen)}>
+
+
             <span className="navbar-toggler-icon">☰</span>
           </button>
         </div>
       </div>
+
 
       <nav className="navbar navbar-expand-md">
         <div className={`collapse navbar-collapse ${isNavOpen ? 'show' : ''}`} id="navbarNav">
