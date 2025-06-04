@@ -21,7 +21,6 @@ import BookingList from "./components/BookingList";
 import BookingForm from "./components/BookingForm";
 import AdminDashboard from "./components/AdminDashboard";
 import CreateRoomForm from "./components/CreateRoomForm";
-import RoomManagement from "./components/RoomManagement";
 import EditRoomForm from "./components/EditRoomForm";
 import ProfileManagement from "./components/ProfileManagement";
 import GoogleCallBack from "./screens/Auth/GoogleCallBack";
@@ -86,7 +85,6 @@ function App() {
           <Route path="/booking-form" element={<BookingForm />} />
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/createroom" element={<AdminRoute><CreateRoomForm /></AdminRoute>} />
-          <Route path="/admin/rooms" element={<AdminRoute><RoomManagement /></AdminRoute>} />
           <Route path="/admin/editroom/:id" element={<AdminRoute><EditRoomForm /></AdminRoute>} />
           <Route path="/membership" element={<UserRoute><Membership /></UserRoute>} />
           <Route path="/admin/discounts" element={<AdminRoute><AdminDiscounts /></AdminRoute>} />

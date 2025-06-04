@@ -247,6 +247,14 @@ function Bookingscreen() {
   }, [bookingId, paymentStatus, bankInfo]);
 
   const onSubmit = async (data) => {
+    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    if (!userInfo || !userInfo.token) {
+      setBookingStatus({
+        type: "error",
+        message: "Bạn cần đăng nhập để thực hiện đặt phòng.",
+      });
+      return;
+    }
     try {
       setLoading(true);
       setBookingStatus(null);
@@ -411,7 +419,7 @@ function Bookingscreen() {
       } else {
         setBookingStatus({
           type: "warning",
-          message: `Thanh toán thành công, nhưng không thể tích điểm: ${pointsResult.message}. Đang chuyển hướng đến trang đánh giá...`,
+          message: `Thanh toán thành công, Đang chuyển hướng đến trang đánh giá...`,
         });
       }
 
@@ -614,6 +622,12 @@ function Bookingscreen() {
               {renderPaymentStatus()}
               {renderBankInfo()}
               <div className="booking-screen-wrapper">
+              {!localStorage.getItem("userInfo") && (
+  <div className="alert alert-warning text-center">
+    Vui lòng <a href="/login">đăng nhập</a> để đặt phòng.
+  </div>
+)}
+
                 <form className="booking-screen" onSubmit={handleSubmit(onSubmit)}>
                   <div className="row">
                     <div className="col-md-6">
@@ -821,10 +835,15 @@ function Bookingscreen() {
                     <button
                       type="submit"
                       className="btn btn-book-now"
-                      disabled={loading || room.availabilityStatus !== "available"}
+                      disabled={
+                        loading ||
+                        room.availabilityStatus !== "available" ||
+                        !localStorage.getItem("userInfo")
+                      }
                     >
                       {loading ? "Đang xử lý..." : "ĐẶT PHÒNG NGAY"}
                     </button>
+
                   </div>
 
                   {bookingStatus?.type === "success" && newBookingId && (

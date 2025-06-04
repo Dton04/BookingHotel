@@ -52,7 +52,7 @@ function Favorites() {
         </div>
 
         {loading ? (
-          <div className="loading-spinner text-center">
+          <div className="loading">
             <Spinner animation="border" variant="primary" />
             <p className="mt-2">Đang tải danh sách phòng yêu thích...</p>
           </div>

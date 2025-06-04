@@ -22,6 +22,8 @@ function HistoryBookings() {
     children: "",
   });
   const [editError, setEditError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [bookingsPerPage] = useState(10); // Số đặt phòng mỗi trang
   const navigate = useNavigate();
 
   // Lấy email người dùng từ localStorage
@@ -45,6 +47,7 @@ function HistoryBookings() {
       );
       setBookings(userBookings);
       setFilteredBookings(userBookings);
+      setCurrentPage(1); // Reset về trang đầu khi lấy dữ liệu mới
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -70,7 +73,21 @@ function HistoryBookings() {
       );
       setFilteredBookings(filtered);
     }
+    setCurrentPage(1); // Reset về trang đầu khi thay đổi bộ lọc
   }, [filterStatus, bookings]);
+
+  // Tính toán dữ liệu phân trang
+  const indexOfLastBooking = currentPage * bookingsPerPage;
+  const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
+  const currentBookings = filteredBookings.slice(indexOfFirstBooking, indexOfLastBooking);
+  const totalPages = Math.ceil(filteredBookings.length / bookingsPerPage);
+
+  // Hàm chuyển trang
+  const handlePageChange = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
 
   // Mở modal xác nhận hủy
   const handleOpenCancelModal = (bookingId) => {
@@ -274,57 +291,67 @@ function HistoryBookings() {
               }".`}
         </div>
       ) : (
-        <div className="table-responsive">
-          <table className="table table-bordered table-striped">
-            <thead>
-              <tr>
-                <th>Tên phòng</th>
-                <th>Ngày nhận phòng</th>
-                <th>Ngày trả phòng</th>
-                <th>Số người lớn</th>
-                <th>Số trẻ em</th>
-                <th>Loại phòng</th>
-                <th>Trạng thái</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBookings.map((booking) => (
-                <tr key={booking._id}>
-                  <td>{booking.roomid?.name || "Không xác định"}</td>
-                  <td>{new Date(booking.checkin).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</td>
-                  <td>{new Date(booking.checkout).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</td>
-                  <td>{booking.adults}</td>
-                  <td>{booking.children}</td>
-                  <td>{booking.roomType || "Không xác định"}</td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        booking.status === "confirmed"
-                          ? "bg-success"
-                          : booking.status === "pending"
-                          ? "bg-warning"
-                          : "bg-danger"
-                      }`}
-                    >
-                      {booking.status === "pending"
-                        ? "Chờ xác nhận"
-                        : booking.status === "confirmed"
-                        ? "Đã xác nhận"
-                        : "Đã hủy"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="d-flex gap-2">
-                      {booking.status === "pending" ? (
-                        <>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleOpenCancelModal(booking._id)}
-                            disabled={loading}
-                          >
-                            Hủy
-                          </button>
+        <>
+          <div className="table-responsive">
+            <table className="table table-bordered table-striped">
+              <thead>
+                <tr>
+                  <th>Tên phòng</th>
+                  <th>Ngày nhận phòng</th>
+                  <th>Ngày trả phòng</th>
+                  <th>Số người lớn</th>
+                  <th>Số trẻ em</th>
+                  <th>Loại phòng</th>
+                  <th>Trạng thái</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentBookings.map((booking) => (
+                  <tr key={booking._id}>
+                    <td>{booking.roomid?.name || "Không xác định"}</td>
+                    <td>{new Date(booking.checkin).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</td>
+                    <td>{new Date(booking.checkout).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</td>
+                    <td>{booking.adults}</td>
+                    <td>{booking.children}</td>
+                    <td>{booking.roomType || "Không xác định"}</td>
+                    <td>
+                      <span
+                        className={`badge ${
+                          booking.status === "confirmed"
+                            ? "bg-success"
+                            : booking.status === "pending"
+                            ? "bg-warning"
+                            : "bg-danger"
+                        }`}
+                      >
+                        {booking.status === "pending"
+                          ? "Chờ xác nhận"
+                          : booking.status === "confirmed"
+                          ? "Đã xác nhận"
+                          : "Đã hủy"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="d-flex gap-2">
+                        {booking.status === "pending" ? (
+                          <>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleOpenCancelModal(booking._id)}
+                              disabled={loading}
+                            >
+                              Hủy
+                            </button>
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={() => handleOpenEditModal(booking)}
+                              disabled={loading}
+                            >
+                              Chỉnh sửa
+                            </button>
+                          </>
+                        ) : booking.status === "confirmed" ? (
                           <button
                             className="btn btn-primary btn-sm"
                             onClick={() => handleOpenEditModal(booking)}
@@ -332,30 +359,45 @@ function HistoryBookings() {
                           >
                             Chỉnh sửa
                           </button>
-                        </>
-                      ) : booking.status === "confirmed" ? (
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleOpenEditModal(booking)}
-                          disabled={loading}
-                        >
-                          Chỉnh sửa
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-info btn-sm"
-                          onClick={() => handleViewCancelReason(booking._id)}
-                        >
-                          Xem lý do hủy
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                        ) : (
+                          <button
+                            className="btn btn-info btn-sm"
+                            onClick={() => handleViewCancelReason(booking._id)}
+                          >
+                            Xem lý do hủy
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Phân trang */}
+          {totalPages > 1 && (
+            <div className="pagination-section mt-4 d-flex justify-content-center align-items-center">
+              <button
+                className="btn btn-outline-primary btn-sm me-2"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Trước
+              </button>
+              <span>
+                Trang {currentPage} / {totalPages}
+              </span>
+              <button
+                className="btn btn-outline-primary btn-sm ms-2"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Sau
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal xác nhận hủy */}
