@@ -1,162 +1,175 @@
-// BookingForm.js
-import React, { useState } from "react";
-import { Spinner } from "react-bootstrap";
+import React, { useState, useRef, useEffect } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import AlertMessage from "../components/AlertMessage";
 import "./../css/booking-form.css";
 
-function BookingForm({ onBookingStatus }) {
-  const [checkin, setCheckin] = useState("");
-  const [checkout, setCheckout] = useState("");
-  const [adults, setAdults] = useState("1");
-  const [children, setChildren] = useState("0");
-  const [roomType, setRoomType] = useState(""); // Thêm trạng thái cho loại phòng
-  const [loading, setLoading] = useState(false);
-  const [alertStatus, setAlertStatus] = useState(null);
+function BookingForm() {
+  const [formData, setFormData] = useState({
+    destination: "",
+    checkin: "",
+    checkout: "",
+    adults: 2,
+    children: 0,
+    rooms: 1,
+  });
+
+  const [regions, setRegions] = useState([]);
+  const [filteredRegions, setFilteredRegions] = useState([]);
+  const [openGuestDropdown, setOpenGuestDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  // Lấy danh sách regions từ API
+  useEffect(() => {
+    axios.get("/api/regions")
+      .then((response) => setRegions(response.data))
+      .catch((err) => console.error("Lỗi lấy regions:", err));
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "destination") {
+      if (value.trim() === "") {
+        setFilteredRegions([]);
+      } else {
+        const filtered = regions.filter((region) =>
+          region.name.toLowerCase().includes(value.toLowerCase())
+        );
+        setFilteredRegions(filtered);
+      }
+    }
+  };
+
+  const handleSelectRegion = (regionName) => {
+    setFormData((prev) => ({ ...prev, destination: regionName }));
+    setFilteredRegions([]);
+  };
+
+  const handleCounter = (field, delta) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: Math.max(0, prev[field] + delta),
+    }));
+  };
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setAlertStatus(null);
-
-    // Kiểm tra các trường bắt buộc
-    if (!checkin || !checkout) {
-      const errorMessage = "Vui lòng chọn ngày nhận phòng và trả phòng";
-      setAlertStatus({ type: "error", message: errorMessage });
-      onBookingStatus({ type: "error", message: errorMessage });
-      return;
-    }
-
-    // Kiểm tra ngày hợp lệ
-    const checkinDate = new Date(checkin);
-    const checkoutDate = new Date(checkout);
-    if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime())) {
-      const errorMessage = "Ngày nhận phòng hoặc trả phòng không hợp lệ";
-      setAlertStatus({ type: "error", message: errorMessage });
-      onBookingStatus({ type: "error", message: errorMessage });
-      return;
-    }
-
-    if (checkinDate >= checkoutDate) {
-      const errorMessage = "Ngày nhận phòng phải trước ngày trả phòng";
-      setAlertStatus({ type: "error", message: errorMessage });
-      onBookingStatus({ type: "error", message: errorMessage });
-      return;
-    }
-
-    // Kiểm tra số lượng khách
-    if (!adults || adults < 1) {
-      const errorMessage = "Vui lòng chọn số lượng người lớn";
-      setAlertStatus({ type: "error", message: errorMessage });
-      onBookingStatus({ type: "error", message: errorMessage });
-      return;
-    }
-
-    if (children < 0) {
-      const errorMessage = "Số lượng trẻ em không hợp lệ";
-      setAlertStatus({ type: "error", message: errorMessage });
-      onBookingStatus({ type: "error", message: errorMessage });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      // Chuyển hướng với các tham số tìm kiếm, bao gồm roomType
-      navigate(
-        `/room-results?checkin=${encodeURIComponent(checkin)}&checkout=${encodeURIComponent(
-          checkout
-        )}&adults=${encodeURIComponent(adults)}&children=${encodeURIComponent(
-          children
-        )}${roomType ? `&roomType=${encodeURIComponent(roomType)}` : ""}`
-      );
-    } catch (err) {
-      console.error("Lỗi khi chuyển hướng:", err);
-      const errorMessage = "Lỗi khi xử lý yêu cầu";
-      setAlertStatus({ type: "error", message: errorMessage });
-      onBookingStatus({ type: "error", message: errorMessage });
-    } finally {
-      setLoading(false);
-    }
+    // Lưu vào localStorage để fallback ở các trang khác (như HotelDetail)
+    localStorage.setItem('bookingInfo', JSON.stringify(formData));
+    navigate(`/room-results?${new URLSearchParams(formData).toString()}`);
   };
 
-  const handleCloseAlert = () => {
-    setAlertStatus(null);
-  };
+  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenGuestDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-    <section className="booking-form-section">
-      <div className="booking-form-container">
-        <AlertMessage
-          type={alertStatus?.type}
-          message={alertStatus?.message}
-          onClose={handleCloseAlert}
+    <div className="booking-search-bar">
+      <form onSubmit={handleSubmit} className="booking-search-form">
+        {/* Địa điểm + autocomplete */}
+        <div className="destination-wrapper">
+          <input
+            type="text"
+            name="destination"
+            placeholder="Bạn muốn đến đâu?"
+            value={formData.destination}
+            onChange={handleChange}
+            className="search-input"
+            required
+          />
+          {filteredRegions.length > 0 && (
+            <ul className="autocomplete-list">
+              {filteredRegions.map((region) => (
+                <li
+                  key={region._id}
+                  onClick={() => handleSelectRegion(region.name)}
+                >
+                  <span className="location-icon">📍</span> {region.name}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Ngày nhận */}
+        <input
+          type="date"
+          name="checkin"
+          value={formData.checkin}
+          onChange={handleChange}
+          className="search-input"
+          required
         />
-        <form className="booking-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>CHECK IN</label>
-            <input
-              type="date"
-              value={checkin}
-              onChange={(e) => setCheckin(e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-              required
-              placeholder="dd/mm/yyyy"
-            />
+
+        {/* Ngày trả */}
+        <input
+          type="date"
+          name="checkout"
+          value={formData.checkout}
+          onChange={handleChange}
+          className="search-input"
+          required
+        />
+
+        {/* Ô chọn khách & phòng */}
+        <div className="guest-dropdown-wrapper" ref={dropdownRef}>
+          <div
+            className="search-input guest-input"
+            onClick={() => setOpenGuestDropdown(!openGuestDropdown)}
+          >
+            {formData.adults} người lớn · {formData.children} trẻ em · {formData.rooms} phòng
           </div>
-          <div className="form-group">
-            <label>CHECK OUT</label>
-            <input
-              type="date"
-              value={checkout}
-              onChange={(e) => setCheckout(e.target.value)}
-              min={
-                checkin
-                  ? new Date(new Date(checkin).setDate(new Date(checkin).getDate() + 1))
-                      .toISOString()
-                      .split("T")[0]
-                  : ""
-              }
-              required
-              placeholder="dd/mm/yyyy"
-            />
-          </div>
-          <div className="form-group">
-            <label>NGƯỜI LỚN</label>
-            <select value={adults} onChange={(e) => setAdults(e.target.value)} required>
-              <option value="" disabled>
-                Người lớn
-              </option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>TRẺ EM</label>
-            <select value={children} onChange={(e) => setChildren(e.target.value)} required>
-              <option value="0">0</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>LOẠI PHÒNG</label>
-            <select value={roomType} onChange={(e) => setRoomType(e.target.value)}>
-              <option value="">Tất cả</option>
-              <option value="Standard">Standard</option>
-              <option value="Deluxe">Deluxe</option>
-              <option value="Luxury">Luxury</option>
-              {/* Thêm các loại phòng khác nếu cần */}
-            </select>
-          </div>
-          <button type="submit" disabled={loading}>
-            {loading ? <Spinner animation="border" size="sm" /> : "KIỂM TRA"}
-          </button>
-        </form>
-      </div>
-    </section>
+
+          {openGuestDropdown && (
+            <div className="guest-dropdown">
+              <div className="dropdown-row">
+                <span>Người lớn</span>
+                <div className="counter">
+                  <button type="button" onClick={() => handleCounter("adults", -1)}>-</button>
+                  <span>{formData.adults}</span>
+                  <button type="button" onClick={() => handleCounter("adults", 1)}>+</button>
+                </div>
+              </div>
+              <div className="dropdown-row">
+                <span>Trẻ em</span>
+                <div className="counter">
+                  <button type="button" onClick={() => handleCounter("children", -1)}>-</button>
+                  <span>{formData.children}</span>
+                  <button type="button" onClick={() => handleCounter("children", 1)}>+</button>
+                </div>
+              </div>
+              <div className="dropdown-row">
+                <span>Phòng</span>
+                <div className="counter">
+                  <button type="button" onClick={() => handleCounter("rooms", -1)}>-</button>
+                  <span>{formData.rooms}</span>
+                  <button type="button" onClick={() => handleCounter("rooms", 1)}>+</button>
+                </div>
+              </div>
+              <div className="dropdown-actions">
+                <button type="button" onClick={() => setOpenGuestDropdown(false)}>
+                  Xong
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Nút tìm */}
+        <button type="submit" className="search-button">
+          Tìm
+        </button>
+      </form>
+    </div>
   );
 }
 

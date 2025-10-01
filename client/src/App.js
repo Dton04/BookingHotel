@@ -4,7 +4,6 @@ import Navbar from "./components/Navbar";
 import Homescreen from "./screens/Homescreen";
 import Rooms from "./components/Rooms";
 import Bookingscreen from "./screens/Bookingscreen";
-import ServicesScreen from "./screens/ServicesScreen";
 import OurTeam from "./components/Pages/OurTeam";
 import Testimonial from "./components/Pages/Testimonial";
 import Contact from "./components/Contact";
@@ -32,6 +31,7 @@ import HotelManagement from "./components/HotelManagement";
 import HotelRoomManagement from "./components/HotelRoomManagement";
 import Rewards from "./components/Rewards";
 import VNPaySuccess from "./components/VNPaySuccess";
+import ServiceManagement from "./components/ServiceManagement";
 
 
 import PointsPage from './components/PointsPage';
@@ -39,6 +39,9 @@ import ReviewManagement from './components/ReviewManagement';
 import Favorites from './components/Favorites';
 import AdminRewards from "./components/AdminRewards";
 
+import AdminF from "./screens/AdminFunction";
+
+import HotelDetail from "./components/HotelDetail";
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -67,7 +70,6 @@ function App() {
           <Route path="/home" element={<Homescreen />} />
           <Route path="/rooms" element={<Rooms />} />
           <Route path="/about" element={<About />} />
-          <Route path="/services" element={<ServicesScreen />} />
           <Route path="/room-results" element={<RoomResults />} />
           <Route path="/book-room/:roomId" element={<Bookingscreen />} />
           <Route path="/book/:roomid" element={<Bookingscreen />} />
@@ -97,9 +99,18 @@ function App() {
 
           <Route path="/booking-success" element={<VNPaySuccess />} />
           <Route path="/admin/rewards" element={<AdminRewards />} />
-        
+          <Route path="/hotel/:id" element={<HotelDetail />} />
 
-          
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminF />
+              </AdminRoute>
+            }
+          />
+
+
           <Route
             path="/admin/staffmanagement"
             element={
@@ -132,6 +143,15 @@ function App() {
               </UserRoute>
             }
           />
+          <Route
+            path="/admin/services"
+            element={
+              <AdminRoute>
+                <ServiceManagement />
+              </AdminRoute>
+            }
+          />
+
         </Routes>
         <Footer />
       </div>

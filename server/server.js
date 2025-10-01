@@ -58,7 +58,7 @@ const revenueRoute = require('./routes/revenueRoutes');
 const regionsRoute = require('./routes/regionsRoutes');
 const momoRoutes = require('./routes/momoRoutes');
 const vnpayRoutes = require('./routes/vnpayRoutes');
-
+const serviceRoutes = require('./routes/serviceRoutes');
 
 
 // Debug routes
@@ -71,6 +71,8 @@ console.log('dashboardRoute:', dashboardRoute);
 console.log('revenueRoute:', revenueRoute);
 console.log('regionsRoute:', regionsRoute);
 console.log('momoRoutes:', momoRoutes);
+console.log('serviceRoutes:', serviceRoutes);
+
 
 // Connect to MongoDB Gay ra loi khong sai dong duoi
 //connectDB();
@@ -96,6 +98,7 @@ app.use('/api/rewards', rewardsRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/discounts',discountRoutes)
 app.use('/api/favorites',favoriteRoutes)
+app.use('/api/services', serviceRoutes)
 
 
 // Xử lý lỗi không được bắt

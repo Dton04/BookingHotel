@@ -1,3 +1,4 @@
+
 .banner {
   position: relative;
   width: 100%;
@@ -219,6 +220,11 @@
     margin-top: 0; /* Xóa khoảng cách thừa phía trên */
     height: 60vh;
    
+  }
+  *{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
   }
 
   .banner-slide {

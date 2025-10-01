@@ -15,7 +15,7 @@ const regionSchema = new mongoose.Schema({
   },
   hotels: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Room',
+    ref: 'Hotel',
     // Danh sách khách sạn/phòng trong khu vực
   }],
   createdAt: {

@@ -24,12 +24,12 @@ function Banner() {
   // Dữ liệu cho slider trên trang chủ
   const slides = [
     {
-      image: 'https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg',
+      image: 'https://images.ctfassets.net/ltric1hkjv72/1u9ZGbnmRiPLywGUIeKcga/be983bfbe9d0344e97c5c86520e24948/Best-Views-Wake-Up-To_Hero_Retouched.jpg',
       subtitle: 'LUXURY LIVING',
       title: 'Discover A Brand Luxurious Hotel',
     },
     {
-      image: './../images/hero-01.jpg',
+      image: 'https://www.thehotelguru.com/_images/48/e8/48e8b317bb1f5cbe1cbcfb12f56daf31/600x422.jpg',
       subtitle: 'EXCLUSIVE OFFERS',
       title: 'Experience The Best Hospitality',
     },
@@ -58,21 +58,14 @@ function Banner() {
           buttons: null,
           image: 'https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg',
         };
-      case '/services':
-        return {
-          isSlider: false,
-          title: 'Services',
-          breadcrumb: 'HOME / PAGES / SERVICES',
-          buttons: null,
-          image: 'https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg',
-        };
+    
       case '/about':
         return {
           isSlider: false,
           title: 'About',
           breadcrumb: 'HOME / PAGES / ABOUT',
           buttons: null,
-          image: 'https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg',
+          image: 'https://hips.hearstapps.com/hmg-prod/images/grand-hotel-tremezzo-6479210d9dae0.jpeg',
         };
       case '/ourteam':
         return {
@@ -82,21 +75,13 @@ function Banner() {
           buttons: null,
           image: 'https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg',
         };
-      case '/testimonial':
-        return {
-          isSlider: false,
-          title: 'Testimonial',
-          breadcrumb: 'HOME / PAGES / TESTIMONIAL',
-          buttons: null,
-          image: 'https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg',
-        };
       case '/contact':
         return {
           isSlider: false,
           title: 'Contact',
           breadcrumb: 'HOME / PAGES / CONTACT',
           buttons: null,
-          image: 'https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg',
+          image: 'https://media.istockphoto.com/id/520542221/photo/hotel-reception-with-bell.jpg?s=612x612&w=0&k=20&c=quMdykg6OVTzGnANco9OVbVIxdRChamN3-iTbEe7os0=',
         };
        case '/admin/bookings':
         return {

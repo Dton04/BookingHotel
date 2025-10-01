@@ -1,0 +1,175 @@
+.service-management {
+  padding: 20px;
+}
+
+.service-management .service-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+}
+
+.service-management .table th {
+  background-color: #f8f9fa;
+  border-top: none;
+  font-weight: 600;
+  color: #495057;
+}
+
+.service-management .table td {
+  vertical-align: middle;
+}
+
+.service-management .btn-group .btn {
+  margin-right: 2px;
+}
+
+.service-management .btn-group .btn:last-child {
+  margin-right: 0;
+}
+
+.service-management .badge {
+  font-size: 0.75rem;
+}
+
+.service-management .form-control:focus,
+.service-management .form-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.service-management .modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.service-management .modal-header .btn-close {
+  filter: invert(1);
+}
+
+.service-management .card {
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.service-management .card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.service-management .pagination .page-link {
+  color: #667eea;
+  border-color: #dee2e6;
+}
+
+.service-management .pagination .page-item.active .page-link {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+.service-management .pagination .page-link:hover {
+  color: #5a6fd8;
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.service-management .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.service-management .btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+.service-management .btn-outline-primary {
+  color: #667eea;
+  border-color: #667eea;
+}
+
+.service-management .btn-outline-primary:hover {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+.service-management .alert {
+  border-radius: 0.5rem;
+}
+
+.service-management .spinner-border {
+  color: #667eea;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .service-management {
+    padding: 10px;
+  }
+  
+  .service-management .table {
+    font-size: 0.875rem;
+  }
+  
+  .service-management .btn-group {
+    flex-direction: column;
+  }
+  
+  .service-management .btn-group .btn {
+    margin-bottom: 2px;
+    margin-right: 0;
+  }
+}
+
+/* Animation for service cards */
+.service-management .table tbody tr {
+  transition: all 0.2s ease-in-out;
+}
+
+.service-management .table tbody tr:hover {
+  background-color: rgba(102, 126, 234, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom checkbox styling */
+.service-management .form-check-input:checked {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+.service-management .form-check-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Loading state */
+.service-management .loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Empty state */
+.service-management .empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+}
+
+.service-management .empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+} 

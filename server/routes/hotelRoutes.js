@@ -59,19 +59,18 @@ router.get('/:id', async (req, res) => {
     }
 
     res.status(200).json({
-      hotel: {
-        _id: hotel._id,
-        name: hotel.name,
-        address: hotel.address,
-        region: hotel.region,
-        contactNumber: hotel.contactNumber,
-        email: hotel.email,
-        description: hotel.description,
-        imageurls: hotel.imageurls,
-        rooms: hotel.rooms,
-        createdAt: hotel.createdAt,
-        updatedAt: hotel.updatedAt,
-      }
+      _id: hotel._id,
+      name: hotel.name,
+      address: hotel.address,
+      region: hotel.region,
+      contactNumber: hotel.contactNumber,
+      email: hotel.email,
+      description: hotel.description,
+      imageurls: hotel.imageurls,
+      rooms: hotel.rooms,
+      amenities: hotel.amenities,
+      createdAt: hotel.createdAt,
+      updatedAt: hotel.updatedAt
     });
   } catch (error) {
     console.error('Lỗi khi lấy chi tiết khách sạn:', error.message, error.stack);
@@ -153,7 +152,7 @@ router.delete('/:id/images/:imgId', protect, admin, async (req, res) => {
 
 // GET /api/hotels - Lấy danh sách khách sạn và tất cả phòng
 router.get('/', async (req, res) => {
-  const { checkin, checkout, adults, children, roomType } = req.query;
+  const { checkin, checkout, adults, children, roomType, destination } = req.query;
 
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -181,7 +180,16 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ message: 'Số lượng khách không hợp lệ' });
     }
 
-    const hotels = await Hotel.find().populate('region');
+    // First find region by name if destination is provided
+    let query = {};
+    if (destination) {
+      const region = await Region.findOne({ name: destination });
+      if (region) {
+        query.region = region._id;
+      }
+    }
+    
+    const hotels = await Hotel.find(query).populate('region');
 
     const filteredHotels = await Promise.all(
       hotels.map(async (hotel) => {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -215,35 +216,63 @@ function Bookingscreen() {
     fetchRoomData();
   }, [fetchRoomData]);
 
+  // Tách riêng effect xử lý user info và location state
+  useEffect(() => {
+    // Lấy thông tin từ user đã đăng nhập
+    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    if (userInfo) {
+      setValue("name", userInfo.name || "");
+      setValue("email", userInfo.email || "");
+      setValue("phone", userInfo.phone || "");
+    }
+
+    // Lấy thông tin từ location state của navigation
+    const locationState = window.history.state?.usr;
+    if (locationState) {
+      setValue("checkin", locationState.checkin || "");
+      setValue("checkout", locationState.checkout || "");
+      setValue("adults", locationState.adults || 2);
+      setValue("children", locationState.children || 0);
+      setValue("roomType", locationState.roomType || "");
+    }
+  }, [setValue]);
+
   useEffect(() => {
     let interval;
     if (bookingId && paymentStatus === "pending" && bankInfo) {
-      interval = setInterval(async () => {
-        try {
-          const response = await axios.get(`/api/bookings/${bookingId}/payment-deadline`);
-          const { timeRemaining: remaining, expired } = response.data;
-          setTimeRemaining(remaining);
-          setPaymentExpired(expired);
+      // Set timeout cho lần check đầu tiên sau 5 giây
+      const timeoutId = setTimeout(() => {
+        interval = setInterval(async () => {
+          try {
+            const response = await axios.get(`/api/bookings/${bookingId}/payment-deadline`);
+            const { timeRemaining: remaining, expired } = response.data;
+            setTimeRemaining(remaining);
+            setPaymentExpired(expired);
 
-          if (expired) {
+            if (expired) {
+              setBookingStatus({
+                type: "error",
+                message: "Thời gian thanh toán đã hết. Đặt phòng đã bị hủy.",
+              });
+              setPaymentStatus("canceled");
+              clearInterval(interval);
+            }
+          } catch (error) {
+            console.error("Lỗi khi kiểm tra thời gian thanh toán:", error);
             setBookingStatus({
               type: "error",
-              message: "Thời gian thanh toán đã hết. Đặt phòng đã bị hủy.",
+              message: "Không thể kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.",
             });
-            setPaymentStatus("canceled");
             clearInterval(interval);
           }
-        } catch (error) {
-          console.error("Lỗi khi kiểm tra thời gian thanh toán:", error);
-          setBookingStatus({
-            type: "error",
-            message: "Không thể kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.",
-          });
-          clearInterval(interval);
-        }
-      }, 1000);
+        }, 10000); // Tăng interval lên 10 giây
+      }, 5000);
+
+      return () => {
+        clearTimeout(timeoutId);
+        if (interval) clearInterval(interval);
+      };
     }
-    return () => clearInterval(interval);
   }, [bookingId, paymentStatus, bankInfo]);
 
   const onSubmit = async (data) => {

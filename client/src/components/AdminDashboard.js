@@ -6,6 +6,7 @@ import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import '../css/dashboard.css';
+import AdminFunctions from '../screens/AdminFunction';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ChartDataLabels);
 
@@ -378,6 +379,11 @@ function AdminDashboard() {
                   </Card.Body>
                 </Card>
               </Col>
+
+              <Col md={12}>
+                <AdminFunctions />
+              </Col>
+
             </Row>
           </>
         )}

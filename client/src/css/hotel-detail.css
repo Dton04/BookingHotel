@@ -1,0 +1,144 @@
+.hotel-detail-page {
+  background-color: #f8f9fa;
+}
+
+.hotel-header {
+  background-color: white;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.hotel-name {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.hotel-location {
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.rating-badge {
+  padding: 0.5rem 1rem;
+  font-size: 1.1rem;
+}
+
+.hotel-main-carousel {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hotel-main-carousel .carousel-control-prev,
+.hotel-main-carousel .carousel-control-next {
+  background-color: rgba(0, 0, 0, 0.5);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.amenity-item {
+  padding: 0.5rem;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  margin-bottom: 0.5rem;
+}
+
+.room-card {
+  transition: transform 0.2s;
+}
+
+.room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.room-image {
+  height: 200px;
+  object-fit: cover;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.room-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.room-price {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0d6efd;
+}
+
+.room-price small {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.room-features {
+  margin-top: 1rem;
+}
+
+.rating-bar-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.star-label {
+  width: 60px;
+}
+
+.count-label {
+  width: 30px;
+  text-align: right;
+}
+
+.rating-bars .progress {
+  height: 12px;
+}
+
+.star-rating {
+  font-size: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+/* Service section styling */
+.service-icon {
+  width: 40px;
+  height: 40px;
+  background-color: #f8f9fa;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+}
+
+/* Tab styling */
+.nav-tabs .nav-link {
+  color: #495057;
+  border: none;
+  padding: 1rem 1.5rem;
+}
+
+.nav-tabs .nav-link.active {
+  color: #0d6efd;
+  border-bottom: 3px solid #0d6efd;
+  background-color: transparent;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .hotel-name {
+    font-size: 1.5rem;
+  }
+
+  .room-image {
+    height: 150px;
+    border-radius: 4px 4px 0 0;
+  }
+}
