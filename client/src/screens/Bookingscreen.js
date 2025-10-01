@@ -107,6 +107,7 @@ function Bookingscreen() {
 
   // Hàm lấy dữ liệu phòng
   const fetchRoomData = useCallback(async () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     try {
       setLoading(true);
       const { data } = await axios.post("/api/rooms/getroombyid", { roomid });
@@ -297,6 +298,8 @@ function Bookingscreen() {
       const bookingResponse = await axios.post("/api/bookings/bookroom", {
         roomid,
         ...data,
+        adults: Number(data.adults),
+        children: Number(data.children) || 0,
         diningServices: selectedServices, // Gửi danh sách dịch vụ được chọn
         appliedVouchers: discountResult?.appliedDiscounts?.map((d) => ({
           code: d.code || d.id,
@@ -651,11 +654,11 @@ function Bookingscreen() {
               {renderPaymentStatus()}
               {renderBankInfo()}
               <div className="booking-screen-wrapper">
-              {!localStorage.getItem("userInfo") && (
-  <div className="alert alert-warning text-center">
-    Vui lòng <a href="/login">đăng nhập</a> để đặt phòng.
-  </div>
-)}
+                {!localStorage.getItem("userInfo") && (
+                  <div className="alert alert-warning text-center">
+                    Vui lòng <a href="/login">đăng nhập</a> để đặt phòng.
+                  </div>
+                )}
 
                 <form className="booking-screen" onSubmit={handleSubmit(onSubmit)}>
                   <div className="row">

@@ -43,6 +43,8 @@ import AdminF from "./screens/AdminFunction";
 
 import HotelDetail from "./components/HotelDetail";
 
+import AdminRegions from "./components/AdminRegions";
+
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
   const userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -92,6 +94,8 @@ function App() {
           <Route path="/admin/discounts" element={<AdminRoute><AdminDiscounts /></AdminRoute>} />
           <Route path="/admin/hotels" element={<AdminRoute><HotelManagement /></AdminRoute>} />
           <Route path="/admin/hotel/:hotelId/rooms" element={<AdminRoute><HotelRoomManagement /></AdminRoute>} />
+          <Route path="/admin/regions" element={<AdminRoute><AdminRegions/></AdminRoute>}/>
+
           <Route path="/rewards" element={<UserRoute><Rewards /></UserRoute>} />
           <Route path="/points" element={<PointsPage />} />
           <Route path="/admin/reviews" element={<ReviewManagement />} />
@@ -148,6 +152,14 @@ function App() {
             element={
               <AdminRoute>
                 <ServiceManagement />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/regions"
+            element={
+              <AdminRoute>
+                <AdminRegions />
               </AdminRoute>
             }
           />

@@ -41,7 +41,7 @@ const HotelDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [hotel, setHotel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -54,12 +54,12 @@ const HotelDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  
+
   const getBookingInfo = () => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const checkin = urlParams.get('checkin');
-      
+
       // Ưu tiên query params từ URL (nếu có)
       if (checkin) {
         return {
@@ -160,8 +160,8 @@ const HotelDetail = () => {
       } catch (error) {
         console.error('Error fetching hotel details:', error);
         setError(
-          error.response?.data?.message || 
-          error.message || 
+          error.response?.data?.message ||
+          error.message ||
           'Có lỗi xảy ra khi tải thông tin khách sạn'
         );
       } finally {
@@ -183,7 +183,7 @@ const HotelDetail = () => {
 
     const checkinDate = new Date(checkin);
     const checkoutDate = new Date(checkout);
-    
+
     // Kiểm tra tính hợp lệ của ngày
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -290,8 +290,8 @@ const HotelDetail = () => {
             <div>
               <div className="d-flex align-items-center">
                 <h1 className="hotel-name h2 mb-0">{hotel.name}</h1>
-                <Button 
-                  variant="link" 
+                <Button
+                  variant="link"
                   className="ms-2 p-0 text-danger"
                   onClick={toggleFavorite}
                 >
@@ -406,52 +406,51 @@ const HotelDetail = () => {
                   <Tab eventKey="rooms" title="Phòng">
                     <div className="rooms-section">
                       {hotel.rooms?.map((room) => (
-                        <Card key={room._id} className="room-card mb-3">
+                        <Card key={room._id} className="room-card mb-4 shadow-sm border-0 rounded-3 overflow-hidden">
                           <Row className="g-0">
                             <Col md={4}>
-                              <div 
-                                className="room-image"
-                                style={{
-                                  backgroundImage: `url(${room.imageurls?.[0] || '/images/default-room.jpg'})`,
-                                }}
-                              />
+                              <div className="room-image-wrapper">
+                                <img
+                                  src={room.imageurls?.[0] || '/images/default-room.jpg'}
+                                  alt={room.type}
+                                  className="room-image"
+                                />
+                              </div>
                             </Col>
                             <Col md={8}>
-                              <Card.Body>
-                                <div className="d-flex justify-content-between">
-                                  <div>
-                                    <h5 className="room-type mb-2">{room.type}</h5>
-                                    <div className="room-features mb-2">
-                                      <Badge bg="light" text="dark" className="me-2">
-                                        <FaUserFriends className="me-1" />
-                                        {room.maxcount} người
-                                      </Badge>
-                                      <Badge bg="light" text="dark" className="me-2">
-                                        <FaBed className="me-1" />
-                                        {room.beds} giường
-                                      </Badge>
-                                      <Badge bg="light" text="dark">
-                                        <FaBath className="me-1" />
-                                        {room.baths} phòng tắm
-                                      </Badge>
-                                    </div>
-                                    <p className="room-description">{room.description}</p>
+                              <Card.Body className="d-flex flex-column justify-content-between h-100">
+                                <div>
+                                  <h5 className="room-type mb-2 fw-bold">{room.type}</h5>
+                                  <div className="room-features mb-3">
+                                    <Badge bg="light" text="dark" className="me-2">
+                                      <FaUserFriends className="me-1" />
+                                      {room.maxcount} người
+                                    </Badge>
+                                    <Badge bg="light" text="dark" className="me-2">
+                                      <FaBed className="me-1" />
+                                      {room.beds} giường
+                                    </Badge>
+                                    <Badge bg="light" text="dark">
+                                      <FaBath className="me-1" />
+                                      {room.baths} phòng tắm
+                                    </Badge>
                                   </div>
-                                  <div className="text-end">
-                                    <div className="room-price mb-2">
-                                      <small className="text-muted">Giá mỗi đêm từ</small>
-                                      <div className="h4 mb-0 text-primary">
-                                        {formatPriceVND(room.rentperday)}
-                                      </div>
+                                  <p className="room-description text-muted">{room.description}</p>
+                                </div>
+                                <div className="text-end">
+                                  <div className="room-price mb-2">
+                                    <small className="text-muted">Giá mỗi đêm từ</small>
+                                    <div className="h4 mb-0 text-primary fw-bold">
+                                      {formatPriceVND(room.rentperday)}
                                     </div>
-                                    <Button
-                                      variant="primary"
-                                      onClick={() => handleBookNow(room)}
-                                      disabled={room.availabilityStatus !== 'available'}
-                                    >
-                                      {room.availabilityStatus === 'available' ? 'Đặt ngay' : 'Hết phòng'}
-                                    </Button>
                                   </div>
+                                  <Button
+                                    variant="primary"
+                                    onClick={() => handleBookNow(room)}
+                                    disabled={room.availabilityStatus !== 'available'}
+                                  >
+                                    {room.availabilityStatus === 'available' ? 'Đặt ngay' : 'Hết phòng'}
+                                  </Button>
                                 </div>
                               </Card.Body>
                             </Col>
@@ -460,6 +459,7 @@ const HotelDetail = () => {
                       ))}
                     </div>
                   </Tab>
+
 
                   {/* Reviews Tab */}
                   <Tab eventKey="reviews" title={"Đánh giá (" + reviews.length + ")"}>
@@ -559,26 +559,26 @@ const HotelDetail = () => {
                     </div>
                     <div className="ms-4">
                       <div className="fw-bold">
-                        Nhận phòng: {bookingInfo.checkin ? 
+                        Nhận phòng: {bookingInfo.checkin ?
                           new Date(bookingInfo.checkin).toLocaleDateString('vi-VN', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit'
-                          }) : 
+                          }) :
                           'Chọn ngày nhận phòng'}
                       </div>
                       <div className="fw-bold">
-                        Trả phòng: {bookingInfo.checkout ? 
+                        Trả phòng: {bookingInfo.checkout ?
                           new Date(bookingInfo.checkout).toLocaleDateString('vi-VN', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit'
-                          }) : 
+                          }) :
                           'Chọn ngày trả phòng'}
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="booking-info-item mb-3 p-2 bg-light rounded">
                     <div className="d-flex align-items-center mb-2">
                       <FaUserFriends className="text-primary me-2" />
@@ -586,7 +586,7 @@ const HotelDetail = () => {
                     </div>
                     <div className="ms-4 fw-bold">
                       {bookingInfo.adults} người lớn
-                      {Number(bookingInfo.children) > 0 && 
+                      {Number(bookingInfo.children) > 0 &&
                         ` · ${bookingInfo.children} trẻ em`}
                     </div>
                   </div>
@@ -601,7 +601,7 @@ const HotelDetail = () => {
                     </div>
                   </div>
                 </div>
-                  <div className="text-center mt-3">
+                <div className="text-center mt-3">
                   <div className="h5 text-primary mb-3">
                     Giá phòng từ {formatPriceVND(Math.min(...hotel.rooms?.map(r => r.rentperday) || [0]))}
                     <small className="text-muted"> /đêm</small>
@@ -650,8 +650,8 @@ const HotelDetail = () => {
       </Container>
 
       {/* Room Modal */}
-      <Modal 
-        show={showRoomModal} 
+      <Modal
+        show={showRoomModal}
         onHide={() => setShowRoomModal(false)}
         size="lg"
       >
@@ -667,8 +667,8 @@ const HotelDetail = () => {
               <Button variant="secondary" onClick={() => setShowRoomModal(false)}>
                 Đóng
               </Button>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 onClick={() => handleBookNow(selectedRoom)}
                 disabled={selectedRoom.status !== 'available'}
               >

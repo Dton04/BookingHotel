@@ -6,14 +6,34 @@ import RoomsContent from "../components/RoomsContent";
 import AlertMessage from "../components/AlertMessage";
 import "../css/homescreen.css";
 
+import '../css/promotion-section.css';
+
 function Homescreen() {
   const [bookingStatus, setBookingStatus] = useState(null);
+  const [regions, setRegions] = useState([]);
+  const [selectedPromotion, setSelectedPromotion] = useState(null);
   const [stats, setStats] = useState({
     rooms: 150,
     customers: 1200,
     rating: 4.8,
     awards: 12
   });
+
+  // Fetch regions từ BE
+  useEffect(() => {
+    fetch("/api/regions")
+      .then(res => res.json())
+      .then(data => setRegions(data))
+      .catch(err => console.error("Error loading regions:", err));
+  }, []);
+
+  const promotions = [
+    { title: "Đặt Sớm - Giảm Sâu", badge: "Giảm 25%", desc: "Đặt phòng trước 30 ngày - Giảm ngay 25%" },
+    { title: "Ở Dài - Giảm Nhiều", badge: "Giảm 15%", desc: "Đặt từ 3 đêm trở lên - Giảm ngay 15%" },
+    { title: "Combo Ăn Sáng", badge: "Tặng Bữa Sáng", desc: "Đặt phòng kèm ăn sáng - Tiết kiệm 20%" },
+    { title: "Ưu Đãi Thành Viên", badge: "Giảm 10%", desc: "Đăng ký thành viên - Giảm thêm 10%" },
+  ];
+
 
   const handleBookingStatus = (status) => {
     setBookingStatus(status);
@@ -31,7 +51,7 @@ function Homescreen() {
         onClose={handleCloseAlert}
       />
       <Banner />
-      
+
       {/* Booking Form Section with Enhanced UI */}
       <section className="booking-section">
         <div className="booking-container">
@@ -47,7 +67,78 @@ function Homescreen() {
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Ưu đãi đặc biệt */}
+      <section className="promotions-section">
+        <div className="container">
+          <div className="promotions-header text-center">
+            <h2 className="subtitle"><span className="line"></span>ƯU ĐÃI ĐẶC BIỆT<span className="line"></span></h2>
+            <h1 className="title">Tiết kiệm <span>NGAY HÔM NAY</span></h1>
+          </div>
+          <div className="row">
+            {promotions.map((promo, i) => (
+              <div className="col-md-6 col-lg-3 mb-4" key={i}>
+                <div className="promotion-card" onClick={() => setSelectedPromotion(promo)}>
+                  <div className="promotion-badge">{promo.badge}</div>
+                  <h3>{promo.title}</h3>
+                  <p>{promo.desc}</p>
+                  <button className="btn btn-promotion">Xem chi tiết</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Modal chi tiết ưu đãi */}
+      {selectedPromotion && (
+        <div className="promotion-modal">
+          <div className="modal-content">
+            <h2>{selectedPromotion.title}</h2>
+            <p>{selectedPromotion.desc}</p>
+            <button className="btn btn-close" onClick={() => setSelectedPromotion(null)}>Đóng</button>
+          </div>
+        </div>
+      )}
+
+      {/* Địa điểm đẹp */}
+      <section className="destinations-section">
+        <div className="container">
+          <div className="destinations-header text-center">
+            <h2 className="subtitle">
+              <span className="line"></span>ĐỊA ĐIỂM ĐẸP<span className="line"></span>
+            </h2>
+            <h1 className="title">Khám phá <span>VIỆT NAM</span></h1>
+          </div>
+          <div className="row">
+            {regions.map((region, index) => (
+              <div className="col-md-4 mb-4" key={region._id}>
+                <div className="destination-card">
+                  <div className="destination-img-wrapper">
+                    <img
+                      src={region.imageUrl || `/images/region-${index + 1}.jpg`}
+                      alt={region.name}
+                      className="destination-img"
+                    />
+                    <div className="destination-overlay">
+                      <h3>{region.name}</h3>
+                      <Link
+                        to={`/room-results?destination=${region._id}`}
+                        className="btn btn-destination"
+                      >
+                        Khám phá
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+
+
       <section className="stats-section">
         <div className="container">
           <div className="row stats-container">
@@ -79,41 +170,6 @@ function Homescreen() {
         </div>
       </section>
 
-      {/* Welcome Section */}
-      <section className="intro-section">
-        <div className="intro-container">
-          <h2 className="subtitle">
-            <span className="line"></span>
-            WELCOME TO HOTELIER
-            <span className="line"></span>
-          </h2>
-          <h1 className="title">
-            Experience Luxury & <span>Comfort</span>
-          </h1>
-          <p className="intro-description">
-            Chào mừng đến với Hotelier - nơi sang trọng gặp gỡ sự thoải mái. Chúng tôi tự hào mang đến:
-          </p>
-          <div className="intro-features">
-            <div className="feature-item">
-              <i className="fas fa-concierge-bell"></i>
-              <span>Dịch vụ 24/7</span>
-            </div>
-            <div className="feature-item">
-              <i className="fas fa-wifi"></i>
-              <span>Wi-Fi Tốc độ cao</span>
-            </div>
-            <div className="feature-item">
-              <i className="fas fa-utensils"></i>
-              <span>Nhà hàng 5 sao</span>
-            </div>
-            <div className="feature-item">
-              <i className="fas fa-spa"></i>
-              <span>Spa & Wellness</span>
-            </div>
-          </div>
-          <Link to="/about" className="btn btn-explore">Khám phá thêm</Link>
-        </div>
-      </section>
 
       {/* Services Section */}
       <section className="services-section">
@@ -130,25 +186,29 @@ function Homescreen() {
           </div>
           <div className="row">
             {[
-              { 
-                title: "Spa & Wellness", 
+              {
+                title: "Spa & Wellness",
                 icon: "spa",
-                description: "Thư giãn với các liệu pháp spa cao cấp và phòng tập hiện đại." 
+                description: "Thư giãn với các liệu pháp spa cao cấp và phòng tập hiện đại.",
+                features: ["Massage trị liệu", "Yoga", "Phòng tập hiện đại", "Xông hơi"]
               },
-              { 
-                title: "Ẩm thực đặc sắc", 
-                icon: "restaurant",
-                description: "Khám phá hương vị độc đáo từ đội ngũ đầu bếp 5 sao." 
+              {
+                title: "Ẩm thực đặc sắc",
+                icon: "utensils",
+                description: "Khám phá hương vị độc đáo từ đội ngũ đầu bếp 5 sao.",
+                features: ["Buffet quốc tế", "Nhà hàng Á - Âu", "Bar & Lounge", "Dịch vụ phòng 24/7"]
               },
-              { 
-                title: "Hội nghị & Sự kiện", 
-                icon: "event",
-                description: "Không gian sang trọng cho mọi dịp đặc biệt của bạn." 
+              {
+                title: "Hội nghị & Sự kiện",
+                icon: "calendar-alt",
+                description: "Không gian sang trọng cho mọi dịp đặc biệt của bạn.",
+                features: ["Phòng hội nghị hiện đại", "Tổ chức tiệc cưới", "Sự kiện doanh nghiệp", "Thiết bị nghe nhìn"]
               },
-              { 
-                title: "Dịch vụ Concierge", 
-                icon: "concierge",
-                description: "Hỗ trợ 24/7 cho mọi nhu cầu của quý khách." 
+              {
+                title: "Dịch vụ Concierge",
+                icon: "concierge-bell",
+                description: "Hỗ trợ 24/7 cho mọi nhu cầu của quý khách.",
+                features: ["Đặt tour du lịch", "Thuê xe", "Đặt vé máy bay", "Hướng dẫn viên"]
               }
             ].map((service, index) => (
               <div className="col-md-6 col-lg-3 mb-4" key={index}>
@@ -158,24 +218,24 @@ function Homescreen() {
                   </div>
                   <h3 className="service-title">{service.title}</h3>
                   <p className="service-description">{service.description}</p>
+                  <ul className="service-features">
+                    {service.features.map((feature, featureIndex) => (
+                      <li key={featureIndex}>
+                        <i className="fas fa-check"></i>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <button className="btn btn-service">Xem chi tiết</button>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </section>
-
       {/* Rooms Section */}
       <section className="rooms-section">
         <div className="rooms-header text-center">
-          <h2 className="subtitle">
-            <span className="line"></span>
-            PHÒNG & SUITE
-            <span className="line"></span>
-          </h2>
-          <h1 className="title">
-            Lựa chọn <span>HOÀN HẢO</span>
-          </h1>
         </div>
         <RoomsContent />
       </section>

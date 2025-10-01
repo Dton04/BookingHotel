@@ -18,6 +18,8 @@ const regionSchema = new mongoose.Schema({
     ref: 'Hotel',
     // Danh sách khách sạn/phòng trong khu vực
   }],
+  imageUrl: { type: String },
+  
   createdAt: {
     type: Date,
     default: Date.now,

@@ -106,29 +106,39 @@ function HistoryBookings() {
   };
 
   // Xử lý hủy đặt phòng
-  const handleCancelBooking = async () => {
-    if (!cancelReason.trim()) {
-      setCancelError("Vui lòng nhập lý do hủy.");
-      return;
-    }
+ // Xử lý hủy đặt phòng
+const handleCancelBooking = async () => {
+  if (!cancelReason.trim()) {
+    setCancelError("Vui lòng nhập lý do hủy.");
+    return;
+  }
 
-    try {
-      setLoading(true);
-      setCancelError(null);
-      await axios.put(`/api/bookings/${selectedBookingId}/cancel`, {
-        cancelReason,
-      });
-      await fetchBookings();
-      handleCloseCancelModal();
-    } catch (err) {
-      setCancelError(
-        err.response?.data?.message ||
-          "Lỗi khi hủy đặt phòng. Vui lòng thử lại."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    setCancelError(null);
+
+    // 1. Hủy booking
+    await axios.delete(`/api/bookings/${selectedBookingId}`);
+
+    // 2. Gửi lý do hủy
+    await axios.post(`/api/bookings/cancel-reason`, {
+      bookingId: selectedBookingId,
+      reason: cancelReason,
+    });
+
+    // 3. Refresh danh sách
+    await fetchBookings();
+    handleCloseCancelModal();
+  } catch (err) {
+    setCancelError(
+      err.response?.data?.message ||
+        "Lỗi khi hủy đặt phòng. Vui lòng thử lại."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Mở modal chỉnh sửa
   const handleOpenEditModal = (booking) => {

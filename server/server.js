@@ -1,3 +1,4 @@
+// server.js
 require('dotenv').config();
 
 const express = require('express');
@@ -45,8 +46,6 @@ app.use(express.json()); // Phân tích JSON body
 app.use(express.urlencoded({ extended: true })); // Phân tích URL-encoded body
 
 // Routes
-const dbConfig = require('./db');
-// Import routes
 const connectDB = require('./db');
 const roomsRoute = require('./routes/roomRoutes');
 const bookingRoute = require('./routes/bookingRoutes');
@@ -59,7 +58,11 @@ const regionsRoute = require('./routes/regionsRoutes');
 const momoRoutes = require('./routes/momoRoutes');
 const vnpayRoutes = require('./routes/vnpayRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
-
+const hotelRoutes = require('./routes/hotelRoutes');
+const rewardsRoutes = require('./routes/rewardsRoutes');
+const statsRoutes = require('./routes/statsRoutes');
+const discountRoutes = require('./routes/discountRoutes');
+const favoriteRoutes = require('./routes/favoriteRoutes');
 
 // Debug routes
 console.log('roomsRoute:', roomsRoute);
@@ -72,16 +75,11 @@ console.log('revenueRoute:', revenueRoute);
 console.log('regionsRoute:', regionsRoute);
 console.log('momoRoutes:', momoRoutes);
 console.log('serviceRoutes:', serviceRoutes);
-
-
-// Connect to MongoDB Gay ra loi khong sai dong duoi
-//connectDB();
-const hotelRoutes = require('./routes/hotelRoutes');
-const rewardsRoutes = require('./routes/rewardsRoutes');
-const statsRoutes = require('./routes/statsRoutes');
-const discountRoutes = require('./routes/discountRoutes')
-
-const favoriteRoutes = require('./routes/favoriteRoutes')
+console.log('hotelRoutes:', hotelRoutes);
+console.log('rewardsRoutes:', rewardsRoutes);
+console.log('statsRoutes:', statsRoutes);
+console.log('discountRoutes:', discountRoutes);
+console.log('favoriteRoutes:', favoriteRoutes);
 
 // Routes
 app.use('/api', contactRoutes);
@@ -96,10 +94,11 @@ app.use('/api/regions', regionsRoute);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/stats', statsRoutes);
-app.use('/api/discounts',discountRoutes)
-app.use('/api/favorites',favoriteRoutes)
-app.use('/api/services', serviceRoutes)
-
+app.use('/api/discounts', discountRoutes);
+app.use('/api/favorites', favoriteRoutes);
+app.use('/api/services', serviceRoutes);
+app.use('/api/momo', momoRoutes);
+app.use('/api/vnpay', vnpayRoutes);
 
 // Xử lý lỗi không được bắt
 app.use((err, req, res, next) => {
@@ -114,7 +113,6 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? err.message : undefined,
   });
 });
-app.use('/api/momo', momoRoutes);
-app.use('/api/vnpay', vnpayRoutes);
+
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server is running on port ${port}`));

@@ -6,6 +6,7 @@ import "./../css/booking-form.css";
 function BookingForm() {
   const [formData, setFormData] = useState({
     destination: "",
+    destinationName: "",
     checkin: "",
     checkout: "",
     adults: 2,
@@ -28,9 +29,13 @@ function BookingForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "destinationName" ? { destination: "" } : {}), 
+    }));
 
-    if (name === "destination") {
+    if (name === "destinationName") {
       if (value.trim() === "") {
         setFilteredRegions([]);
       } else {
@@ -42,8 +47,12 @@ function BookingForm() {
     }
   };
 
-  const handleSelectRegion = (regionName) => {
-    setFormData((prev) => ({ ...prev, destination: regionName }));
+  const handleSelectRegion = (region) => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      destination: region._id,
+      destinationName: region.name,
+     }));
     setFilteredRegions([]);
   };
 
@@ -56,9 +65,18 @@ function BookingForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Chỉ gửi destination (region._id) cùng với các trường khác
+    const submitData = {
+      destination: formData.destination,
+      checkin: formData.checkin,
+      checkout: formData.checkout,
+      adults: formData.adults,
+      children: formData.children,
+      rooms: formData.rooms,
+    };
     // Lưu vào localStorage để fallback ở các trang khác (như HotelDetail)
-    localStorage.setItem('bookingInfo', JSON.stringify(formData));
-    navigate(`/room-results?${new URLSearchParams(formData).toString()}`);
+    localStorage.setItem('bookingInfo', JSON.stringify(submitData));
+    navigate(`/room-results?${new URLSearchParams(submitData).toString()}`);
   };
 
   // Đóng dropdown khi click ra ngoài
@@ -79,9 +97,9 @@ function BookingForm() {
         <div className="destination-wrapper">
           <input
             type="text"
-            name="destination"
+            name="destinationName"
             placeholder="Bạn muốn đến đâu?"
-            value={formData.destination}
+            value={formData.destinationName}
             onChange={handleChange}
             className="search-input"
             required
@@ -91,7 +109,7 @@ function BookingForm() {
               {filteredRegions.map((region) => (
                 <li
                   key={region._id}
-                  onClick={() => handleSelectRegion(region.name)}
+                  onClick={() => handleSelectRegion(region)}
                 >
                   <span className="location-icon">📍</span> {region.name}
                 </li>

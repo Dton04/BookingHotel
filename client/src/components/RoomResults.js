@@ -188,30 +188,13 @@ const RoomResults = () => {
     const { checkin, checkout, adults, children, roomType } = getQueryParams();
     const destination = searchParams.get("destination");
     
-    if (!checkin || !checkout || !adults) {
-      setAlertStatus({
-        type: "error",
-        message: "Vui lòng cung cấp ngày nhận phòng, trả phòng và số lượng người lớn",
-      });
-      return;
-    }
+    
 
     const checkinDate = new Date(checkin);
     const checkoutDate = new Date(checkout);
     const totalGuests = Number(adults) + Number(children || 0);
 
-    if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime())) {
-      setAlertStatus({ type: "error", message: "Ngày nhận phòng hoặc trả phòng không hợp lệ" });
-      return;
-    }
-    if (checkinDate >= checkoutDate) {
-      setAlertStatus({ type: "error", message: "Ngày nhận phòng phải trước ngày trả phòng" });
-      return;
-    }
-    if (totalGuests < 1) {
-      setAlertStatus({ type: "error", message: "Số lượng khách phải lớn hơn 0" });
-      return;
-    }
+   
 
     setLoading(true);
     try {
@@ -244,9 +227,22 @@ const RoomResults = () => {
   };
 
   useEffect(() => {
-    fetchRegions();
-    fetchAvailableHotels();
-  }, [location.search]);
+  const searchParams = new URLSearchParams(location.search);
+  const destination = searchParams.get("destination");
+
+  // Nếu có destination trong URL, cập nhật filters.region
+  if (destination) {
+    setFilters((prev) => ({
+      ...prev,
+      region: destination,
+    }));
+  }
+  //cuộn lên đầu
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  fetchRegions();
+  fetchAvailableHotels();
+}, [location.search]);
 
   useEffect(() => {
     if (hotels.length > 0) {
@@ -352,24 +348,24 @@ const RoomResults = () => {
   };
 
   const filteredAndSortedHotels = useMemo(() => {
-    let result = [...hotels];
+  let result = [...hotels];
 
-    result = result.filter((hotel) => {
-      const matchesRegion = filters.region ? hotel.region._id === filters.region : true;
-      const matchesServices = filters.services.length === 0 || 
-        filters.services.some(serviceCategory => 
-          hotelServices[hotel._id]?.some(service => service.category === serviceCategory)
-        );
-      return matchesRegion && matchesServices;
-    }).map((hotel) => ({
-      ...hotel,
-      rooms: hotel.rooms.filter(
-        (room) =>
-          room.rentperday >= filters.priceRange[0] &&
-          room.rentperday <= filters.priceRange[1] &&
-          (averageRatings[hotel._id]?.average || 0) >= filters.rating
-      ),
-    }));
+  result = result.filter((hotel) => {
+    const matchesRegion = filters.region ? hotel.region._id === filters.region : true;
+    const matchesServices = filters.services.length === 0 || 
+      filters.services.some(serviceCategory => 
+        hotelServices[hotel._id]?.some(service => service.category === serviceCategory)
+      );
+    return matchesRegion && matchesServices;
+  }).map((hotel) => ({
+    ...hotel,
+    rooms: hotel.rooms.filter(
+      (room) =>
+        room.rentperday >= filters.priceRange[0] &&
+        room.rentperday <= filters.priceRange[1] &&
+        (averageRatings[hotel._id]?.average || 0) >= filters.rating
+    ),
+  }));
 
     result.forEach((hotel) => {
       hotel.rooms.sort((a, b) => {

@@ -122,27 +122,30 @@ function AdminBookings() {
         throw new Error("Bạn cần đăng nhập để thực hiện hành động này");
       }
 
-      await axios.put(
-        `/api/bookings/${bookingId}/cancel`,
-        {
-          cancelReason: "Hủy bởi admin"
+      const response = await axios.delete(`/api/bookings/${bookingId}`, { // SỬA: Thay PUT thành DELETE
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${userInfo.token}`,
-          },
-        }
-      );
+        data: { cancelReason: "Hủy bởi admin" }, // Gửi body trong DELETE (nếu server hỗ trợ)
+      });
+
+      // Cập nhật state dựa trên response từ server
       setBookings(
         bookings.map((booking) =>
           booking._id === bookingId
-            ? { ...booking, status: "canceled" }
+            ? { ...booking, status: "canceled", cancelDate: new Date() }
             : booking
         )
       );
+      setError(null); // Xóa lỗi nếu hủy thành công
     } catch (err) {
       console.error("Error canceling booking:", err.response?.data, err.message);
-      setError(err.response?.data?.message || "Lỗi khi hủy đặt phòng");
+      setError(
+        err.response?.data?.message ||
+        err.response?.status === 400
+          ? "Không thể hủy đặt phòng: " + err.response?.data?.message
+          : "Lỗi khi hủy đặt phòng"
+      );
     }
   };
 
@@ -161,10 +164,8 @@ function AdminBookings() {
 
   return (
     <section className="admin-bookings">
-        <Banner />
+      <Banner />
       <div className="container">
-
-
         {/* Thanh tìm kiếm và bộ lọc */}
         <div className="filter-section">
           <InputGroup className="mb-3 search-bar">
