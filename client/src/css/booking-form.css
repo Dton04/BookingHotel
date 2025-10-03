@@ -1,3 +1,73 @@
+.react-datepicker {
+  font-family: inherit;
+  border-radius: 12px !important;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-range,
+.react-datepicker__day--keyboard-selected {
+  background-color: #0071c2 !important;
+  color: #fff !important;
+}
+
+.react-datepicker__day:hover {
+  background-color: #f0f8ff;
+}
+
+.date-input-wrapper {
+  position: relative;
+}
+
+.date-input {
+  width: 100%;
+  padding: 12px 40px 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.calendar-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #0071c2;
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.search-input.with-icon {
+  width: 100%;
+  padding: 12px 14px 12px 40px; /* chừa chỗ bên trái */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #0071c2;
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.list-icon {
+  margin-right: 8px;
+  color: #0071c2;
+}
+
+
+
 .booking-search-bar {
   display: flex;
   justify-content: center;
@@ -17,6 +87,7 @@
   align-items: center;
   font-size: 15px;
   width: 1000px;
+  border: 2px solid #febb02;
   
   
 }

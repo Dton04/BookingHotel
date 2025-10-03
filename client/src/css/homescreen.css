@@ -36,17 +36,20 @@ body {
 }
 
 .booking-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px;
+  max-width: 1100px;
+  margin: 0 auto; /* Căn giữa ngang */
+  padding: 20px;
   background: var(--white);
   border-radius: 15px;
   box-shadow: var(--shadow);
+  
+  /* Căn giữa dọc và xít lên trên */
+  position: relative;
+  top: -70px; 
 }
 
-.booking-header {
-  margin-bottom: 30px;
-}
+
+
 
 /* Stats Section */
 .stats-section {

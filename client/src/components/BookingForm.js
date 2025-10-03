@@ -3,6 +3,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./../css/booking-form.css";
 
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { ko } from "date-fns/locale";
+import { FaMapMarkerAlt, FaRegCalendarAlt, FaUserFriends } from "react-icons/fa";
+
 function BookingForm() {
   const [formData, setFormData] = useState({
     destination: "",
@@ -32,7 +37,7 @@ function BookingForm() {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-      ...(name === "destinationName" ? { destination: "" } : {}), 
+      ...(name === "destinationName" ? { destination: "" } : {}),
     }));
 
     if (name === "destinationName") {
@@ -48,11 +53,11 @@ function BookingForm() {
   };
 
   const handleSelectRegion = (region) => {
-    setFormData((prev) => ({ 
-      ...prev, 
+    setFormData((prev) => ({
+      ...prev,
       destination: region._id,
       destinationName: region.name,
-     }));
+    }));
     setFilteredRegions([]);
   };
 
@@ -93,58 +98,69 @@ function BookingForm() {
   return (
     <div className="booking-search-bar">
       <form onSubmit={handleSubmit} className="booking-search-form">
-        {/* Địa điểm + autocomplete */}
-        <div className="destination-wrapper">
+
+        {/* Địa điểm */}
+        <div className="input-wrapper">
+          <FaMapMarkerAlt className="input-icon" />
           <input
             type="text"
             name="destinationName"
             placeholder="Bạn muốn đến đâu?"
             value={formData.destinationName}
             onChange={handleChange}
-            className="search-input"
+            className="search-input with-icon"
             required
           />
           {filteredRegions.length > 0 && (
             <ul className="autocomplete-list">
               {filteredRegions.map((region) => (
-                <li
-                  key={region._id}
-                  onClick={() => handleSelectRegion(region)}
-                >
-                  <span className="location-icon">📍</span> {region.name}
+                <li key={region._id} onClick={() => handleSelectRegion(region)}>
+                  <FaMapMarkerAlt className="list-icon" /> {region.name}
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        {/* Ngày nhận */}
-        <input
-          type="date"
-          name="checkin"
-          value={formData.checkin}
-          onChange={handleChange}
-          className="search-input"
-          required
-        />
+        {/* Ngày nhận phòng */}
+        <div className="input-wrapper">
+          <FaRegCalendarAlt className="input-icon" />
+          <DatePicker
+            selected={formData.checkin}
+            onChange={(date) => setFormData({ ...formData, checkin: date })}
+            selectsStart
+            startDate={formData.checkin}
+            endDate={formData.checkout}
+            placeholderText="Ngày nhận phòng"
+            className="search-input with-icon"
+            dateFormat="dd/MM/yyyy"
+          />
+        </div>
 
-        {/* Ngày trả */}
-        <input
-          type="date"
-          name="checkout"
-          value={formData.checkout}
-          onChange={handleChange}
-          className="search-input"
-          required
-        />
+        {/* Ngày trả phòng */}
+        <div className="input-wrapper">
+          <FaRegCalendarAlt className="input-icon" />
+          <DatePicker
+            selected={formData.checkout}
+            onChange={(date) => setFormData({ ...formData, checkout: date })}
+            selectsEnd
+            startDate={formData.checkin}
+            endDate={formData.checkout}
+            minDate={formData.checkin}
+            placeholderText="Ngày trả phòng"
+            className="search-input with-icon"
+            dateFormat="dd/MM/yyyy"
+          />
+        </div>
 
         {/* Ô chọn khách & phòng */}
-        <div className="guest-dropdown-wrapper" ref={dropdownRef}>
+        <div className="input-wrapper guest-dropdown-wrapper" ref={dropdownRef}>
+          <FaUserFriends className="input-icon" />
           <div
-            className="search-input guest-input"
+            className="search-input with-icon guest-input"
             onClick={() => setOpenGuestDropdown(!openGuestDropdown)}
           >
-            {formData.adults} người lớn · {formData.children} trẻ em · {formData.rooms} phòng
+            {formData.adults} người lớn · {formData.rooms} phòng
           </div>
 
           {openGuestDropdown && (

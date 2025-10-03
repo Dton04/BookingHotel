@@ -1,67 +1,39 @@
 const mongoose = require("mongoose");
 
-const roomSchema = mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
+const roomSchema = new mongoose.Schema({
+  hotelId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Hotel",
+    required: true, // Mỗi phòng phải thuộc về một khách sạn
   },
-  maxcount: {
-    type: Number,
-    required: true,
-  },
-  beds: {
-    type: Number,
-    required: true,
-  },
-  baths: {
-    type: Number,
-    required: true,
-  },
-  phonenumber: {
-    type: Number,
-    required: true,
-  },
-  rentperday: {
-    type: Number,
-    required: true,
-  },
-  imageurls: [],
-  currentbookings: [
-    {
-      bookingId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Booking',
-      },
-      checkin: {
-        type: Date,
-        required: true,
-      },
-      checkout: {
-        type: Date,
-        required: true,
-      },
-    },
-  ],
+  name: { type: String, required: true, trim: true },
+  type: { type: String, required: true, trim: true }, // Ví dụ: Deluxe, Standard...
+  description: { type: String, required: true },
+
+  maxcount: { type: Number, required: true }, // số người tối đa
+  beds: { type: Number, required: true },     // số giường
+  baths: { type: Number, required: true },    // số phòng tắm
+
+  rentperday: { type: Number, required: true, min: 0 },
+  quantity: { type: Number, default: 1 }, // số lượng phòng loại này
+
+  phonenumber: { type: String, trim: true },
+
+  imageurls: [{ type: String }],
+
   availabilityStatus: {
     type: String,
-    enum: ['available', 'maintenance', 'busy'],
-    default: 'available',
+    enum: ["available", "maintenance", "busy"],
+    default: "available",
   },
-  type: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-  hotelId: {
-    type:String,
-  }
-}, {
-  timestamps: true,
-});
 
-const roomModel = mongoose.model('Room', roomSchema);
+  currentbookings: [
+    {
+      bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking" },
+      checkin: { type: Date, required: true },
+      checkout: { type: Date, required: true },
+    },
+  ],
+}, { timestamps: true });
 
-module.exports = roomModel;
+module.exports = mongoose.model("Room", roomSchema);

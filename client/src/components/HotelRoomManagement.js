@@ -5,7 +5,7 @@ import '../css/hotelRoomManagement.css';
 
 function HotelRoomManagement() {
   const { hotelId } = useParams();
-  const [hotel, setHotel] = useState(null); // Thêm state để lưu thông tin khách sạn
+  const [hotel, setHotel] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
@@ -13,6 +13,7 @@ function HotelRoomManagement() {
     beds: '',
     baths: '',
     phonenumber: '',
+    quantity: '',
     rentperday: '',
     type: '',
     description: '',
@@ -28,8 +29,8 @@ function HotelRoomManagement() {
   const fetchHotelAndRooms = async () => {
     try {
       const response = await axiosInstance.get(`/hotels/${hotelId}/rooms`);
-      setHotel(response.data.hotel); // Lưu thông tin khách sạn
-      setRooms(response.data.rooms); // Lưu danh sách phòng
+      setHotel(response.data.hotel);
+      setRooms(response.data.rooms);
     } catch (err) {
       setError('Lỗi khi lấy thông tin khách sạn hoặc danh sách phòng');
     }
@@ -46,18 +47,22 @@ function HotelRoomManagement() {
 
   const handleEdit = async (room) => {
     try {
-      const response = await axiosInstance.get(`/rooms/images/${room._id}`);
+      // Lấy đầy đủ thông tin phòng từ BE
+      const roomRes = await axiosInstance.post('/rooms/getroombyid', { roomid: room._id });
+      const imgRes = await axiosInstance.get(`/rooms/images/${room._id}`);
+
       setFormData({
-        name: room.name,
-        maxcount: room.maxcount,
-        beds: room.beds,
-        baths: room.baths,
-        phonenumber: room.phonenumber,
-        rentperday: room.rentperday,
-        type: room.type,
-        description: room.description,
-        availabilityStatus: room.availabilityStatus,
-        imageurls: response.data.images || [],
+        name: roomRes.data.name,
+        maxcount: roomRes.data.maxcount,
+        beds: roomRes.data.beds,
+        baths: roomRes.data.baths,
+        phonenumber: roomRes.data.phonenumber,
+        quantity: roomRes.data.quantity || '',
+        rentperday: roomRes.data.rentperday,
+        type: roomRes.data.type,
+        description: roomRes.data.description,
+        availabilityStatus: roomRes.data.availabilityStatus,
+        imageurls: imgRes.data.images || [],
       });
       setIsEditing(true);
       setEditId(room._id);
@@ -88,7 +93,7 @@ function HotelRoomManagement() {
       const payload = { ...formData, hotelId };
       let savedRoom;
       if (isEditing) {
-        const response = await axiosInstance.put(`/rooms/${editId}`, payload);
+        const response = await axiosInstance.patch(`/rooms/${editId}`, payload);
         savedRoom = response.data.room;
         setSuccess('Cập nhật phòng thành công');
       } else {
@@ -111,6 +116,7 @@ function HotelRoomManagement() {
         name: '',
         maxcount: '',
         beds: '',
+        quantity: '',
         baths: '',
         phonenumber: '',
         rentperday: '',
@@ -200,13 +206,14 @@ function HotelRoomManagement() {
             </div>
           </div>
           <div className="col-md-6">
+
             <div className="mb-3">
-              <label className="form-label">Số điện thoại</label>
+              <label className="form-label">Số lượng phòng</label>
               <input
                 type="number"
                 className="form-control"
-                name="phonenumber"
-                value={formData.phonenumber}
+                name="quantity"
+                value={formData.quantity}
                 onChange={handleInputChange}
                 required
               />
@@ -300,6 +307,7 @@ function HotelRoomManagement() {
                 name: '',
                 maxcount: '',
                 beds: '',
+                quantity: '',
                 baths: '',
                 phonenumber: '',
                 rentperday: '',
@@ -323,6 +331,7 @@ function HotelRoomManagement() {
             <th>Tên</th>
             <th>Số người tối đa</th>
             <th>Số giường</th>
+            <th>Số lượng phòng</th>
             <th>Số phòng tắm</th>
             <th>Giá/ngày</th>
             <th>Loại</th>
@@ -336,6 +345,7 @@ function HotelRoomManagement() {
               <td>{room.name}</td>
               <td>{room.maxcount}</td>
               <td>{room.beds}</td>
+              <td>{room.quantity}</td>
               <td>{room.baths}</td>
               <td>{room.rentperday}</td>
               <td>{room.type}</td>

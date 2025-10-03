@@ -1,22 +1,52 @@
+/* Gallery chính */
+.image-gallery-slide img {
+  width: 100%;
+  height: 450px;
+  object-fit: cover;   /* Giữ tỷ lệ, không méo hình */
+  border-radius: 8px;
+}
+
+/* Thumbnail */
+.image-gallery-thumbnail img {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.image-gallery-content {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+
 .hotel-detail-page {
   background-color: #f8f9fa;
 }
 
 .hotel-header {
-  background-color: white;
-  border-bottom: 1px solid #dee2e6;
+  background-color: #fff;
+  padding: 20px 0;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .hotel-name {
   font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.hotel-rating {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #6c757d;
 }
 
 .hotel-location {
-  color: #6c757d;
   font-size: 1rem;
+  color: #495057;
 }
+
 
 .rating-badge {
   padding: 0.5rem 1rem;
@@ -54,7 +84,12 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
-
+.room-image-wrapper {
+  height: 230px;
+  overflow: hidden;
+  border-radius: 10px;
+  
+}
 .room-image {
   width: 100%;
   height: 100%;
@@ -142,4 +177,14 @@
     height: 150px;
     border-radius: 4px 4px 0 0;
   }
+}
+
+
+.service-card .card-body {
+  padding-left: 10px;   /* giảm padding bên trái */
+  padding-right: 10px;  /* optional, nếu muốn gọn hơn */
+}
+
+.service-card .d-flex {
+  margin-left: 0;   /* ép sát icon về trái */
 }

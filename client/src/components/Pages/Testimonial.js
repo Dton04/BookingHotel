@@ -118,7 +118,7 @@ function Testimonial() {
       const response = await axios.get(`/api/bookings/check`, {
         params: {
           email: userEmail,
-          roomId: JSON.stringify({ $in: roomIds }),
+          hotelId: selectedHotel
         },
       });
 
@@ -400,81 +400,67 @@ function Testimonial() {
         </div>
 
         <div className="rating-section">
-          <div className="hotel-selector">
-            <label htmlFor="hotelSelect">Chọn khách sạn: </label>
-            <select
-              id="hotelSelect"
-              value={selectedHotel}
-              onChange={(e) => setSelectedHotel(e.target.value)}
-              disabled={loading || hotels.length === 0}
-            >
-              <option value="" disabled>
-                Chọn một khách sạn
-              </option>
-              {hotels.map((hotel) => (
-                <option key={hotel._id} value={hotel._id}>
-                  {hotel.name}
-                </option>
-              ))}
-            </select>
-          </div>
+  <div className="hotel-selector">
+    <label htmlFor="hotelSelect">Chọn khách sạn: </label>
+    <select
+      id="hotelSelect"
+      value={selectedHotel}
+      onChange={(e) => setSelectedHotel(e.target.value)}
+      disabled={loading || hotels.length === 0}
+    >
+      <option value="" disabled>Chọn một khách sạn</option>
+      {hotels.map((hotel) => (
+        <option key={hotel._id} value={hotel._id}>{hotel.name}</option>
+      ))}
+    </select>
+  </div>
 
-          {hasBooked === null ? (
-            <div className="rating-message-container">
-              <p className="rating-message">Đang kiểm tra trạng thái đặt phòng...</p>
-            </div>
-          ) : !hasBooked ? (
-            <div className="rating-message-container">
-              <p className="rating-message">
-                Bạn chưa có đặt phòng hợp lệ tại khách sạn này. Vui lòng đặt phòng trước khi đánh giá.
-              </p>
-            </div>
-          ) : paymentStatus === "pending" ? (
-            <div className="rating-message-container">
-              <p className="rating-message">
-                Thanh toán của bạn đang chờ xác nhận. Vui lòng hoàn tất thanh toán để gửi đánh giá.
-              </p>
-            </div>
-          ) : paymentStatus === "canceled" ? (
-            <div className="rating-message-container">
-              <p className="rating-message">
-                Đặt phòng đã bị hủy. Bạn không thể gửi đánh giá cho đặt phòng này.
-              </p>
-            </div>
-          ) : paymentStatus !== "paid" ? (
-            <div className="rating-message-container">
-              <p className="rating-message">
-                Thanh toán chưa được hoàn tất. Vui lòng thanh toán để gửi đánh giá.
-              </p>
-            </div>
-          ) : (
-            <>
-              <button
-                className="rating-toggle-btn"
-                onClick={() => {
-                  setShowRatingForm(!showRatingForm);
-                  setSubmitStatus(null);
-                }}
-                disabled={loading || hotels.length === 0 || rooms.length === 0}
-              >
-                {showRatingForm ? "Ẩn form đánh giá" : "Gửi đánh giá"}
-              </button>
+  {hasBooked === null && (
+    <p className="rating-message">Đang kiểm tra trạng thái đặt phòng...</p>
+  )}
 
-              {showRatingForm && (
-                <RatingForm
-                  onSubmit={handleRatingSubmit}
-                  hasBooked={hasBooked}
-                  hotels={hotels}
-                  rooms={rooms} // Truyền rooms
-                  selectedHotel={selectedHotel}
-                  selectedRoom={selectedRoom} // Truyền selectedRoom
-                  setSelectedRoom={setSelectedRoom} // Truyền setSelectedRoom
-                  submitStatus={submitStatus}
-                />
-              )}
-            </>
-          )}
-        </div>
+  {!hasBooked && (
+    <p className="rating-message error">
+      Bạn chưa có đặt phòng hợp lệ tại khách sạn này. Vui lòng đặt phòng trước khi đánh giá.
+    </p>
+  )}
+
+  {hasBooked && paymentStatus === "pending" && (
+    <p className="rating-message">Thanh toán đang chờ xác nhận...</p>
+  )}
+
+  {hasBooked && paymentStatus === "canceled" && (
+    <p className="rating-message">Đặt phòng đã bị hủy, bạn không thể đánh giá.</p>
+  )}
+
+  {hasBooked && paymentStatus === "paid" && (
+    <>
+      <button
+        className="rating-toggle-btn"
+        onClick={() => {
+          setShowRatingForm(!showRatingForm);
+          setSubmitStatus(null);
+        }}
+      >
+        {showRatingForm ? "Ẩn form đánh giá" : "Gửi đánh giá"}
+      </button>
+
+      {showRatingForm && (
+        <RatingForm
+          onSubmit={handleRatingSubmit}
+          hasBooked={hasBooked}
+          hotels={hotels}
+          rooms={rooms}
+          selectedHotel={selectedHotel}
+          selectedRoom={selectedRoom}
+          setSelectedRoom={setSelectedRoom}
+          submitStatus={submitStatus}
+        />
+      )}
+    </>
+  )}
+</div>
+
       </div>
     </div>
   );

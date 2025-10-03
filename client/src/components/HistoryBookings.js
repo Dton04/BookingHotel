@@ -51,7 +51,7 @@ function HistoryBookings() {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Lỗi khi tải lịch sử đặt phòng. Vui lòng thử lại sau."
+        "Lỗi khi tải lịch sử đặt phòng. Vui lòng thử lại sau."
       );
     } finally {
       setLoading(false);
@@ -106,38 +106,38 @@ function HistoryBookings() {
   };
 
   // Xử lý hủy đặt phòng
- // Xử lý hủy đặt phòng
-const handleCancelBooking = async () => {
-  if (!cancelReason.trim()) {
-    setCancelError("Vui lòng nhập lý do hủy.");
-    return;
-  }
+  // Xử lý hủy đặt phòng
+  const handleCancelBooking = async () => {
+    if (!cancelReason.trim()) {
+      setCancelError("Vui lòng nhập lý do hủy.");
+      return;
+    }
 
-  try {
-    setLoading(true);
-    setCancelError(null);
+    try {
+      setLoading(true);
+      setCancelError(null);
 
-    // 1. Hủy booking
-    await axios.delete(`/api/bookings/${selectedBookingId}`);
+      // 1. Hủy booking
+      await axios.delete(`/api/bookings/${selectedBookingId}`);
 
-    // 2. Gửi lý do hủy
-    await axios.post(`/api/bookings/cancel-reason`, {
-      bookingId: selectedBookingId,
-      reason: cancelReason,
-    });
+      // 2. Gửi lý do hủy
+      await axios.post(`/api/bookings/cancel-reason`, {
+        bookingId: selectedBookingId,
+        reason: cancelReason,
+      });
 
-    // 3. Refresh danh sách
-    await fetchBookings();
-    handleCloseCancelModal();
-  } catch (err) {
-    setCancelError(
-      err.response?.data?.message ||
+      // 3. Refresh danh sách
+      await fetchBookings();
+      handleCloseCancelModal();
+    } catch (err) {
+      setCancelError(
+        err.response?.data?.message ||
         "Lỗi khi hủy đặt phòng. Vui lòng thử lại."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   // Mở modal chỉnh sửa
@@ -200,7 +200,7 @@ const handleCancelBooking = async () => {
     } catch (err) {
       setEditError(
         err.response?.data?.message ||
-          "Lỗi khi chỉnh sửa đặt phòng. Vui lòng thử lại."
+        "Lỗi khi chỉnh sửa đặt phòng. Vui lòng thử lại."
       );
     } finally {
       setLoading(false);
@@ -217,7 +217,7 @@ const handleCancelBooking = async () => {
     } catch (err) {
       alert(
         err.response?.data?.message ||
-          "Lỗi khi lấy lý do hủy. Vui lòng thử lại."
+        "Lỗi khi lấy lý do hủy. Vui lòng thử lại."
       );
     }
   };
@@ -292,13 +292,12 @@ const handleCancelBooking = async () => {
         <div className="alert alert-info text-center">
           {filterStatus === "all"
             ? "Bạn chưa có đặt phòng nào."
-            : `Không có đặt phòng nào với trạng thái "${
-                filterStatus === "pending"
-                  ? "Chờ xác nhận"
-                  : filterStatus === "confirmed"
-                  ? "Đã xác nhận"
-                  : "Đã hủy"
-              }".`}
+            : `Không có đặt phòng nào với trạng thái "${filterStatus === "pending"
+              ? "Chờ xác nhận"
+              : filterStatus === "confirmed"
+                ? "Đã xác nhận"
+                : "Đã hủy"
+            }".`}
         </div>
       ) : (
         <>
@@ -306,6 +305,7 @@ const handleCancelBooking = async () => {
             <table className="table table-bordered table-striped">
               <thead>
                 <tr>
+                  <th>Tên khách sạn</th>
                   <th>Tên phòng</th>
                   <th>Ngày nhận phòng</th>
                   <th>Ngày trả phòng</th>
@@ -319,6 +319,8 @@ const handleCancelBooking = async () => {
               <tbody>
                 {currentBookings.map((booking) => (
                   <tr key={booking._id}>
+                  <td>{booking.hotelId?.name || booking.roomid?.hotelId?.name || "Không xác định"}</td>
+
                     <td>{booking.roomid?.name || "Không xác định"}</td>
                     <td>{new Date(booking.checkin).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</td>
                     <td>{new Date(booking.checkout).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</td>
@@ -327,19 +329,18 @@ const handleCancelBooking = async () => {
                     <td>{booking.roomType || "Không xác định"}</td>
                     <td>
                       <span
-                        className={`badge ${
-                          booking.status === "confirmed"
+                        className={`badge ${booking.status === "confirmed"
                             ? "bg-success"
                             : booking.status === "pending"
-                            ? "bg-warning"
-                            : "bg-danger"
-                        }`}
+                              ? "bg-warning"
+                              : "bg-danger"
+                          }`}
                       >
                         {booking.status === "pending"
                           ? "Chờ xác nhận"
                           : booking.status === "confirmed"
-                          ? "Đã xác nhận"
-                          : "Đã hủy"}
+                            ? "Đã xác nhận"
+                            : "Đã hủy"}
                       </span>
                     </td>
                     <td>

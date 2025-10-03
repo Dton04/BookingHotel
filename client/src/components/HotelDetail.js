@@ -362,26 +362,12 @@ const HotelDetail = () => {
                       <h4>Giới thiệu</h4>
                       <p>{hotel.description}</p>
 
-                      <h4 className="mt-4">Tiện nghi nổi bật</h4>
-                      <Row className="g-3 mb-4">
-                        {hotel.amenities?.map((amenity, index) => (
-                          <Col md={4} key={index}>
-                            <div className="amenity-item d-flex align-items-center">
-                              <FaCheck className="text-success me-2" />
-                              <span>{amenity}</span>
-                            </div>
-                          </Col>
-                        ))}
-                      </Row>
-
-                      <h4>Dịch vụ khách sạn</h4>
+                      <h4>Các tiện nghi nổi bật</h4>
                       <Row className="g-3">
                         {services.map((service) => (
                           <Col md={6} key={service._id}>
-                            <Card className="h-100 service-card">
-                              <Card.Body>
-                                <div className="d-flex align-items-center">
-                                  <i className={service.icon + " service-icon me-3"}></i>
+                                <div className="align-items-start">
+                                  <i className={service.icon}></i>
                                   <div>
                                     <h6 className="mb-1">{service.name}</h6>
                                     <p className="mb-0 small text-muted">
@@ -393,9 +379,7 @@ const HotelDetail = () => {
                                       </div>
                                     )}
                                   </div>
-                                </div>
-                              </Card.Body>
-                            </Card>
+                                </div>           
                           </Col>
                         ))}
                       </Row>
@@ -405,7 +389,11 @@ const HotelDetail = () => {
                   {/* Rooms Tab */}
                   <Tab eventKey="rooms" title="Phòng">
                     <div className="rooms-section">
-                      {hotel.rooms?.map((room) => (
+                      {hotel.rooms?.filter((room) =>{
+                        const totalGuests = parseInt(bookingInfo.adults) + parseInt(bookingInfo.children|| 0);
+                        return totalGuests <= room.maxcount;
+                      })
+                      .map((room) => (
                         <Card key={room._id} className="room-card mb-4 shadow-sm border-0 rounded-3 overflow-hidden">
                           <Row className="g-0">
                             <Col md={4}>

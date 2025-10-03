@@ -337,7 +337,7 @@ exports.getHotelWithRooms = async (req, res) => {
 
     const hotel = await Hotel.findById(id)
       .populate('region', 'name')
-      .populate('rooms', '_id name maxcount beds baths rentperday type description imageurls availabilityStatus')
+      .populate("rooms")
       .lean();
 
     if (!hotel) {

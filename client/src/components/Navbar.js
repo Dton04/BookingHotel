@@ -98,6 +98,13 @@ function Navbar() {
                     <li><Link className="dropdown-item" to="/bookings" onClick={closeNav}>Đặt phòng</Link></li>
                     <li><Link className="dropdown-item" to="/stats" onClick={closeNav}>Thống kê</Link></li>
                      <li><Link className="dropdown-item" to="/testimonial" onClick={closeNav}>Đánh giá</Link></li>
+
+                     <li>
+  <Link className="dropdown-item" to="/reviews" onClick={closeNav}>
+    <i className="fas fa-star me-2"></i>Đánh giá
+  </Link>
+</li>
+
                     <li><Link className="dropdown-item" to="/rewards" onClick={closeNav}><i className="fa fa-gift me-2"></i>Ưu đãi</Link></li>
                     <li><Link className="dropdown-item" to="/membership" onClick={closeNav}><i className="fas fa-star me-2"></i>Thành viên</Link></li>
                     <li><Link className="dropdown-item" to="/favorites" onClick={closeNav}><i className="fas fa-heart me-2"></i>Yêu thích</Link></li>

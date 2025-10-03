@@ -184,47 +184,49 @@ const RoomResults = () => {
   };
 
   const fetchAvailableHotels = async () => {
-    const searchParams = new URLSearchParams(location.search);
-    const { checkin, checkout, adults, children, roomType } = getQueryParams();
-    const destination = searchParams.get("destination");
-    
-    
+  const searchParams = new URLSearchParams(location.search);
+  const { checkin, checkout, adults, children, rooms } = getQueryParams();
+  const destination = searchParams.get("destination");
 
-    const checkinDate = new Date(checkin);
-    const checkoutDate = new Date(checkout);
-    const totalGuests = Number(adults) + Number(children || 0);
+  const checkinDate = new Date(checkin);
+  const checkoutDate = new Date(checkout);
 
-   
+  // Tổng số khách
+  const totalGuests = Number(adults) + Number(children || 0);
+  // Số phòng yêu cầu
+  const roomsRequested = Number(rooms) || 1;
+  // Số khách trung bình mỗi phòng
+  const guestsPerRoom = Math.ceil(totalGuests / roomsRequested);
 
-    setLoading(true);
-    try {
-      const response = await axios.get("/api/hotels", {
-        params: { checkin, checkout, adults, children, roomType, destination },
-      });
+  setLoading(true);
+  try {
+    // Gọi API lấy danh sách khách sạn theo destination
+    const response = await axios.get(`/api/hotels?destination=${destination}`);
 
-      const filteredHotels = response.data.filter(
-        (hotel) => hotel.rooms && hotel.rooms.length > 0
-      );
+    // Lọc khách sạn đủ điều kiện
+    const filteredHotels = response.data.filter((hotel) => {
+      if (!hotel.rooms || hotel.rooms.length < roomsRequested) return false;
 
-      setHotels(filteredHotels);
-      if (filteredHotels.length === 0) {
-        let message = "Không có phòng phù hợp với yêu cầu của bạn.";
-        if (roomType) {
-          message = `Không có phòng loại "${roomType}" trong khoảng thời gian này.`;
-        } else if (totalGuests > 4) {
-          message = `Không có phòng phù hợp cho ${totalGuests} khách. Vui lòng thử số lượng khách ít hơn.`;
-        }
-        setAlertStatus({ type: "warning", message });
-      } else {
-        setAlertStatus(null);
-      }
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || "Lỗi khi lấy danh sách phòng. Vui lòng thử lại.";
-      setAlertStatus({ type: "error", message: errorMessage });
-    } finally {
-      setLoading(false);
-    }
-  };
+      // Lọc ra các phòng có sức chứa phù hợp
+      const validRooms = hotel.rooms.filter((room) => room.maxcount >= guestsPerRoom);
+
+      // Khách sạn hợp lệ nếu có ít nhất số phòng yêu cầu
+      return validRooms.length >= roomsRequested;
+    });
+
+    // Chỉ giữ lại phòng hợp lệ để hiển thị
+    filteredHotels.forEach((hotel) => {
+      hotel.rooms = hotel.rooms.filter((room) => room.maxcount >= guestsPerRoom);
+    });
+
+    setHotels(filteredHotels);
+  } catch (err) {
+    console.error("Lỗi khi tải khách sạn:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
   const searchParams = new URLSearchParams(location.search);
@@ -647,7 +649,7 @@ const RoomResults = () => {
                       variant="primary"
                       size="lg"
                       className="px-5"
-                      onClick={() => navigate("/search")}
+                      onClick={() => navigate("/")}
                     >
                       Tìm Kiếm Lại
                     </Button>

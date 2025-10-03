@@ -1,6 +1,12 @@
 const mongoose = require("mongoose");
 
 const bookingSchema = new mongoose.Schema({
+  hotelId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Hotel',
+    required: true
+  },
+
   roomid: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Room",
@@ -75,6 +81,7 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     default: null, // Lý do hủy đặt phòng
   },
+
   voucherDiscount: {
     type: Number,
     default: 0, // Tổng số tiền giảm giá từ voucher
@@ -86,9 +93,9 @@ const bookingSchema = new mongoose.Schema({
     },
   ],
   diningServices: {
-  type: [String],
-  default: [],
-},
+    type: [String],
+    default: [],
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -117,6 +124,9 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     default: null, // Lưu transactionId từ VNPay (sau khi thanh toán thành công)
   },
+
+  roomsBooked: { type: Number, default: 1 },
+
 });
 
 // Thêm index

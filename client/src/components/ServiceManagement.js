@@ -16,9 +16,20 @@ import {
 } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+
 import { FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash } from 'react-icons/fa';
 import '../css/service-management.css';
 
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token"); // giả sử token được lưu ở localStorage
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 const ServiceManagement = () => {
   const [services, setServices] = useState([]);
   const [hotels, setHotels] = useState([]);
@@ -38,7 +49,7 @@ const ServiceManagement = () => {
     description: '',
     price: 0,
     icon: 'fas fa-concierge-bell',
-    hotelId: '',
+    hotelIds: [],
     imageUrl: '',
     operatingHours: {
       open: '06:00',
@@ -57,8 +68,7 @@ const ServiceManagement = () => {
   const validateForm = () => {
     const errors = {};
     if (!formData.name.trim()) errors.name = 'Tên dịch vụ là bắt buộc';
-    if (!formData.description.trim()) errors.description = 'Mô tả là bắt buộc';
-    if (!formData.hotelId) errors.hotelId = 'Vui lòng chọn khách sạn';
+    if (!formData.hotelIds || formData.hotelIds.length === 0) errors.hotelIds = 'Vui lòng chọn khách sạn';
     if (!formData.isFree && formData.price <= 0) errors.price = 'Giá phải lớn hơn 0';
     if (formData.imageUrl && !isValidUrl(formData.imageUrl)) errors.imageUrl = 'URL hình ảnh không hợp lệ';
     return errors;
@@ -115,12 +125,23 @@ const ServiceManagement = () => {
     try {
       let response;
       if (editingService) {
-        response = await axios.put(`/api/services/${editingService._id}`, formData);
+        await axios.put(`/api/services/${editingService._id}`, formData);
         toast.success('Cập nhật dịch vụ thành công');
       } else {
-        response = await axios.post('/api/services', formData);
+        if (formData.hotelIds.includes("all")) {
+          // Nếu chọn tất cả -> tạo dịch vụ cho mọi khách sạn
+          for (const h of hotels) {
+            await axios.post('/api/services', { ...formData, hotelId: h._id });
+          }
+        } else {
+          // Nếu chọn nhiều khách sạn cụ thể
+          for (const hotelId of formData.hotelIds) {
+            await axios.post('/api/services', { ...formData, hotelId });
+          }
+        }
         toast.success('Tạo dịch vụ thành công');
       }
+
       setShowModal(false);
       resetForm();
       fetchServices();
@@ -137,7 +158,7 @@ const ServiceManagement = () => {
       description: service.description,
       price: service.price,
       icon: service.icon,
-      hotelId: service.hotelId._id || service.hotelId,
+      hotelIds: [service.hotelId._id] || service.hotelId,
       imageUrl: service.imageUrl,
       operatingHours: service.operatingHours,
       capacity: service.capacity,
@@ -178,7 +199,7 @@ const ServiceManagement = () => {
       description: '',
       price: 0,
       icon: 'fas fa-concierge-bell',
-      hotelId: '',
+      hotelIds: [],
       imageUrl: '',
       operatingHours: {
         open: '06:00',
@@ -216,8 +237,8 @@ const ServiceManagement = () => {
         <Col>
           <div className="d-flex justify-content-between align-items-center">
             <h2 className="mb-0">Quản lý dịch vụ bổ sung</h2>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               onClick={() => setShowModal(true)}
               className="d-flex align-items-center"
             >
@@ -239,7 +260,7 @@ const ServiceManagement = () => {
                     <Form.Label>Khách sạn</Form.Label>
                     <Form.Select
                       value={filters.hotelId}
-                      onChange={(e) => setFilters({...filters, hotelId: e.target.value})}
+                      onChange={(e) => setFilters({ ...filters, hotelId: e.target.value })}
                     >
                       <option value="">Tất cả khách sạn</option>
                       {hotels.map(hotel => (
@@ -255,7 +276,7 @@ const ServiceManagement = () => {
                     <Form.Label>Trạng thái</Form.Label>
                     <Form.Select
                       value={filters.isAvailable}
-                      onChange={(e) => setFilters({...filters, isAvailable: e.target.value})}
+                      onChange={(e) => setFilters({ ...filters, isAvailable: e.target.value })}
                     >
                       <option value="">Tất cả</option>
                       <option value="true">Đang hoạt động</option>
@@ -264,9 +285,9 @@ const ServiceManagement = () => {
                   </Form.Group>
                 </Col>
                 <Col md={4} className="d-flex align-items-end">
-                  <Button 
-                    variant="outline-secondary" 
-                    onClick={() => setFilters({hotelId: '', isAvailable: ''})}
+                  <Button
+                    variant="outline-secondary"
+                    onClick={() => setFilters({ hotelId: '', isAvailable: '' })}
                   >
                     Xóa bộ lọc
                   </Button>
@@ -304,18 +325,17 @@ const ServiceManagement = () => {
                       {currentServices.map(service => (
                         <tr key={service._id}>
                           <td>
-                            <div className="d-flex align-items-center">
-                              <div className="service-icon me-3">
+                            <div className="service-card">
+                              <div className="service-icon">
                                 <i className={service.icon}></i>
                               </div>
                               <div>
-                                <div className="fw-bold">{service.name}</div>
-                                <small className="text-muted">
-                                  {service.description.substring(0, 50)}...
-                                </small>
+                                <div className="service-name">{service.name}</div>
+                                <div className="service-desc">{service.description}</div>
                               </div>
                             </div>
                           </td>
+
                           <td>{service.hotelId?.name || 'N/A'}</td>
                           <td>
                             {service.isFree ? (
@@ -424,7 +444,7 @@ const ServiceManagement = () => {
                   <Form.Control
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     isInvalid={!!formErrors.name}
                     required
                   />
@@ -437,12 +457,16 @@ const ServiceManagement = () => {
                 <Form.Group className="mb-3">
                   <Form.Label>Khách sạn *</Form.Label>
                   <Form.Select
-                    value={formData.hotelId}
-                    onChange={(e) => setFormData({...formData, hotelId: e.target.value})}
-                    isInvalid={!!formErrors.hotelId}
+                    multiple
+                    value={formData.hotelIds}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      setFormData({ ...formData, hotelIds: selected });
+                    }}
+                    isInvalid={!!formErrors.hotelIds}
                     required
                   >
-                    <option value="">Chọn khách sạn</option>
+                    <option value="all">Tất cả khách sạn</option>
                     {hotels.map(hotel => (
                       <option key={hotel._id} value={hotel._id}>
                         {hotel.name}
@@ -450,9 +474,10 @@ const ServiceManagement = () => {
                     ))}
                   </Form.Select>
                   <Form.Control.Feedback type="invalid">
-                    {formErrors.hotelId}
+                    {formErrors.hotelIds}
                   </Form.Control.Feedback>
                 </Form.Group>
+
               </Col>
             </Row>
 
@@ -462,9 +487,9 @@ const ServiceManagement = () => {
                 as="textarea"
                 rows={3}
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 isInvalid={!!formErrors.description}
-                required
+                
               />
               <Form.Control.Feedback type="invalid">
                 {formErrors.description}
@@ -478,7 +503,7 @@ const ServiceManagement = () => {
                   <Form.Control
                     type="text"
                     value={formData.icon}
-                    onChange={(e) => setFormData({...formData, icon: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                     placeholder="fas fa-concierge-bell"
                   />
                   {formData.icon && (
@@ -495,7 +520,7 @@ const ServiceManagement = () => {
                   <Form.Control
                     type="url"
                     value={formData.imageUrl}
-                    onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                     isInvalid={!!formErrors.imageUrl}
                     placeholder="https://example.com/image.jpg"
                   />
@@ -514,7 +539,7 @@ const ServiceManagement = () => {
                     type="number"
                     min="0"
                     value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
+                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
                     disabled={formData.isFree}
                     isInvalid={!!formErrors.price}
                   />
@@ -530,7 +555,7 @@ const ServiceManagement = () => {
                     type="number"
                     min="0"
                     value={formData.capacity}
-                    onChange={(e) => setFormData({...formData, capacity: Number(e.target.value)})}
+                    onChange={(e) => setFormData({ ...formData, capacity: Number(e.target.value) })}
                     placeholder="0 = không giới hạn"
                   />
                 </Form.Group>
@@ -542,8 +567,8 @@ const ServiceManagement = () => {
                     type="time"
                     value={formData.operatingHours.open}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      operatingHours: {...formData.operatingHours, open: e.target.value}
+                      ...formData,
+                      operatingHours: { ...formData.operatingHours, open: e.target.value }
                     })}
                   />
                 </Form.Group>
@@ -555,8 +580,8 @@ const ServiceManagement = () => {
                     type="time"
                     value={formData.operatingHours.close}
                     onChange={(e) => setFormData({
-                      ...formData, 
-                      operatingHours: {...formData.operatingHours, close: e.target.value}
+                      ...formData,
+                      operatingHours: { ...formData.operatingHours, close: e.target.value }
                     })}
                   />
                 </Form.Group>
@@ -569,7 +594,7 @@ const ServiceManagement = () => {
                   type="checkbox"
                   label="Miễn phí"
                   checked={formData.isFree}
-                  onChange={(e) => setFormData({...formData, isFree: e.target.checked, price: e.target.checked ? 0 : formData.price})}
+                  onChange={(e) => setFormData({ ...formData, isFree: e.target.checked, price: e.target.checked ? 0 : formData.price })}
                 />
               </Col>
               <Col md={4}>
@@ -577,7 +602,7 @@ const ServiceManagement = () => {
                   type="checkbox"
                   label="Yêu cầu đặt trước"
                   checked={formData.requiresBooking}
-                  onChange={(e) => setFormData({...formData, requiresBooking: e.target.checked})}
+                  onChange={(e) => setFormData({ ...formData, requiresBooking: e.target.checked })}
                 />
               </Col>
             </Row>

@@ -221,7 +221,8 @@ function AdminBookings() {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Phòng</th>
+                  <th>Khách sạn</th>
+
                   <th>Khách hàng</th>
                   <th>Ngày nhận phòng</th>
                   <th>Ngày trả phòng</th>
@@ -233,7 +234,7 @@ function AdminBookings() {
                 {currentBookings.map((booking, index) => (
                   <tr key={booking._id}>
                     <td>{indexOfFirstBooking + index + 1}</td>
-                    <td>{booking.roomid?.name || "Phòng không xác định"}</td>
+                   <td>{booking.hotelId?.name || booking.roomid?.hotelId?.name || "Không xác định"}</td>
                     <td>
                       {booking.name} <br />
                       <small>{booking.email}</small>

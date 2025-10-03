@@ -1,5 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Provider } from 'react-redux';
+import store from './redux/store';
 import Navbar from "./components/Navbar";
 import Homescreen from "./screens/Homescreen";
 import Rooms from "./components/Rooms";
@@ -45,6 +47,9 @@ import HotelDetail from "./components/HotelDetail";
 
 import AdminRegions from "./components/AdminRegions";
 
+import Review from "./screens/Review";
+
+
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
   const userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -65,8 +70,9 @@ const UserRoute = ({ children }) => {
 
 function App() {
   return (
-    <Router>
-      <div className="App">
+    <Provider store={store}>
+      <Router>
+        <div className="App">
         <Navbar />
         <Routes>
           <Route path="/home" element={<Homescreen />} />
@@ -104,6 +110,17 @@ function App() {
           <Route path="/booking-success" element={<VNPaySuccess />} />
           <Route path="/admin/rewards" element={<AdminRewards />} />
           <Route path="/hotel/:id" element={<HotelDetail />} />
+
+           <Route
+            path="/reviews"
+            element={
+              <UserRoute>
+                <Review />
+              </UserRoute>
+            }
+          />
+
+
 
           <Route
             path="/admin"
@@ -168,6 +185,7 @@ function App() {
         <Footer />
       </div>
     </Router>
+    </Provider>
   );
 }
 

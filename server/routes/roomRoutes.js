@@ -43,8 +43,8 @@ router.post("/getroombyid", roomController.getRoomById);
 // POST /api/rooms - Tạo phòng mới (chỉ admin)
 router.post("/", protect, restrictRoomManagement, roomController.createRoom);
 
-//  PATCH /api/rooms/:id/price - Cập nhật giá phòng
-router.patch("/:id/price", protect, restrictRoomManagement, roomController.updateRoomPrice);
+//  PATCH /api/rooms/:id - Cập nhật phòng
+router.patch("/:id", protect, restrictRoomManagement, roomController.updateRoom);
 
 //  POST /api/rooms/:id/images - Tải ảnh phòng
 router.post("/:id/images", protect, restrictRoomManagement, upload.array('images', 5), roomController.uploadRoomImages);
@@ -54,5 +54,7 @@ router.delete("/:id/images/:imgId", protect, restrictRoomManagement, roomControl
 
 //  GET /api/rooms/images/:id - Lấy danh sách ảnh của phòng
 router.get("/images/:id", roomController.getRoomImages);
+// DELETE /api/rooms/:id  - Xóa phòng
+router.delete("/:id", roomController.deleteRoom);
 
 module.exports = router;

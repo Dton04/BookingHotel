@@ -9,10 +9,13 @@
   border-radius: 50%;
   display: flex;
   align-items: center;
+  font-size: 22px; 
   justify-content: center;
   color: white;
   font-size: 16px;
 }
+
+
 
 .service-management .table th {
   background-color: #f8f9fa;
@@ -24,6 +27,8 @@
 .service-management .table td {
   vertical-align: middle;
 }
+
+
 
 .service-management .btn-group .btn {
   margin-right: 2px;
@@ -173,3 +178,6 @@
   margin-bottom: 1rem;
   opacity: 0.5;
 } 
+
+
+

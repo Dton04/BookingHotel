@@ -50,6 +50,7 @@ function Bookingscreen() {
     handleSubmit,
     formState: { errors },
     setValue,
+    getValues,
   } = useForm({
     resolver: yupResolver(bookingSchema),
     defaultValues: {
@@ -87,6 +88,7 @@ function Bookingscreen() {
   const [discountResult, setDiscountResult] = useState(null);
   const [totalAmount, setTotalAmount] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]); // State để lưu dịch vụ được chọn
+  const [roomsNeeded, setRoomsNeeded] = useState(1);
 
   // Hàm xử lý chọn dịch vụ
   const handleServiceChange = (serviceId) => {
@@ -227,14 +229,24 @@ function Bookingscreen() {
       setValue("phone", userInfo.phone || "");
     }
 
-    // Lấy thông tin từ location state của navigation
+    // Ưu tiên lấy từ location state
     const locationState = window.history.state?.usr;
+
     if (locationState) {
       setValue("checkin", locationState.checkin || "");
       setValue("checkout", locationState.checkout || "");
       setValue("adults", locationState.adults || 2);
       setValue("children", locationState.children || 0);
       setValue("roomType", locationState.roomType || "");
+    } else {
+      // Nếu không có locationState thì fallback từ localStorage
+      const bookingInfo = JSON.parse(localStorage.getItem("bookingInfo"));
+      if (bookingInfo) {
+        setValue("checkin", bookingInfo.checkin || "");
+        setValue("checkout", bookingInfo.checkout || "");
+        setValue("adults", bookingInfo.adults || 2);
+        setValue("children", bookingInfo.children || 0);
+      }
     }
   }, [setValue]);
 
@@ -288,6 +300,28 @@ function Bookingscreen() {
     try {
       setLoading(true);
       setBookingStatus(null);
+      const totalGuests = Number(data.adults) + Number(data.children || 0);
+      const calculatedRoomsNeeded = Math.ceil(totalGuests / room.maxcount);
+      setRoomsNeeded(calculatedRoomsNeeded); // ✅ lưu vào state
+
+
+      // ✅ Tính số ngày ở
+      const days = Math.ceil(
+        (new Date(data.checkout) - new Date(data.checkin)) /
+        (1000 * 60 * 60 * 24)
+      );
+
+      // ✅ Tính tổng tiền
+      const baseAmount = room.rentperday * days * roomsNeeded;
+      const servicesCost = calculateServiceCost();
+      const discountAmount =
+        discountResult?.appliedDiscounts?.reduce(
+          (sum, d) => sum + d.discount,
+          0
+        ) || 0;
+
+      const totalAmount = baseAmount + servicesCost - discountAmount;
+
       setPaymentStatus(null);
       setBankInfo(null);
       setTimeRemaining(null);
@@ -297,9 +331,12 @@ function Bookingscreen() {
       // Gửi yêu cầu đặt phòng với danh sách dịch vụ
       const bookingResponse = await axios.post("/api/bookings/bookroom", {
         roomid,
+        hotelId: room.hotelId,
         ...data,
         adults: Number(data.adults),
         children: Number(data.children) || 0,
+        roomsNeeded,
+        totalAmount,
         diningServices: selectedServices, // Gửi danh sách dịch vụ được chọn
         appliedVouchers: discountResult?.appliedDiscounts?.map((d) => ({
           code: d.code || d.id,
@@ -746,38 +783,44 @@ function Bookingscreen() {
                       <div className="form-group">
                         <select
                           className={`form-control ${errors.adults ? "is-invalid" : ""}`}
-                          {...register("adults")}
+                          {...register("adults", { required: "Vui lòng chọn số người lớn" })}
                         >
                           <option value="" disabled>
                             Chọn số người lớn
                           </option>
-                          {[1, 2, 3, 4].map((num) => (
-                            <option key={num} value={num}>
-                              {num} Người lớn
+                          {[...Array(99).keys()].map((num) => (
+                            <option key={num + 1} value={num + 1}>
+                              {num + 1} Người lớn
                             </option>
                           ))}
                         </select>
-                        {errors.adults && <div className="invalid-feedback">{errors.adults.message}</div>}
+                        {errors.adults && (
+                          <div className="invalid-feedback">{errors.adults.message}</div>
+                        )}
                       </div>
                     </div>
+
                     <div className="col-md-6">
                       <div className="form-group">
                         <select
                           className={`form-control ${errors.children ? "is-invalid" : ""}`}
-                          {...register("children")}
+                          {...register("children", { required: "Vui lòng chọn số trẻ em" })}
                         >
                           <option value="" disabled>
                             Chọn số trẻ em
                           </option>
-                          {[0, 1, 2, 3].map((num) => (
+                          {[...Array(100).keys()].map((num) => (
                             <option key={num} value={num}>
                               {num} Trẻ em
                             </option>
                           ))}
                         </select>
-                        {errors.children && <div className="invalid-feedback">{errors.children.message}</div>}
+                        {errors.children && (
+                          <div className="invalid-feedback">{errors.children.message}</div>
+                        )}
                       </div>
                     </div>
+
                   </div>
                   <div className="form-group">
                     <label htmlFor="paymentMethod">Phương thức thanh toán</label>
@@ -902,15 +945,34 @@ function Bookingscreen() {
                       </div>
                       <div className="col-md-8">
                         <h5 className="fw-bold mb-2">{room.name}</h5>
-                        <p className="mb-1">Loại phòng: <strong>{room.type}</strong></p>
-                        <p className="mb-1">Giá thuê mỗi ngày: <strong>{room.rentperday.toLocaleString()} VND</strong></p>
-                        <p className="mb-0 text-muted small">
-                          Sức chứa tối đa: {room.maxcount} người | {room.beds} giường | {room.baths} phòng tắm
+                        <p className="mb-1">
+                          Loại phòng: <strong>{room.type}</strong>
+                        </p>
+                        <p className="mb-1">
+                          Giá thuê mỗi ngày:{" "}
+                          <strong>{room.rentperday.toLocaleString()} VND</strong>
+                        </p>
+                        <p className="mb-1">
+                          Số phòng cần đặt: <strong>{roomsNeeded}</strong>
+                        </p>
+                        <p className="mb-0 text-primary fw-bold">
+                          Tổng tiền (chưa giảm giá):{" "}
+                          {(
+                            room.rentperday *
+                            roomsNeeded *
+                            Math.ceil(
+                              (new Date(getValues("checkout")) - new Date(getValues("checkin"))) /
+                              (1000 * 60 * 60 * 24)
+                            )
+                          ).toLocaleString()}{" "}
+                          VND
                         </p>
                       </div>
                     </div>
                   </div>
                 )}
+
+
               </div>
             </div>
           </div>
