@@ -70,11 +70,22 @@ function BookingForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Chỉ gửi destination (region._id) cùng với các trường khác
+    
+    const checkinDate = formData.checkin ? new Date(formData.checkin) : '';
+    const checkoutDate = formData.checkout ? new Date(formData.checkout) : '';
+
+    // Đặt giờ theo múi giờ địa phương
+    if (checkinDate) {
+      checkinDate.setHours(0, 0, 0, 0);
+    }
+    if (checkoutDate) {
+      checkoutDate.setHours(23, 59, 59, 999);
+    }
+
     const submitData = {
       destination: formData.destination,
-      checkin: formData.checkin,
-      checkout: formData.checkout,
+      checkin: checkinDate ? new Date(checkinDate.getTime() - checkinDate.getTimezoneOffset() * 60000).toISOString() : '',
+      checkout: checkoutDate ? new Date(checkoutDate.getTime() - checkoutDate.getTimezoneOffset() * 60000).toISOString() : '',
       adults: formData.adults,
       children: formData.children,
       rooms: formData.rooms,

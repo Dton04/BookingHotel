@@ -14,50 +14,62 @@ function Registerscreen() {
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
+ const handleRegister = async (e) => {
+  e.preventDefault();
+  setError('');
+  setSuccess('');
 
-    if (password !== confirmPassword) {
-      setError('Mật khẩu và xác nhận mật khẩu không khớp!');
-      return;
-    }
+  if (password !== confirmPassword) {
+    setError('Mật khẩu và xác nhận mật khẩu không khớp!');
+    return;
+  }
 
-    if (!name || !email || !password) {
-      setError('Vui lòng điền đầy đủ các trường bắt buộc.');
-      return;
-    }
+  if (!name || !email || !password) {
+    setError('Vui lòng điền đầy đủ các trường bắt buộc.');
+    return;
+  }
 
-    if (phone && (phone.length > 10 || !/^[0-9]*$/.test(phone))) {
-      setError('Số điện thoại phải tối đa 10 chữ số và chỉ chứa số.');
-      return;
-    }
+  if (phone && (phone.length > 10 || !/^[0-9]*$/.test(phone))) {
+    setError('Số điện thoại phải tối đa 10 chữ số và chỉ chứa số.');
+    return;
+  }
 
-    try {
-      setLoading(true);
-      const response = await axios.post('/api/users/register', { 
-        name, 
-        email, 
-        password, 
-        phone 
-      });
-      setSuccess('Đăng ký thành công! Chuyển hướng đến đăng nhập...');
-      setName('');
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
-      setPhone('');
+  try {
+    setLoading(true);
+    const response = await axios.post('/api/users/register', {
+      name,
+      email,
+      password,
+      phone
+    });
 
+    // ✅ Nếu server trả về redirect đến verify-otp
+    if (response.data.redirect) {
+      setSuccess('Đã gửi mã OTP, vui lòng kiểm tra email để xác nhận.');
+      setTimeout(() => {
+        navigate(response.data.redirect); // chuyển tới /verify-otp?email=...
+      }, 1000);
+    } else {
+      setSuccess('Đăng ký thành công!');
       setTimeout(() => {
         navigate('/login');
       }, 2000);
-    } catch (error) {
-      setError(error.response?.data?.message || 'Lỗi khi đăng ký. Vui lòng thử lại.');
-    } finally {
-      setLoading(false);
     }
-  };
+
+    // Reset form
+    setName('');
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setPhone('');
+
+  } catch (error) {
+    setError(error.response?.data?.message || 'Lỗi khi đăng ký. Vui lòng thử lại.');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="register-container">

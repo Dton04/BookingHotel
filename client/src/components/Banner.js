@@ -43,12 +43,7 @@ function Banner() {
         return {
           isSlider: true, // Dùng slider cho trang chủ
           slides: slides,
-          buttons: (
-            <div className="banner-buttons">
-              <Link to="/rooms" className="btn btn-primary">OUR ROOMS</Link>
-              <Link to="/book" className="btn btn-secondary">BOOK A ROOM</Link>
-            </div>
-          ),
+        
         };
       case '/rooms':
         return {
@@ -83,6 +78,15 @@ function Banner() {
           buttons: null,
           image: 'https://media.istockphoto.com/id/520542221/photo/hotel-reception-with-bell.jpg?s=612x612&w=0&k=20&c=quMdykg6OVTzGnANco9OVbVIxdRChamN3-iTbEe7os0=',
         };
+        case '/discounts':
+        return {
+          isSlider: false,
+          title: 'Ưu đãi cho hôm nay',
+          breadcrumb: 'Khuyến mãi đặc biệt. Không có ở nơi khác. Hãy lưu lại để nhận ưu đãi hằng ngày.',
+          buttons: null,
+          image: 'https://c8.alamy.com/comp/M9MEKN/journey-travel-concept-happy-family-rides-in-car-on-vacation-cartoon-vector-illustration-M9MEKN.jpg',
+        };
+
        case '/admin/bookings':
         return {
           isSlider: false,
@@ -91,6 +95,8 @@ function Banner() {
           buttons: null,
           image: 'https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg',
         };
+        
+        
       default:
         return {
           isSlider: false,

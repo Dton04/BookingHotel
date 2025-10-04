@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Discount = require('../models/discount');
+const Hotel = require('../models/hotel');
 const Room = require('../models/room');
 const User = require('../models/user');
 const Transaction = require('../models/transaction');
@@ -54,11 +55,12 @@ router.post('/', protect, admin, async (req, res) => {
     }
 
     if (applicableHotels && applicableHotels.length > 0) {
-      const rooms = await Room.find({ _id: { $in: applicableHotels } });
-      if (rooms.length !== applicableHotels.length) {
-        return res.status(400).json({ message: 'Một hoặc nhiều phòng không tồn tại' });
+      const hotels = await Hotel.find({ _id: { $in: applicableHotels } });
+      if (hotels.length !== applicableHotels.length) {
+        return res.status(400).json({ message: 'Một hoặc nhiều khách sạn không tồn tại' });
       }
     }
+
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -503,7 +505,7 @@ router.post('/apply', async (req, res) => {
 
         if (
           discount.applicableHotels.length > 0 &&
-          !discount.applicableHotels.some((id) => id.equals(bookingData.roomid))
+          !discount.applicableHotels.some((id) => id.equals(bookingData.hotelid))
         ) {
           continue;
         }
@@ -521,7 +523,11 @@ router.post('/apply', async (req, res) => {
             isUsed: false,
             expiryDate: { $gte: now },
           }).session(session);
-          if (!userVoucher) {
+
+
+          // Nếu không có voucher hợp lệ hoặc đã dùng rồi thì bỏ qua
+          const userUsage = discount.usedBy.find((u) => u.userId.equals(user._id));
+          if (!userVoucher || (userUsage && userUsage.count >= 1)) {
             continue;
           }
         }
@@ -617,5 +623,70 @@ router.post('/apply', async (req, res) => {
     res.status(500).json({ message: 'Lỗi khi áp dụng khuyến mãi', error: error.message });
   }
 });
+
+// POST thu thập mã giảm giá
+// POST thu thập mã giảm giá
+router.post("/collect/:identifier", protect, async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    let discount;
+
+    // Nếu identifier là ObjectId -> tìm theo _id, ngược lại -> tìm theo code
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+      discount = await Discount.findById(identifier);
+    } else {
+      discount = await Discount.findOne({ code: identifier });
+    }
+
+    if (!discount) {
+      return res.status(404).json({ message: "Không tìm thấy mã giảm giá" });
+    }
+
+    const voucher = await UserVoucher.create({
+      userId: req.user._id,
+      discountId: discount._id, // bạn nên đổi lại field này trong model cho hợp lý
+      voucherCode: discount.code,
+      expiryDate: discount.endDate,
+    });
+
+    res.json({ message: "Đã thu thập mã", voucher });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// GET tất cả mã user đã thu thập
+router.get("/my-vouchers", protect, async (req, res) => {
+  try {
+    const vouchers = await UserVoucher.find({ userId: req.user._id, isUsed: false });
+    res.json(vouchers);
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi khi lấy voucher của bạn" });
+  }
+});
+
+
+/**
+ * @route   GET /api/discounts/:id/hotels
+ * @desc    Lấy danh sách khách sạn áp dụng khuyến mãi theo ID
+ * @access  Công khai
+ */
+// GET /api/discounts/:id/hotels - Lấy các khách sạn áp dụng discount
+router.get('/:id/hotels', async (req, res) => {
+  try {
+    const discount = await Discount.findById(req.params.id)
+      .populate('applicableHotels'); // populate từ Hotel
+    if (!discount) return res.status(404).json({ message: 'Không tìm thấy khuyến mãi' });
+
+    res.json(discount.applicableHotels);
+  } catch (error) {
+    console.error('Error fetching hotels for discount:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+});
+
+
+
 
 module.exports = router;

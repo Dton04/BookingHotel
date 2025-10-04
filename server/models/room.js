@@ -32,6 +32,7 @@ const roomSchema = new mongoose.Schema({
       bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking" },
       checkin: { type: Date, required: true },
       checkout: { type: Date, required: true },
+      roomsBooked: { type: Number, default: 1},
     },
   ],
 }, { timestamps: true });

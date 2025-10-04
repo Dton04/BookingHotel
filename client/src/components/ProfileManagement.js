@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Loader from './Loader';
 import Navbar from './Navbar';
@@ -25,117 +25,57 @@ function ProfileManagement() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
+
   const navigate = useNavigate();
-
-  const userInfo = useMemo(() => {
-    return JSON.parse(localStorage.getItem('userInfo'));
-  }, []);
-
   const API_BASE_URL = 'http://localhost:5000';
+  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
 
-  const fetchUserProfile = async () => {
-    try {
-      if (!userInfo || !userInfo.token) {
-        throw new Error('No token found');
-      }
-      const response = await axios.get(`${API_BASE_URL}/api/users/profile`, {
-        headers: { Authorization: `Bearer ${userInfo.token}` },
-      });
-      setUser({
-        name: response.data.name || '',
-        email: response.data.email || '',
-        phone: response.data.phone || '',
-        avatar: response.data.avatar || '',
-        bookingsCount: response.data.bookingsCount || 0,
-      });
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      if (
-        error.response?.status === 401 &&
-        (error.response.data.message === 'Not authorized, token expired' ||
-          error.response.data.message === 'Not authorized, no token provided' ||
-          error.message === 'No token found')
-      ) {
-        localStorage.removeItem('userInfo');
-        navigate('/login', { replace: true });
-        setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-      } else {
-        setError(error.response?.data?.message || error.message);
-      }
-      setLoading(false);
-    }
-  };
-
+  // 🔹 Tự động logout nếu chưa login
   useEffect(() => {
-    if (!userInfo) {
+    if (!userInfo || !userInfo.token) {
       navigate('/login', { replace: true });
-      return;
     }
-    fetchUserProfile();
-  }, [navigate, userInfo]);
+  }, [navigate]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setUser({ ...user, [name]: value });
-  };
-
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Kiểm tra định dạng và kích thước
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-      if (!allowedTypes.includes(file.type)) {
-        setError('Vui lòng chọn file JPEG, PNG hoặc GIF');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Kích thước file không được vượt quá 5MB');
-        return;
-      }
-
-      setNewAvatar(file);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setUser((prev) => ({ ...prev, avatar: reader.result }));
-      };
-      reader.onerror = (error) => {
-        console.error('Error reading file:', error);
-        setError('Lỗi khi đọc file ảnh');
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveAvatar = async () => {
-    try {
-      setUploadLoading(true);
-      const response = await axios.put(
-        `${API_BASE_URL}/api/users/profile`,
-        { avatar: '' },
-        {
-          headers: {
-            Authorization: `Bearer ${userInfo?.token}`,
-            'Content-Type': 'application/json',
-          },
+  // 🔹 Lấy thông tin người dùng
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data } = await axios.get(
+          `${API_BASE_URL}/api/users/${userInfo._id}/profile`,
+          {
+            headers: { Authorization: `Bearer ${userInfo.token}` },
+          }
+        );
+        setUser({
+          name: data.name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          avatar: data.avatar || '',
+          bookingsCount: data.bookingsCount || 0,
+        });
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        if (error.response?.status === 401) {
+          localStorage.removeItem('userInfo');
+          navigate('/login', { replace: true });
+        } else {
+          setError(error.response?.data?.message || 'Không thể tải thông tin hồ sơ');
         }
-      );
-      setUser((prev) => ({ ...prev, avatar: '' }));
-      setNewAvatar(null);
-      setSuccess('Xóa ảnh đại diện thành công');
-    } catch (error) {
-      console.error('Error removing avatar:', error);
-      setError(error.response?.data?.message || 'Lỗi khi xóa ảnh đại diện');
-    } finally {
-      setUploadLoading(false);
-    }
-  };
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (userInfo && userInfo.token) fetchProfile();
+  }, [navigate]);
 
+  // 🔹 Cập nhật thông tin cơ bản
   const handleSubmit = async (e) => {
     e.preventDefault();
     setUploadLoading(true);
     setError(null);
     setSuccess(null);
+
     try {
       let response;
       if (newAvatar) {
@@ -143,51 +83,50 @@ function ProfileManagement() {
         formData.append('name', user.name);
         formData.append('phone', user.phone);
         formData.append('avatar', newAvatar);
-        response = await axios.put(`${API_BASE_URL}/api/users/profile`, formData, {
-          headers: {
-            Authorization: `Bearer ${userInfo?.token}`,
-          },
-        });
+        response = await axios.put(
+          `${API_BASE_URL}/api/users/${userInfo._id}/profile`,
+          formData,
+          { headers: { Authorization: `Bearer ${userInfo.token}` } }
+        );
       } else {
         response = await axios.put(
-          `${API_BASE_URL}/api/users/profile`,
+          `${API_BASE_URL}/api/users/${userInfo._id}/profile`,
           { name: user.name, phone: user.phone },
           {
             headers: {
-              Authorization: `Bearer ${userInfo?.token}`,
+              Authorization: `Bearer ${userInfo.token}`,
               'Content-Type': 'application/json',
             },
           }
         );
       }
 
-      setUser({
-        name: response.data.name || '',
-        email: response.data.email || '',
-        phone: response.data.phone || '',
-        avatar: response.data.avatar || '',
-        bookingsCount: response.data.bookingsCount || 0,
-      });
-      setNewAvatar(null);
-      setSuccess('Cập nhật hồ sơ thành công');
+      setUser((prev) => ({
+        ...prev,
+        name: response.data.name,
+        phone: response.data.phone,
+        avatar: response.data.avatar,
+      }));
+
+      // 🔹 Cập nhật lại localStorage (giống LoginScreen)
+      const updatedUserInfo = {
+        ...userInfo,
+        name: response.data.name,
+        phone: response.data.phone,
+        avatar: response.data.avatar
+      };
+      localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+
+      setSuccess('Cập nhật hồ sơ thành công!');
     } catch (error) {
       console.error('Error updating profile:', error);
-      if (
-        error.response?.status === 401 &&
-        (error.response.data.message === 'Not authorized, token expired' ||
-          error.response.data.message === 'Not authorized, no token provided')
-      ) {
-        localStorage.removeItem('userInfo');
-        navigate('/login', { replace: true });
-        setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-      } else {
-        setError(error.response?.data?.message || 'Lỗi khi cập nhật hồ sơ');
-      }
+      setError(error.response?.data?.message || 'Lỗi khi cập nhật hồ sơ');
     } finally {
       setUploadLoading(false);
     }
   };
 
+  // 🔹 Đổi mật khẩu
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     setPasswordLoading(true);
@@ -195,58 +134,49 @@ function ProfileManagement() {
     setSuccess(null);
 
     if (newPassword !== confirmNewPassword) {
-      setError('Mật khẩu mới và xác nhận mật khẩu không khớp');
-      setPasswordLoading(false);
-      return;
-    }
-    if (!oldPassword) {
-      setError('Vui lòng nhập mật khẩu cũ');
-      setPasswordLoading(false);
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError('Mật khẩu mới phải dài ít nhất 6 ký tự');
+      setError('Mật khẩu mới và xác nhận không khớp');
       setPasswordLoading(false);
       return;
     }
 
     try {
-      const updateData = {
-        oldPassword,
-        newPassword,
-      };
-      const response = await axios.put(
-        `${API_BASE_URL}/api/users/profile`,
-        updateData,
+      const { data } = await axios.put(
+        `${API_BASE_URL}/api/users/${userInfo._id}/password`,
+        { oldPassword, newPassword },
         {
           headers: {
-            Authorization: `Bearer ${userInfo?.token}`,
+            Authorization: `Bearer ${userInfo.token}`,
             'Content-Type': 'application/json',
           },
         }
       );
-
-      setSuccess('Cập nhật mật khẩu thành công');
+      setSuccess(data.message || 'Đổi mật khẩu thành công');
       setOldPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
       setShowPasswordForm(false);
     } catch (error) {
-      console.error('Error updating password:', error);
-      if (
-        error.response?.status === 401 &&
-        (error.response.data.message === 'Not authorized, token expired' ||
-          error.response.data.message === 'Not authorized, no token provided')
-      ) {
-        localStorage.removeItem('userInfo');
-        navigate('/login', { replace: true });
-        setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-      } else {
-        setError(error.response?.data?.message || 'Lỗi khi cập nhật mật khẩu');
-      }
+      setError(error.response?.data?.message || 'Lỗi khi đổi mật khẩu');
     } finally {
       setPasswordLoading(false);
     }
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+      setError('Vui lòng chọn ảnh JPG, PNG hoặc GIF');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Kích thước ảnh không vượt quá 5MB');
+      return;
+    }
+    setNewAvatar(file);
+    const reader = new FileReader();
+    reader.onload = () => setUser((prev) => ({ ...prev, avatar: reader.result }));
+    reader.readAsDataURL(file);
   };
 
   if (loading) return <Loader />;
@@ -256,20 +186,20 @@ function ProfileManagement() {
       <Navbar />
       <div className="profile-management" style={{ marginTop: '120px' }}>
         <h2>Quản lý hồ sơ</h2>
-        {error && (
-          <Alert variant="danger" onClose={() => setError(null)} dismissible>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert variant="success" onClose={() => setSuccess(null)} dismissible>
-            {success}
-          </Alert>
-        )}
+
+        {error && <Alert variant="danger">{error}</Alert>}
+        {success && <Alert variant="success">{success}</Alert>}
+
         <div className="profile-container">
           <div className="avatar-section">
             <img
-              src={user.avatar || defaultAvatar}
+              src={
+                user.avatar?.startsWith('data:')
+                  ? user.avatar
+                  : user.avatar
+                    ? `${API_BASE_URL}/${user.avatar}`
+                    : defaultAvatar
+              }
               alt="Avatar"
               className="avatar-image"
             />
@@ -284,27 +214,13 @@ function ProfileManagement() {
               <input
                 id="avatar-upload"
                 type="file"
-                accept="image/jpeg,image/png,image/gif"
+                accept="image/*"
                 onChange={handleAvatarChange}
                 style={{ display: 'none' }}
-                disabled={uploadLoading}
               />
-              {user.avatar && (
-                <Button
-                  variant="outline-danger"
-                  size="sm"
-                  onClick={handleRemoveAvatar}
-                  disabled={uploadLoading}
-                  className="remove-avatar-button"
-                >
-                  Xóa ảnh
-                </Button>
-              )}
             </div>
-            <p className="avatar-note">
-              Sử dụng ảnh vuông, tối đa 5MB (JPEG, PNG, GIF)
-            </p>
           </div>
+
           <form className="profile-form" onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Họ và tên</label>
@@ -312,75 +228,73 @@ function ProfileManagement() {
                 type="text"
                 name="name"
                 value={user.name}
-                onChange={handleInputChange}
-                required
+                onChange={(e) => setUser({ ...user, name: e.target.value })}
               />
-              <span className="edit-icon" />
             </div>
+
+            <div className="form-group">
+              <label>Email</label>
+              <input type="email" value={user.email} disabled />
+            </div>
+
             <div className="form-group">
               <label>Số điện thoại</label>
               <input
                 type="text"
                 name="phone"
-                value={user.phone}
-                onChange={handleInputChange}
-                placeholder="Nhập số điện thoại"
+                value={user.phone || ''}
+                onChange={(e) => setUser({ ...user, phone: e.target.value })}
               />
-              <span className="edit-icon" />
             </div>
-            <div className="form-group">
-              <label>Email</label>
-              <input type="email" name="email" value={user.email} disabled />
-              <span className="lock-icon" />
-            </div>
+
             <div className="form-group">
               <label>Tổng số đặt phòng</label>
               <p className="disabled-field">{user.bookingsCount}</p>
-              <span className="lock-icon" />
             </div>
-            <div className="form-group">
-              <label>Mật khẩu</label>
-              <Button
-                variant="outline-primary"
-                onClick={() => setShowPasswordForm(!showPasswordForm)}
-              >
-                Đổi mật khẩu
-              </Button>
-            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={uploadLoading}
+            >
+              {uploadLoading ? (
+                <Spinner animation="border" size="sm" />
+              ) : (
+                'Cập nhật hồ sơ'
+              )}
+            </Button>
+
+            <hr />
+
+            <Button
+              variant="outline-primary"
+              onClick={() => setShowPasswordForm(!showPasswordForm)}
+            >
+              {showPasswordForm ? 'Hủy' : 'Đổi mật khẩu'}
+            </Button>
+
             {showPasswordForm && (
               <div className="password-form">
-                <div className="form-group">
-                  <label>Mật khẩu cũ</label>
-                  <input
-                    type="password"
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                    placeholder="Nhập mật khẩu cũ"
-                  />
-                  <span className="edit-icon" />
-                </div>
-                <div className="form-group">
-                  <label>Mật khẩu mới</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Nhập mật khẩu mới"
-                  />
-                  <span className="edit-icon" />
-                </div>
-                <div className="form-group">
-                  <label>Xác nhận mật khẩu mới</label>
-                  <input
-                    type="password"
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    placeholder="Xác nhận mật khẩu mới"
-                  />
-                  <span className="edit-icon" />
-                </div>
+                <input
+                  type="password"
+                  placeholder="Mật khẩu cũ"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                />
+                <input
+                  type="password"
+                  placeholder="Mật khẩu mới"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <input
+                  type="password"
+                  placeholder="Xác nhận mật khẩu mới"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                />
                 <Button
-                  variant="primary"
+                  variant="success"
                   onClick={handlePasswordUpdate}
                   disabled={passwordLoading}
                 >
@@ -392,17 +306,6 @@ function ProfileManagement() {
                 </Button>
               </div>
             )}
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={uploadLoading || loading}
-            >
-              {uploadLoading || loading ? (
-                <Spinner animation="border" size="sm" />
-              ) : (
-                'Cập nhật hồ sơ'
-              )}
-            </Button>
           </form>
         </div>
       </div>

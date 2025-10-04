@@ -37,7 +37,7 @@ const discountSchema = new mongoose.Schema({
   },
   applicableHotels: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Room',
+    ref: 'Hotel',
   }],
   startDate: {
     type: Date,
@@ -81,12 +81,23 @@ const discountSchema = new mongoose.Schema({
       default: 0,
     },
   }],
+  image: {
+    type: String,
+    trim: true,
+  },
+
   isDeleted: {
     type: Boolean,
     default: false,
   },
 }, {
   timestamps: true,
+});
+
+//Virtual: còn hiệu lực hay không
+discountSchema.virtual('isActive').get(function () {
+  const now = new Date();
+  return this.startDate <= now && now <= this.endDate;
 });
 
 // Pre-save hook để xác thực

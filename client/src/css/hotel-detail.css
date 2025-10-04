@@ -188,3 +188,26 @@
 .service-card .d-flex {
   margin-left: 0;   /* ép sát icon về trái */
 }
+
+
+.service-item {
+  display: flex;
+  align-items: center;
+  gap: 10px; 
+}
+
+.service-item i {
+  font-size: 15px;
+  color: #0071c2; 
+  min-width: 10px;
+  text-align: center;
+}
+
+
+.tab-room {
+  color: black !important;   
+  font-weight: 600;
+}
+
+
+

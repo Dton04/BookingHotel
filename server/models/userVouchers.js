@@ -6,7 +6,7 @@ const userVoucherSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-  rewardId: {
+  discountId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Reward',
     required: true,

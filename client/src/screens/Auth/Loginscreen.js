@@ -12,47 +12,42 @@ function LoginScreen() {
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
+  e.preventDefault();
+  setError('');
+  setSuccess('');
 
-    if (!email || !password) {
-      setError('Vui lòng điền đầy đủ thông tin.');
-      return;
+  if (!email || !password) {
+    setError('Vui lòng điền đầy đủ thông tin.');
+    return;
+  }
+
+  try {
+    setLoading(true);
+    const response = await axios.post('/api/users/login', { email, password });
+
+    if (response.data.redirect) {
+      // Nếu có redirect → chuyển sang trang xác nhận OTP
+      navigate(response.data.redirect);
+    } else if (response.data.user) {
+      
+      // Nếu server trả về user (đã xác minh OTP)
+      localStorage.setItem('userInfo', JSON.stringify(response.data.user));
+      
+      window.dispatchEvent(new Event('storage'));
+
+      setSuccess('Đăng nhập thành công!');
+      navigate('/home');
+    } else {
+      setError('Không nhận được phản hồi hợp lệ từ server.');
     }
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || 'Đã xảy ra lỗi khi đăng nhập.';
+    setError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
-    try {
-      setLoading(true);
-      const response = await axios.post('/api/users/login', { email, password });
-      const userData = response.data;
-      // Lưu thông tin người dùng
-      localStorage.setItem('userInfo', JSON.stringify(userData));
-      // Lưu token riêng
-      if (userData.token) {
-        localStorage.setItem('token', userData.token);
-      } else {
-        throw new Error('Không nhận được token từ server');
-      }
-      setSuccess('Đăng nhập thành công! Đang chuyển hướng...');
-      setEmail('');
-      setPassword('');
-
-      setTimeout(() => {
-        if (userData.isAdmin) {
-          navigate('/home');
-        } else if (userData.role === 'staff') {
-          navigate('/home');
-        } else {
-          navigate('/home');
-        }
-      }, 2000);
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Đã xảy ra lỗi khi đăng nhập.';
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGoogleLogin = () => {
     setLoading(true);

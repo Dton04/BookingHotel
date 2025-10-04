@@ -60,6 +60,13 @@ const userSchema = mongoose.Schema({
       ref: 'Room',
     },
   ],
+  failedLoginAttempts: { type: Number, default: 0 },
+  lockUntil: { type: Date },
+  otp: { type: String },
+  otpExpires: { type: Date },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
+
   vouchers: [
     {
       type: mongoose.Schema.Types.ObjectId,

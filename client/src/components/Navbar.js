@@ -1,13 +1,8 @@
-// Navbar.js
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import '../css/navbar.css';
 import axios from 'axios';
-
-import facebookIcon from '../assets/icons/facebook-icon.jpg';
-import twitterIcon from '../assets/icons/x-icon.jpg';
-import instagramIcon from '../assets/icons/instagram-icon.png';
-import youtubeIcon from '../assets/icons/youtube-icon.jpg';
 
 function Navbar() {
   const location = useLocation();
@@ -20,12 +15,17 @@ function Navbar() {
   const [points, setPoints] = useState(0);
 
   const checkLoginStatus = async () => {
-    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-    if (userInfo && userInfo.name && userInfo.token) {
+    const storedUserInfo = localStorage.getItem('userInfo');
+    if (!storedUserInfo) return;
+
+    const userInfo = JSON.parse(storedUserInfo);
+    const userData = userInfo.user || userInfo; 
+
+    if (userData && userData.name && userData.token) {
       setIsLoggedIn(true);
-      setUser(userInfo);
+      setUser(userData);  // Set user là userData
       try {
-        const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+        const config = { headers: { Authorization: `Bearer ${userData.token}` } };  
         const response = await axios.get('/api/users/points', config);
         setPoints(response.data.points);
       } catch (error) {
@@ -72,7 +72,7 @@ function Navbar() {
         <div className="top-bar-right d-flex align-items-center">
           {isLoggedIn ? (
             <div className="user-menu">
-              <button 
+              <button
                 className="user-menu-button"
                 onClick={() => setUserDropdownOpen(!isUserDropdownOpen)}
               >
@@ -85,7 +85,7 @@ function Navbar() {
                   <>
                     <li><Link className="dropdown-item" to="/admin" onClick={closeNav}><i className="fas fa-cog me-2"></i>Quản trị</Link></li>
                     <li><Link className="dropdown-item" to="/admin/dashboard" onClick={closeNav}><i className="fas fa-tachometer-alt me-2"></i>Bảng điều khiển</Link></li>
-                  
+
                   </>
                 ) : user.role === 'staff' ? (
                   <>
@@ -97,13 +97,19 @@ function Navbar() {
                   <>
                     <li><Link className="dropdown-item" to="/bookings" onClick={closeNav}>Đặt phòng</Link></li>
                     <li><Link className="dropdown-item" to="/stats" onClick={closeNav}>Thống kê</Link></li>
-                     <li><Link className="dropdown-item" to="/testimonial" onClick={closeNav}>Đánh giá</Link></li>
 
-                     <li>
-  <Link className="dropdown-item" to="/reviews" onClick={closeNav}>
-    <i className="fas fa-star me-2"></i>Đánh giá
-  </Link>
-</li>
+
+                    <li>
+                      <Link className="dropdown-item" to="/reviews" onClick={closeNav}>
+                        <i className="fas fa-star me-2"></i>Đánh giá
+                      </Link>
+                    </li>
+
+                    <li>
+                      <Link className="dropdown-item" to="/discounts" onClick={closeNav}>
+                        <i className="fas fa-star me-2"></i>Uu dai
+                      </Link>
+                    </li>
 
                     <li><Link className="dropdown-item" to="/rewards" onClick={closeNav}><i className="fa fa-gift me-2"></i>Ưu đãi</Link></li>
                     <li><Link className="dropdown-item" to="/membership" onClick={closeNav}><i className="fas fa-star me-2"></i>Thành viên</Link></li>
@@ -122,9 +128,9 @@ function Navbar() {
             </div>
           )}
 
-          <button 
-            className="navbar-toggler d-md-none ms-2" 
-            type="button" 
+          <button
+            className="navbar-toggler d-md-none ms-2"
+            type="button"
             onClick={() => setNavOpen(!isNavOpen)}
           >
             <i className="fas fa-bars text-white"></i>
@@ -148,10 +154,17 @@ function Navbar() {
               </Link>
             </li>
 
+
             <li className={`nav-item ${location.pathname === '/about' ? 'active' : ''}`}>
               <Link className="nav-link" to="/about" onClick={closeNav}>
                 <i className="fas fa-info-circle me-2"></i>
                 Về chúng tôi
+              </Link>
+            </li>
+            <li className={`nav-item ${location.pathname === '/discount' ? 'active' : ''}`}>
+              <Link className="nav-link" to="/discounts" onClick={closeNav}>
+                <i className="fas fa-solid fa-gifts"></i>
+                Phiếu giảm giá và ưu đãi
               </Link>
             </li>
             <li className={`nav-item ${location.pathname === '/contact' ? 'active' : ''}`}>

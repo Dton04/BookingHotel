@@ -8,7 +8,7 @@ import '../css/AdminDiscounts.css';
 
 const AdminDiscounts = () => {
   const [discounts, setDiscounts] = useState([]);
-  const [rooms, setRooms] = useState([]);
+  const [hotels, setHotels] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDiscount, setSelectedDiscount] = useState(null);
@@ -45,15 +45,15 @@ const AdminDiscounts = () => {
     }
   };
 
-  const fetchRooms = async () => {
+  const fetchHotels = async () => {
     try {
-      const response = await axios.get('/api/rooms/getallrooms', {
+      const response = await axios.get('/api/hotels', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setRooms(response.data);
+      setHotels(response.data);
     } catch (error) {
-      setRooms([]);
-      toast.error('Không thể lấy danh sách phòng từ server. Vui lòng kiểm tra kết nối.');
+      setHotels([]);
+      toast.error('Không thể lấy danh sách khách sạn từ server.');
     }
   };
 
@@ -63,7 +63,7 @@ const AdminDiscounts = () => {
       return;
     }
     fetchDiscounts();
-    fetchRooms();
+    fetchHotels();
   }, []);
 
   const handleOpenModal = (discount = null) => {
@@ -148,6 +148,11 @@ const AdminDiscounts = () => {
     if (formData.type === 'accumulated' && (!formData.minSpending || formData.minSpending <= 0)) {
       newErrors.minSpending = 'Chi tiêu tối thiểu phải lớn hơn 0 cho khuyến mãi accumulated';
     }
+    if (formData.type === "festival" && (!formData.startDate || !formData.endDate)) {
+      newErrors.startDate = "Ngày bắt đầu là bắt buộc cho festival";
+      newErrors.endDate = "Ngày kết thúc là bắt buộc cho festival";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -158,6 +163,7 @@ const AdminDiscounts = () => {
 
     try {
       const data = { ...formData };
+      if (!data.image) delete data.image;
       if (!data.maxDiscount) delete data.maxDiscount;
       if (!data.minSpending) delete data.minSpending;
       if (data.type !== 'member') delete data.membershipLevel;
@@ -203,15 +209,16 @@ const AdminDiscounts = () => {
     }
   };
 
-  const getRoomNames = (hotelIds) => {
-    if (!hotelIds || hotelIds.length === 0) return 'Tất cả phòng';
-    const roomNames = hotelIds.map((id) => {
+  const getHotelNames = (hotelIds) => {
+    if (!hotelIds || hotelIds.length === 0) return 'Tất cả khách sạn';
+    const names = hotelIds.map((id) => {
       const idStr = typeof id === 'object' && id._id ? id._id.toString() : id.toString();
-      const room = rooms.find((r) => r._id?.toString() === idStr);
-      return room ? room.name : '(ID không tìm thấy)';
+      const hotel = hotels.find((h) => h._id?.toString() === idStr);
+      return hotel ? hotel.name : '(ID không tìm thấy)';
     });
-    return roomNames.length > 0 ? roomNames.join(', ') : 'Không có phòng hợp lệ';
+    return names.length > 0 ? names.join(', ') : 'Không có khách sạn hợp lệ';
   };
+
 
   return (
     <div className="admin-discounts-container">
@@ -228,10 +235,11 @@ const AdminDiscounts = () => {
             <th>Mã</th>
             <th>Loại</th>
             <th>Giảm giá</th>
-            <th>Phòng áp dụng</th>
+            <th>Khách sạn áp dụng</th>
             <th>Ngày bắt đầu</th>
             <th>Ngày kết thúc</th>
             <th>Chồng khuyến mãi</th>
+            <th>Ảnh</th>
             <th>Hành động</th>
           </tr>
         </thead>
@@ -246,10 +254,15 @@ const AdminDiscounts = () => {
                   ? `${discount.discountValue}%`
                   : `${discount.discountValue} VND`}
               </td>
-              <td>{getRoomNames(discount.applicableHotels)}</td>
+              <td>{getHotelNames(discount.applicableHotels)}</td>
               <td>{moment(discount.startDate).format('DD/MM/YYYY')}</td>
               <td>{moment(discount.endDate).format('DD/MM/YYYY')}</td>
               <td>{discount.isStackable ? 'Có' : 'Không'}</td>
+              <td>
+                {discount.image ? (
+                  <img src={discount.image} alt={discount.name} style={{ width: "80px", borderRadius: "6px" }} />
+                ) : "-"}
+              </td>
               <td>
                 <button
                   className="edit-button"
@@ -352,7 +365,7 @@ const AdminDiscounts = () => {
             </Form.Group>
 
             <Form.Group className="form-group">
-              <Form.Label>Phòng áp dụng</Form.Label>
+              <Form.Label>Khách sạn áp dụng</Form.Label>
               <Form.Control
                 as="select"
                 multiple
@@ -360,16 +373,16 @@ const AdminDiscounts = () => {
                 value={formData.applicableHotels}
                 onChange={handleHotelChange}
               >
-                {rooms.map((room) => (
-                  <option key={room._id} value={room._id.toString()}>
-                    {room.name}
+                {hotels.map((hotel) => (
+                  <option key={hotel._id} value={hotel._id.toString()}>
+                    {hotel.name}
                   </option>
                 ))}
               </Form.Control>
               <Form.Text className="text-muted">
                 {formData.applicableHotels.length > 0
-                  ? `Đã chọn: ${getRoomNames(formData.applicableHotels)}`
-                  : 'Chưa chọn phòng nào, áp dụng cho tất cả phòng'}
+                  ? `Đã chọn: ${getHotelNames(formData.applicableHotels)}`
+                  : 'Chưa chọn khách sạn nào, áp dụng cho tất cả khách sạn'}
               </Form.Text>
             </Form.Group>
 
@@ -425,6 +438,18 @@ const AdminDiscounts = () => {
                 checked={formData.isStackable}
                 onChange={handleInputChange}
               />
+            </Form.Group>
+            <Form.Group className="form-group">
+              <Form.Label>Ảnh khuyến mãi (URL)</Form.Label>
+              <Form.Control
+                type="text"
+                name="image"
+                value={formData.image || ""}
+                onChange={handleInputChange}
+              />
+              <Form.Text className="text-muted">
+                (Ví dụ: https://example.com/banner.jpg)
+              </Form.Text>
             </Form.Group>
 
             {formData.type === 'member' && (

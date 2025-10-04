@@ -54,6 +54,8 @@ const HotelDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [roomCount, setRoomCount] = useState(1);
+
 
   const getBookingInfo = () => {
     try {
@@ -149,13 +151,19 @@ const HotelDetail = () => {
           setServices([]);
         }
 
-        // Fetch reviews (tạm thời comment lại vì chưa có API)
-        // const reviewsResponse = await axios.get(`/api/reviews/hotel/${id}`);
-        // setReviews(reviewsResponse.data);
-        // if (reviewsResponse.data.length > 0) {
-        //   const avgRating = reviewsResponse.data.reduce((acc, review) => acc + review.rating, 0) / reviewsResponse.data.length;
-        //   setAverageRating(avgRating);
-        // }
+        // Fetch reviews từ API
+try {
+  const reviewsResponse = await axios.get(`http://localhost:5000/api/reviews?hotelId=${id}`);
+  setReviews(reviewsResponse.data.reviews || []);
+
+  const avgResponse = await axios.get(`http://localhost:5000/api/reviews/average?hotelId=${id}`);
+  setAverageRating(avgResponse.data.average || 0);
+} catch (reviewError) {
+  console.error("Error fetching reviews:", reviewError);
+  setReviews([]);
+  setAverageRating(0);
+}
+
 
       } catch (error) {
         console.error('Error fetching hotel details:', error);
@@ -357,7 +365,7 @@ const HotelDetail = () => {
                   className="mb-4"
                 >
                   {/* Overview Tab */}
-                  <Tab eventKey="overview" title="Tổng quan">
+                  <Tab eventKey="overview" title="Tổng quan" tabClassName="tab-room">
                     <div className="overview-section">
                       <h4>Giới thiệu</h4>
                       <p>{hotel.description}</p>
@@ -365,33 +373,38 @@ const HotelDetail = () => {
                       <h4>Các tiện nghi nổi bật</h4>
                       <Row className="g-3">
                         {services.map((service) => (
-                          <Col md={6} key={service._id}>
-                                <div className="align-items-start">
-                                  <i className={service.icon}></i>
-                                  <div>
-                                    <h6 className="mb-1">{service.name}</h6>
-                                    <p className="mb-0 small text-muted">
-                                      {service.description}
-                                    </p>
-                                    {!service.isFree && (
-                                      <div className="text-primary mt-1">
-                                        {formatPriceVND(service.price)}
-                                      </div>
-                                    )}
+                          <Col md={3} key={service._id}>
+                            <div className="service-item">
+                              <i className={service.icon}></i>
+                              <div className="service-text">
+                                <h6 className="mb-1">{service.name}</h6>
+                                <p className="mb-0 small text-muted">{service.description}</p>
+                                {!service.isFree && (
+                                  <div className="text-primary mt-1">
+                                    {formatPriceVND(service.price)}
                                   </div>
-                                </div>           
+                                )}
+                              </div>
+                            </div>
                           </Col>
                         ))}
                       </Row>
+
                     </div>
                   </Tab>
 
                   {/* Rooms Tab */}
-                  <Tab eventKey="rooms" title="Phòng">
+                  <Tab eventKey="rooms" title="Phòng" tabClassName="tab-room">
                     <div className="rooms-section">
                       {hotel.rooms?.filter((room) =>{
                         const totalGuests = parseInt(bookingInfo.adults) + parseInt(bookingInfo.children|| 0);
-                        return totalGuests <= room.maxcount;
+                        const roomsNeeded = parseInt(bookingInfo.rooms) || 1;
+
+                        // TInh TB
+                        const guestsPerRoom = Math.ceil(totalGuests / roomsNeeded);
+                        return guestsPerRoom <= room.maxcount;
+
+                      
                       })
                       .map((room) => (
                         <Card key={room._id} className="room-card mb-4 shadow-sm border-0 rounded-3 overflow-hidden">
@@ -450,7 +463,7 @@ const HotelDetail = () => {
 
 
                   {/* Reviews Tab */}
-                  <Tab eventKey="reviews" title={"Đánh giá (" + reviews.length + ")"}>
+                  <Tab eventKey="reviews" tabClassName="tab-room" title={"Đánh giá (" + reviews.length + ")" }>
                     <div className="reviews-section">
                       <Row>
                         <Col md={4}>
@@ -548,7 +561,7 @@ const HotelDetail = () => {
                     <div className="ms-4">
                       <div className="fw-bold">
                         Nhận phòng: {bookingInfo.checkin ?
-                          new Date(bookingInfo.checkin).toLocaleDateString('vi-VN', {
+                          new Date(new Date(bookingInfo.checkin).getTime() + new Date().getTimezoneOffset() * 60000).toLocaleDateString('vi-VN', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit'
@@ -557,7 +570,7 @@ const HotelDetail = () => {
                       </div>
                       <div className="fw-bold">
                         Trả phòng: {bookingInfo.checkout ?
-                          new Date(bookingInfo.checkout).toLocaleDateString('vi-VN', {
+                          new Date(new Date(bookingInfo.checkout).getTime() + new Date().getTimezoneOffset() * 60000).toLocaleDateString('vi-VN', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit'

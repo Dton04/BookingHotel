@@ -233,22 +233,30 @@ function Bookingscreen() {
     const locationState = window.history.state?.usr;
 
     if (locationState) {
-      setValue("checkin", locationState.checkin || "");
-      setValue("checkout", locationState.checkout || "");
+      setValue("checkin", formatDate(locationState.checkin));
+      setValue("checkout", formatDate(locationState.checkout));
       setValue("adults", locationState.adults || 2);
       setValue("children", locationState.children || 0);
       setValue("roomType", locationState.roomType || "");
+      setValue("roomsBooked", locationState.rooms || 1);
     } else {
       // Nếu không có locationState thì fallback từ localStorage
       const bookingInfo = JSON.parse(localStorage.getItem("bookingInfo"));
       if (bookingInfo) {
-        setValue("checkin", bookingInfo.checkin || "");
-        setValue("checkout", bookingInfo.checkout || "");
+        setValue("checkin", formatDate(bookingInfo.checkin));
+        setValue("checkout", formatDate(bookingInfo.checkout));
         setValue("adults", bookingInfo.adults || 2);
         setValue("children", bookingInfo.children || 0);
+        setValue("roomsBooked", bookingInfo.rooms || 1);
       }
     }
   }, [setValue]);
+  const formatDate = (date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    if (isNaN(d)) return "";
+    return d.toISOString().split("T")[0];
+  };
 
   useEffect(() => {
     let interval;
@@ -302,7 +310,8 @@ function Bookingscreen() {
       setBookingStatus(null);
       const totalGuests = Number(data.adults) + Number(data.children || 0);
       const calculatedRoomsNeeded = Math.ceil(totalGuests / room.maxcount);
-      setRoomsNeeded(calculatedRoomsNeeded); // ✅ lưu vào state
+      const roomsBooked = Number(data.roomsBooked) || 1;
+      setRoomsNeeded(roomsBooked);
 
 
       // ✅ Tính số ngày ở
@@ -311,7 +320,7 @@ function Bookingscreen() {
         (1000 * 60 * 60 * 24)
       );
 
-      // ✅ Tính tổng tiền
+      // Tính tổng tiền
       const baseAmount = room.rentperday * days * roomsNeeded;
       const servicesCost = calculateServiceCost();
       const discountAmount =
@@ -335,7 +344,7 @@ function Bookingscreen() {
         ...data,
         adults: Number(data.adults),
         children: Number(data.children) || 0,
-        roomsNeeded,
+        roomsBooked,
         totalAmount,
         diningServices: selectedServices, // Gửi danh sách dịch vụ được chọn
         appliedVouchers: discountResult?.appliedDiscounts?.map((d) => ({
@@ -822,6 +831,30 @@ function Bookingscreen() {
                     </div>
 
                   </div>
+
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label className="form-label">Số phòng</label>
+                      <select
+                        className={`form-control ${errors.roomsBooked ? "is-invalid" : ""}`}
+                        {...register("roomsBooked", { required: "Vui lòng chọn số phòng" })}
+                        onChange={(e) => setRoomsNeeded(Number(e.target.value))}
+                      >
+                        <option value="" disabled>
+                          Chọn số phòng
+                        </option>
+                        {[...Array(room.quantity).keys()].map((num) => (
+                          <option key={num + 1} value={num + 1}>
+                            {num + 1} phòng
+                          </option>
+                        ))}
+                      </select>
+                      {errors.roomsBooked && (
+                        <div className="invalid-feedback">{errors.roomsBooked.message}</div>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="form-group">
                     <label htmlFor="paymentMethod">Phương thức thanh toán</label>
                     <select

@@ -7,7 +7,7 @@ import Homescreen from "./screens/Homescreen";
 import Rooms from "./components/Rooms";
 import Bookingscreen from "./screens/Bookingscreen";
 import OurTeam from "./components/Pages/OurTeam";
-import Testimonial from "./components/Pages/Testimonial";
+
 import Contact from "./components/Contact";
 import About from "./screens/About";
 import Footer from "./components/Footer";
@@ -49,6 +49,9 @@ import AdminRegions from "./components/AdminRegions";
 
 import Review from "./screens/Review";
 
+import DiscountsPage from "./screens/DiscountsPage"
+
+import VerifyOTP from "./screens/Auth/VerifyOTP";
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -82,7 +85,6 @@ function App() {
           <Route path="/book-room/:roomId" element={<Bookingscreen />} />
           <Route path="/book/:roomid" element={<Bookingscreen />} />
           <Route path="/ourteam" element={<OurTeam />} />
-          <Route path="/testimonial" element={<Testimonial />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/" element={<Homescreen />} />
           <Route path="/login" element={<LoginScreen />} />
@@ -111,6 +113,8 @@ function App() {
           <Route path="/admin/rewards" element={<AdminRewards />} />
           <Route path="/hotel/:id" element={<HotelDetail />} />
 
+          <Route path="/discounts" element={<DiscountsPage />} />
+          <Route path="/verify-otp" element={<VerifyOTP />} />  
            <Route
             path="/reviews"
             element={
