@@ -137,6 +137,8 @@ passport.deserializeUser(async (id, done) => {
 // Routes
 router.post('/register', usersController.register);
 router.post('/login', usersController.login);
+router.post('/google/send-otp', usersController.sendGoogleOTP);
+router.post('/verify-otp', usersController.verifyOTP);
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: 'http://localhost:3000/login?error=Google authentication failed' }), usersController.googleCallback);
 router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));
@@ -168,7 +170,6 @@ router.post('/regions/assign-admin', protect, admin, usersController.assignRegio
 router.get('/membership/benefits/:userId', protect, usersController.getMembershipBenefits);
 
 
-router.post('/google/send-otp', usersController.sendGoogleOTP);
-router.post('/verify-otp', usersController.verifyOTP);
+
 
 module.exports = router;

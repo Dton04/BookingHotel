@@ -4,6 +4,7 @@ import Banner from "../components/Banner";
 import BookingForm from "../components/BookingForm";
 import RoomsContent from "../components/RoomsContent";
 import AlertMessage from "../components/AlertMessage";
+import { useNavigate } from "react-router-dom";
 import "../css/homescreen.css";
 
 import '../css/promotion-section.css';
@@ -11,13 +12,21 @@ import '../css/promotion-section.css';
 function Homescreen() {
   const [bookingStatus, setBookingStatus] = useState(null);
   const [regions, setRegions] = useState([]);
-  const [selectedPromotion, setSelectedPromotion] = useState(null);
   const [stats, setStats] = useState({
     rooms: 150,
     customers: 1200,
     rating: 4.8,
     awards: 12
   });
+  const [festivalDiscounts, setFestivalDiscounts] = useState([]);
+  const navigate = useNavigate();
+  useEffect(() => {
+    fetch("/api/discounts/festival")
+      .then(res => res.json())
+      .then(data => setFestivalDiscounts(data))
+      .catch(err => console.error("Error loading festival discounts:", err));
+  }, []);
+
 
   // Fetch regions từ BE
   useEffect(() => {
@@ -67,38 +76,8 @@ function Homescreen() {
         </div>
       </section>
 
-      {/* Ưu đãi đặc biệt */}
-      <section className="promotions-section">
-        <div className="container">
-          <div className="promotions-header text-center">
-            <h2 className="subtitle"><span className="line"></span>ƯU ĐÃI ĐẶC BIỆT<span className="line"></span></h2>
-            <h1 className="title">Tiết kiệm <span>NGAY HÔM NAY</span></h1>
-          </div>
-          <div className="row">
-            {promotions.map((promo, i) => (
-              <div className="col-md-6 col-lg-3 mb-4" key={i}>
-                <div className="promotion-card" onClick={() => setSelectedPromotion(promo)}>
-                  <div className="promotion-badge">{promo.badge}</div>
-                  <h3>{promo.title}</h3>
-                  <p>{promo.desc}</p>
-                  <button className="btn btn-promotion">Xem chi tiết</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Modal chi tiết ưu đãi */}
-      {selectedPromotion && (
-        <div className="promotion-modal">
-          <div className="modal-content">
-            <h2>{selectedPromotion.title}</h2>
-            <p>{selectedPromotion.desc}</p>
-            <button className="btn btn-close" onClick={() => setSelectedPromotion(null)}>Đóng</button>
-          </div>
-        </div>
-      )}
+
 
       {/* Địa điểm đẹp */}
       <section className="destinations-section">
@@ -135,6 +114,66 @@ function Homescreen() {
           </div>
         </div>
       </section>
+
+      <section className="festival-section py-5 bg-gradient">
+        <div className="container">
+          <div className="text-center mb-5">
+            <h2 className="festival-subtitle">
+              <span className="line"></span> ƯU ĐÃI LỄ HỘI <span className="line"></span>
+            </h2>
+            <h1 className="festival-title">
+              Không khí lễ hội - <span>Ưu đãi tuyệt vời!</span>
+            </h1>
+            <p className="festival-desc">
+              Khám phá những ưu đãi độc quyền trong mùa lễ hội — tiết kiệm đến <strong>50%</strong> cho các điểm đến nổi bật!
+            </p>
+          </div>
+
+          <div className="row justify-content-center">
+            {festivalDiscounts.map((festival) => (
+              <div className="col-md-4 col-lg-3 mb-4" key={festival._id}>
+                <div
+                  className="festival-card position-relative overflow-hidden rounded-4 shadow-lg border-0"
+                  onClick={() => navigate(`/festival/${festival._id}`)}
+                  style={{ cursor: "pointer", transition: "transform 0.3s" }}
+                >
+                  <div className="festival-img-wrapper">
+                    <img
+                      src={festival.image || "/default-festival.jpg"}
+                      alt={festival.name}
+                      className="festival-img rounded-4"
+                    />
+                    <div className="festival-badge">Giảm {festival.discountValue}%</div> 
+                  </div>
+                  <div className="festival-info text-center p-3">
+                    <h5 className="fw-bold">{festival.name}</h5>
+                    <p className="text-muted small mb-3">
+                      {festival.description?.slice(0, 60) || "Khám phá các ưu đãi độc quyền mùa lễ hội."}
+                    </p>
+                    <button className="btn btn-festival px-4 py-2">
+                      Khám phá ngay
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+      {/* Ưu đãi cuối năm */}
+      <section className="year-end-deals text-center py-5 bg-light">
+        <div className="container">
+          <h2 className="subtitle mb-3">Ưu Đãi Cuối Năm 🎉</h2>
+          <h1 className="title mb-4">Vui là chính, không cần dài</h1>
+          <p className="mb-4">Tận hưởng thêm chút nắng vàng cuối mùa với giảm giá tối thiểu 15%</p>
+          <Link to="/deals" className="btn btn-primary btn-lg">
+            Tìm ưu đãi
+          </Link>
+        </div>
+      </section>
+
 
 
 

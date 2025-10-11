@@ -84,13 +84,13 @@
   padding: 12px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  align-items: center;
   font-size: 15px;
-  width: 1000px;
+  width: 100%;
+  max-width: 1000px; /* thay width cố định bằng max-width */
   border: 2px solid #febb02;
-  
-  
+  margin: 0 auto;
 }
+
 
 .search-input {
   padding: 10px;
@@ -219,3 +219,10 @@
 .search-button:hover {
   background: #005b99;
 }
+
+
+
+
+
+
+

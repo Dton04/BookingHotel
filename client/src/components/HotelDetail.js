@@ -28,7 +28,7 @@ import {
   FaCheck,
   FaRegCalendarAlt,
   FaPhoneAlt,
-  FaEnvelope,     // bổ sung icon email
+  FaEnvelope,
   FaHeart,
   FaRegHeart
 } from 'react-icons/fa';
@@ -36,11 +36,11 @@ import ImageGallery from 'react-image-gallery';
 import 'react-image-gallery/styles/css/image-gallery.css';
 import '../css/hotel-detail.css';
 
-
 const HotelDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const festival = location.state?.festival;
 
   const [hotel, setHotel] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +62,6 @@ const HotelDetail = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const checkin = urlParams.get('checkin');
 
-      // Ưu tiên query params từ URL (nếu có)
       if (checkin) {
         return {
           checkin: checkin || '',
@@ -72,7 +71,6 @@ const HotelDetail = () => {
           rooms: urlParams.get('rooms') || '1'
         };
       } else {
-        // Fallback về localStorage (dữ liệu từ BookingForm trước đó)
         const stored = localStorage.getItem('bookingInfo');
         if (stored) {
           const data = JSON.parse(stored);
@@ -84,7 +82,6 @@ const HotelDetail = () => {
             rooms: data.rooms || '1'
           };
         }
-        // Default nếu không có gì
         return {
           checkin: '',
           checkout: '',
@@ -105,6 +102,41 @@ const HotelDetail = () => {
     }
   };
   const [bookingInfo, setBookingInfo] = useState(getBookingInfo());
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [tempBooking, setTempBooking] = useState(bookingInfo);
+
+
+  // Khi lưu thay đổi
+  const handleSaveBookingInfo = () => {
+    setBookingInfo(tempBooking);
+    localStorage.setItem("bookingInfo", JSON.stringify(tempBooking));
+
+    // Cập nhật URL query để load lại phòng
+    const params = new URLSearchParams(tempBooking).toString();
+
+    navigate(`?${params}`, {
+      replace: true,
+      state: { festival }
+    });
+
+
+    setShowEditModal(false);
+
+  };
+
+
+  // Tính giá sau giảm
+  const calcDiscountedPrice = (price) => {
+    if (!festival || !price) return price;
+    if (festival.discountType === "percentage") {
+      return price * (1 - festival.discountValue / 100);
+    }
+    return Math.max(price - festival.discountValue, 0);
+  };
+
+  const formatPriceVND = (price) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  };
 
   // Cập nhật bookingInfo khi URL thay đổi
   useEffect(() => {
@@ -123,26 +155,29 @@ const HotelDetail = () => {
         setLoading(true);
         setError(null);
 
-        // Lấy thông tin từ URL
         const urlParams = new URLSearchParams(window.location.search);
         const checkin = urlParams.get('checkin');
         const checkout = urlParams.get('checkout');
         const adults = urlParams.get('adults');
         const children = urlParams.get('children');
 
-        // Fetch hotel details với phòng trống (nếu có đủ thông tin)
-        let hotelUrl = `http://localhost:5000/api/hotels/${id}`;
-        if (checkin && checkout && adults) {
-          hotelUrl = `http://localhost:5000/api/hotels/${id}/available-rooms?checkin=${checkin}&checkout=${checkout}&adults=${adults}&children=${children || 0}`;
-        }
+        let hotelUrl = `http://localhost:5000/api/hotels/${id}?includeEmpty=true`;
 
         const hotelResponse = await axios.get(hotelUrl);
         if (!hotelResponse.data) {
           throw new Error('Không tìm thấy thông tin khách sạn');
         }
-        setHotel(hotelResponse.data);
 
-        // Fetch services
+        // Áp dụng giá giảm từ festival nếu có
+        const updatedHotel = {
+          ...hotelResponse.data,
+          rooms: hotelResponse.data.rooms.map((room) => ({
+            ...room,
+            discountedPrice: room.discountedPrice || calcDiscountedPrice(room.rentperday),
+          })),
+        };
+        setHotel(updatedHotel);
+
         try {
           const servicesResponse = await axios.get(`http://localhost:5000/api/services/hotel/${id}`);
           setServices(servicesResponse.data);
@@ -151,20 +186,16 @@ const HotelDetail = () => {
           setServices([]);
         }
 
-        // Fetch reviews từ API
-try {
-  const reviewsResponse = await axios.get(`http://localhost:5000/api/reviews?hotelId=${id}`);
-  setReviews(reviewsResponse.data.reviews || []);
-
-  const avgResponse = await axios.get(`http://localhost:5000/api/reviews/average?hotelId=${id}`);
-  setAverageRating(avgResponse.data.average || 0);
-} catch (reviewError) {
-  console.error("Error fetching reviews:", reviewError);
-  setReviews([]);
-  setAverageRating(0);
-}
-
-
+        try {
+          const reviewsResponse = await axios.get(`http://localhost:5000/api/reviews?hotelId=${id}`);
+          setReviews(reviewsResponse.data.reviews || []);
+          const avgResponse = await axios.get(`http://localhost:5000/api/reviews/average?hotelId=${id}`);
+          setAverageRating(avgResponse.data.average || 0);
+        } catch (reviewError) {
+          console.error("Error fetching reviews:", reviewError);
+          setReviews([]);
+          setAverageRating(0);
+        }
       } catch (error) {
         console.error('Error fetching hotel details:', error);
         setError(
@@ -178,10 +209,9 @@ try {
     };
 
     fetchHotelDetails();
-  }, [id]);
+  }, [id, festival, location.search]);
 
   const handleBookNow = (room) => {
-    // Lấy thông tin từ bookingInfo state
     const { checkin, checkout, adults, children } = bookingInfo;
 
     if (!checkin || !checkout) {
@@ -191,8 +221,6 @@ try {
 
     const checkinDate = new Date(checkin);
     const checkoutDate = new Date(checkout);
-
-    // Kiểm tra tính hợp lệ của ngày
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -211,27 +239,25 @@ try {
       return;
     }
 
-    // Chuyển đến trang đặt phòng với đầy đủ thông tin
     navigate(`/book/${room._id}`, {
       state: {
         roomId: room._id,
         roomType: room.type,
         hotelName: hotel.name,
         hotelId: hotel._id,
-        checkin: checkin,
-        checkout: checkout,
+        checkin,
+        checkout,
         adults: parseInt(adults),
         children: parseInt(children) || 0,
-        rentPerDay: room.rentperday
-      }
+        rentPerDay: room.discountedPrice || room.rentperday,
+        festival: festival ? {
+          _id: festival._id,
+          name: festival.name,
+          discountType: festival.discountType,
+          discountValue: festival.discountValue,
+        } : null,
+      },
     });
-  };
-
-  const formatPriceVND = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
   };
 
   const toggleFavorite = () => {
@@ -323,6 +349,13 @@ try {
                 <FaMapMarkerAlt className="text-primary me-2" />
                 {hotel.address}
               </p>
+              {festival && (
+                <Badge bg="danger" className="mt-2">
+                  Ưu đãi {festival.name}: Giảm {festival.discountType === "percentage"
+                    ? `${festival.discountValue}%`
+                    : formatPriceVND(festival.discountValue)}
+                </Badge>
+              )}
             </div>
             <Button
               variant="outline-primary"
@@ -364,12 +397,10 @@ try {
                   onSelect={(k) => setActiveTab(k)}
                   className="mb-4"
                 >
-                  {/* Overview Tab */}
                   <Tab eventKey="overview" title="Tổng quan" tabClassName="tab-room">
                     <div className="overview-section">
                       <h4>Giới thiệu</h4>
                       <p>{hotel.description}</p>
-
                       <h4>Các tiện nghi nổi bật</h4>
                       <Row className="g-3">
                         {services.map((service) => (
@@ -389,81 +420,94 @@ try {
                           </Col>
                         ))}
                       </Row>
-
                     </div>
                   </Tab>
 
-                  {/* Rooms Tab */}
                   <Tab eventKey="rooms" title="Phòng" tabClassName="tab-room">
                     <div className="rooms-section">
-                      {hotel.rooms?.filter((room) =>{
-                        const totalGuests = parseInt(bookingInfo.adults) + parseInt(bookingInfo.children|| 0);
-                        const roomsNeeded = parseInt(bookingInfo.rooms) || 1;
-
-                        // TInh TB
-                        const guestsPerRoom = Math.ceil(totalGuests / roomsNeeded);
-                        return guestsPerRoom <= room.maxcount;
-
-                      
-                      })
-                      .map((room) => (
-                        <Card key={room._id} className="room-card mb-4 shadow-sm border-0 rounded-3 overflow-hidden">
-                          <Row className="g-0">
-                            <Col md={4}>
-                              <div className="room-image-wrapper">
-                                <img
-                                  src={room.imageurls?.[0] || '/images/default-room.jpg'}
-                                  alt={room.type}
-                                  className="room-image"
-                                />
-                              </div>
-                            </Col>
-                            <Col md={8}>
-                              <Card.Body className="d-flex flex-column justify-content-between h-100">
-                                <div>
-                                  <h5 className="room-type mb-2 fw-bold">{room.type}</h5>
-                                  <div className="room-features mb-3">
-                                    <Badge bg="light" text="dark" className="me-2">
-                                      <FaUserFriends className="me-1" />
-                                      {room.maxcount} người
-                                    </Badge>
-                                    <Badge bg="light" text="dark" className="me-2">
-                                      <FaBed className="me-1" />
-                                      {room.beds} giường
-                                    </Badge>
-                                    <Badge bg="light" text="dark">
-                                      <FaBath className="me-1" />
-                                      {room.baths} phòng tắm
-                                    </Badge>
-                                  </div>
-                                  <p className="room-description text-muted">{room.description}</p>
+                      {hotel.rooms
+                        ?.filter((room) => {
+                          const totalGuests = parseInt(bookingInfo.adults) + parseInt(bookingInfo.children || 0);
+                          const roomsNeeded = parseInt(bookingInfo.rooms) || 1;
+                          const guestsPerRoom = Math.ceil(totalGuests / roomsNeeded);
+                          return guestsPerRoom <= room.maxcount;
+                        })
+                        .map((room) => (
+                          <Card
+                            key={room._id}
+                            className="room-card mb-4 shadow-sm border-0 rounded-3 overflow-hidden"
+                          >
+                            <Row className="g-0">
+                              <Col md={4}>
+                                <div className="room-image-wrapper">
+                                  <img
+                                    src={room.imageurls?.[0] || '/images/default-room.jpg'}
+                                    alt={room.type}
+                                    className="room-image"
+                                  />
                                 </div>
-                                <div className="text-end">
-                                  <div className="room-price mb-2">
-                                    <small className="text-muted">Giá mỗi đêm từ</small>
-                                    <div className="h4 mb-0 text-primary fw-bold">
-                                      {formatPriceVND(room.rentperday)}
+                              </Col>
+                              <Col md={8}>
+                                <Card.Body className="d-flex flex-column justify-content-between h-100">
+                                  <div>
+                                    <h5 className="room-type mb-2 fw-bold">{room.type}</h5>
+                                    <div className="room-features mb-3">
+                                      <Badge bg="light" text="dark" className="me-2">
+                                        <FaUserFriends className="me-1" />
+                                        {room.maxcount} người
+                                      </Badge>
+                                      <Badge bg="light" text="dark" className="me-2">
+                                        <FaBed className="me-1" />
+                                        {room.beds} giường
+                                      </Badge>
+                                      <Badge bg="light" text="dark">
+                                        <FaBath className="me-1" />
+                                        {room.baths} phòng tắm
+                                      </Badge>
                                     </div>
+                                    <p className="room-description text-muted">{room.description}</p>
+                                    {room.quantity === 0 && (
+                                      <p className="text-danger fw-semibold mt-2">
+                                        Hết phòng loại này
+                                      </p>
+                                    )}
                                   </div>
-                                  <Button
-                                    variant="primary"
-                                    onClick={() => handleBookNow(room)}
-                                    disabled={room.availabilityStatus !== 'available'}
-                                  >
-                                    {room.availabilityStatus === 'available' ? 'Đặt ngay' : 'Hết phòng'}
-                                  </Button>
-                                </div>
-                              </Card.Body>
-                            </Col>
-                          </Row>
-                        </Card>
-                      ))}
+                                  <div className="text-end">
+                                    <div className="room-price mb-2">
+                                      {room.discountedPrice && room.discountedPrice !== room.rentperday ? (
+                                        <>
+                                          <small className="text-muted text-decoration-line-through">
+                                            {formatPriceVND(room.rentperday)}
+                                          </small>
+                                          <div className="h4 mb-0 text-danger fw-bold">
+                                            {formatPriceVND(room.discountedPrice)}
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <div className="h4 mb-0 text-primary fw-bold">
+                                          {formatPriceVND(room.rentperday)}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <Button
+                                      variant={room.quantity > 0 ? "primary" : "secondary"}
+                                      onClick={() => handleBookNow(room)}
+                                      disabled={room.quantity === 0 || room.availabilityStatus !== "available"}
+                                    >
+                                      {room.quantity === 0 || room.availabilityStatus !== "available"
+                                        ? "Hết phòng"
+                                        : "Đặt ngay"}
+                                    </Button>
+                                  </div>
+                                </Card.Body>
+                              </Col>
+                            </Row>
+                          </Card>
+                        ))}
                     </div>
                   </Tab>
 
-
-                  {/* Reviews Tab */}
-                  <Tab eventKey="reviews" tabClassName="tab-room" title={"Đánh giá (" + reviews.length + ")" }>
+                  <Tab eventKey="reviews" tabClassName="tab-room" title={`Đánh giá (${reviews.length})`}>
                     <div className="reviews-section">
                       <Row>
                         <Col md={4}>
@@ -475,11 +519,7 @@ try {
                               {Array.from({ length: 5 }).map((_, index) => (
                                 <FaStar
                                   key={index}
-                                  className={
-                                    index < Math.round(averageRating)
-                                      ? 'text-warning'
-                                      : 'text-muted'
-                                  }
+                                  className={index < Math.round(averageRating) ? 'text-warning' : 'text-muted'}
                                 />
                               ))}
                             </div>
@@ -525,9 +565,7 @@ try {
             </Card>
           </Col>
 
-          {/* Sidebar */}
           <Col lg={4}>
-            {/* Contact Info Card */}
             <Card className="mb-4">
               <Card.Body>
                 <h5 className="card-title mb-4">Thông tin liên hệ</h5>
@@ -548,7 +586,6 @@ try {
               </Card.Body>
             </Card>
 
-            {/* Booking Summary Card */}
             <Card className="mb-4">
               <Card.Body>
                 <h5 className="card-title mb-4">Thông tin đặt phòng của bạn</h5>
@@ -579,7 +616,6 @@ try {
                       </div>
                     </div>
                   </div>
-
                   <div className="booking-info-item mb-3 p-2 bg-light rounded">
                     <div className="d-flex align-items-center mb-2">
                       <FaUserFriends className="text-primary me-2" />
@@ -587,26 +623,33 @@ try {
                     </div>
                     <div className="ms-4 fw-bold">
                       {bookingInfo.adults} người lớn
-                      {Number(bookingInfo.children) > 0 &&
-                        ` · ${bookingInfo.children} trẻ em`}
+                      {Number(bookingInfo.children) > 0 && ` · ${bookingInfo.children} trẻ em`}
                     </div>
                   </div>
-
                   <div className="booking-info-item mb-3 p-2 bg-light rounded">
                     <div className="d-flex align-items-center mb-2">
                       <FaBed className="text-primary me-2" />
                       <label className="text-muted mb-0">Số phòng</label>
                     </div>
-                    <div className="ms-4 fw-bold">
-                      {bookingInfo.rooms} phòng
-                    </div>
+                    <div className="ms-4 fw-bold">{bookingInfo.rooms} phòng</div>
                   </div>
                 </div>
                 <div className="text-center mt-3">
                   <div className="h5 text-primary mb-3">
-                    Giá phòng từ {formatPriceVND(Math.min(...hotel.rooms?.map(r => r.rentperday) || [0]))}
+                    Giá phòng từ {formatPriceVND(Math.min(...hotel.rooms?.map(r => r.discountedPrice || r.rentperday) || [0]))}
                     <small className="text-muted"> /đêm</small>
                   </div>
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    className="mb-2 w-80"
+                    onClick={() => {
+                      setTempBooking(bookingInfo);
+                      setShowEditModal(true);
+                    }}
+                  >
+                    ✏️ Chỉnh sửa thông tin đặt phòng
+                  </Button>
                   <Button
                     variant="primary"
                     size="lg"
@@ -620,7 +663,6 @@ try {
               </Card.Body>
             </Card>
 
-            {/* Policies Card */}
             <Card>
               <Card.Body>
                 <h5 className="card-title mb-4">Chính sách khách sạn</h5>
@@ -629,8 +671,7 @@ try {
                     <div className="d-flex">
                       <FaRegCalendarAlt className="me-2 text-primary" />
                       <div>
-                        <strong>Nhận phòng:</strong>
-                        <div>Từ 14:00</div>
+                        <strong>Nhận phòng:</strong> Từ 14:00
                       </div>
                     </div>
                   </ListGroup.Item>
@@ -638,8 +679,7 @@ try {
                     <div className="d-flex">
                       <FaRegCalendarAlt className="me-2 text-primary" />
                       <div>
-                        <strong>Trả phòng:</strong>
-                        <div>Trước 12:00</div>
+                        <strong>Trả phòng:</strong> Trước 12:00
                       </div>
                     </div>
                   </ListGroup.Item>
@@ -650,7 +690,6 @@ try {
         </Row>
       </Container>
 
-      {/* Room Modal */}
       <Modal
         show={showRoomModal}
         onHide={() => setShowRoomModal(false)}
@@ -679,7 +718,85 @@ try {
           </>
         )}
       </Modal>
-    </div>
+
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Chỉnh sửa thông tin đặt phòng</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="mb-3">
+            <label className="form-label">Ngày nhận phòng</label>
+            <input
+              type="date"
+              className="form-control"
+              value={tempBooking.checkin}
+              onChange={(e) =>
+                setTempBooking({ ...tempBooking, checkin: e.target.value })
+              }
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Ngày trả phòng</label>
+            <input
+              type="date"
+              className="form-control"
+              value={tempBooking.checkout}
+              onChange={(e) =>
+                setTempBooking({ ...tempBooking, checkout: e.target.value })
+              }
+            />
+          </div>
+          <div className="mb-3 d-flex justify-content-between">
+            <div className="me-2 flex-fill">
+              <label className="form-label">Người lớn</label>
+              <input
+                type="number"
+                min="1"
+                className="form-control"
+                value={tempBooking.adults}
+                onChange={(e) =>
+                  setTempBooking({ ...tempBooking, adults: e.target.value })
+                }
+              />
+            </div>
+            <div className="ms-2 flex-fill">
+              <label className="form-label">Trẻ em</label>
+              <input
+                type="number"
+                min="0"
+                className="form-control"
+                value={tempBooking.children}
+                onChange={(e) =>
+                  setTempBooking({ ...tempBooking, children: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Số phòng</label>
+            <input
+              type="number"
+              min="1"
+              className="form-control"
+              value={tempBooking.rooms}
+              onChange={(e) =>
+                setTempBooking({ ...tempBooking, rooms: e.target.value })
+              }
+            />
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+            Hủy
+          </Button>
+          <Button variant="primary" onClick={handleSaveBookingInfo}>
+            Lưu thay đổi
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+    </div >
   );
-}
+};
+
 export default HotelDetail;

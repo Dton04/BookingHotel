@@ -86,6 +86,15 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     default: 0, // Tổng số tiền giảm giá từ voucher
   },
+  discount: {
+  id: { type: mongoose.Schema.Types.ObjectId, ref: "Discount", default: null },
+  name: String,
+  discountType: String,
+  discountValue: Number,
+  amountReduced: Number,
+},
+
+
   appliedVouchers: [
     {
       code: String,

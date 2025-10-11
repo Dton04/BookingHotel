@@ -75,4 +75,7 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/festival/:id', hotelController.getHotelsByFestival);
+router.get('/:id/available-rooms', hotelController.getAvailableRoomsByHotelId);
+
 module.exports = router;

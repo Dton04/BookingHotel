@@ -343,7 +343,7 @@ function HotelManagement() {
                 </button>
                 <Link
                   to={`/admin/hotel/${hotel._id}/rooms`}
-                  className="btn btn-sm btn-info"
+                  className="btn btn-sm btn-info mt-2"
                 >
                   Quản lý phòng
                 </Link>

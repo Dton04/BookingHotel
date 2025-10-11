@@ -5,26 +5,45 @@ const User = require('../models/user');
 
 // POST /api/regions - Tạo region mới
 exports.createRegion = async (req, res) => {
-  const { name, hotels } = req.body;
-
   try {
+    const name = req.body?.name;
+    const hotels = req.body?.hotels ? JSON.parse(req.body.hotels) : [];
+
+    if (!name) {
+      return res.status(400).json({ message: "Thiếu tên khu vực" });
+    }
+
+    // Nếu đã tồn tại
     const regionExists = await Region.findOne({ name });
     if (regionExists) {
-      return res.status(400).json({ message: 'Khu vực đã tồn tại' });
+      return res.status(400).json({ message: "Khu vực đã tồn tại" });
+    }
+
+    let imageUrl = null;
+    if (req.file) {
+      imageUrl = `${req.protocol}://${req.get("host")}/Uploads/${req.file.filename}`;
     }
 
     const region = new Region({
       name,
-      hotels: hotels || [],
+      hotels,
+      imageUrl,
     });
 
     const savedRegion = await region.save();
-    res.status(201).json(savedRegion);
+    res.status(201).json({
+      message: "Tạo khu vực thành công",
+      region: savedRegion,
+    });
   } catch (error) {
-    console.error('Lỗi khi tạo khu vực:', error.message);
-    res.status(500).json({ message: 'Lỗi khi tạo khu vực', error: error.message });
+    console.error("Lỗi khi tạo khu vực:", error.message);
+    res.status(500).json({
+      message: "Lỗi khi tạo khu vực",
+      error: error.message,
+    });
   }
 };
+
 
 // GET /api/regions - Lấy danh sách regions
 exports.getRegions = async (req, res) => {

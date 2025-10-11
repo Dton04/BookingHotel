@@ -31,8 +31,8 @@ function DiscountsPage() {
     fetchData();
   }, []);
 
-    const handleFestivalClick = (id) => {
-    navigate(`/festival-hotels/${id}`);
+  const handleFestivalClick = (festival) => {
+    navigate(`/festival/${festival._id}`, { state: { festival } });
   };
 
   const handleCollect = async (id) => {
@@ -53,15 +53,17 @@ function DiscountsPage() {
   // Filter discounts theo lựa chọn
   const filteredDiscounts = discounts.filter((d) => {
     if (filter === "voucher") return d.type === "voucher";
-    if (filter === "limited") return d.type !== "voucher"; // gom hết loại khác
-    return true; // all
+    if (filter === "festival") return d.type === "festival";
+    if (filter === "limited") return d.type !== "voucher" && d.type !== "festival";
+    return true;
   });
+
 
 
   return (
     <div className="discounts-page">
       <Banner />
-  
+
 
       {/* Bộ lọc */}
       <div className="discounts-filter mb-3">
@@ -83,47 +85,53 @@ function DiscountsPage() {
         >
           Khuyến mãi có thời hạn
         </button>
+        <button
+          className={`btn ${filter === "festival" ? "btn-dark" : "btn-outline-dark"} me-2`}
+          onClick={() => setFilter("festival")}
+        >
+          Ưu đãi lễ hội
+        </button>
       </div>
 
-      {/* Danh sách */}
-      {/* Danh sách */}
-<div className="discounts-grid">
-      {filteredDiscounts.map((d) => (
-        <div key={d._id} className="discount-card">
-          <div className="discount-image">
-            <img src={d.image || "/default-discount.jpg"} alt={d.name} />
-            <span className="discount-badge">
-              {d.discountType === "percentage"
-                ? `-${d.discountValue}%`
-                : `-${d.discountValue.toLocaleString()} VND`}
-            </span>
-          </div>
-          <div className="discount-content">
-            <h5 className="discount-title">{d.name}</h5>
-            <p className="discount-desc">{d.description}</p>
 
-            {d.type === "voucher" ? (
-              <button
-                className={`btn-discount ${
-                  collected.includes(d.code) ? "btn-collected" : "btn-collect"
-                }`}
-                disabled={collected.includes(d.code)}
-                onClick={() => handleCollect(d._id)}
-              >
-                {collected.includes(d.code) ? "Đã thu thập" : "Nhận phiếu giảm giá"}
-              </button>
-            ) : d.type === "festival" ? (
-              <button
-                className="btn-discount btn-festival"
-                onClick={() => handleFestivalClick(d._id)}
-              >
-                Xem khách sạn ưu đãi
-              </button>
-            ) : null}
+      {/* Danh sách */}
+      <div className="discounts-grid">
+        {filteredDiscounts.map((d) => (
+        <div key={d._id} className={`discount-card ${d.type === "festival" ? "festival" : ""}`}>
+
+            <div className="discount-image">
+              <img src={d.image || "/default-discount.jpg"} alt={d.name} />
+              <span className="discount-badge">
+                {d.discountType === "percentage"
+                  ? `-${d.discountValue}%`
+                  : `-${d.discountValue.toLocaleString()} VND`}
+              </span>
+            </div>
+            <div className="discount-content">
+              <h5 className="discount-title">{d.name}</h5>
+              <p className="discount-desc">{d.description}</p>
+
+              {d.type === "voucher" ? (
+                <button
+                  className={`btn-discount ${collected.includes(d.code) ? "btn-collected" : "btn-collect"
+                    }`}
+                  disabled={collected.includes(d.code)}
+                  onClick={() => handleCollect(d._id)}
+                >
+                  {collected.includes(d.code) ? "Đã thu thập" : "Nhận phiếu giảm giá"}
+                </button>
+              ) : d.type === "festival" ? (
+                <button
+                  className="btn-discount btn-festival"
+                  onClick={() => handleFestivalClick(d)}
+                >
+                  Xem khách sạn ưu đãi
+                </button>
+              ) : null}
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
 
     </div>
   );

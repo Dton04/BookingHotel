@@ -54,14 +54,7 @@ function Banner() {
           image: 'https://res.cloudinary.com/dah1butg2/image/upload/v1743929403/pexels-pixabay-260922_smnq5l.jpg',
         };
     
-      case '/about':
-        return {
-          isSlider: false,
-          title: 'About',
-          breadcrumb: 'HOME / PAGES / ABOUT',
-          buttons: null,
-          image: 'https://hips.hearstapps.com/hmg-prod/images/grand-hotel-tremezzo-6479210d9dae0.jpeg',
-        };
+    
       case '/ourteam':
         return {
           isSlider: false,

@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+/* --- Tổng thể trang --- */
+.festival-page {
+  background: linear-gradient(to bottom right, #f9fafc, #eef1f5);
+  min-height: 100vh;
+  font-family: "Playfair Display", serif;
+  font-size: 1.5rem;
+}
+
+/* --- Banner lễ hội --- */
+.festival-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 0 40px 40px;
+  height: 400px;
+}
+
+.festival-effect {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.75);
+  transform: scale(1.02);
+}
+
+.festival-overlay {
+  position: absolute;
+  inset: 0;
+  color: #fff;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 20px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.7));
+}
+
+.festival-title {
+  font-size: 48px;
+  font-weight: 700;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  margin-bottom: 12px;
+}
+
+.festival-description {
+  max-width: 800px;
+  margin: 0 auto 20px;
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+.festival-discount-badge {
+  font-size: 20px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: #ff5a5f !important;
+}
+
+/* --- Bộ lọc khu vực --- */
+.region-filter .region-button {
+  border-radius: 25px;
+  padding: 10px 20px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.region-filter .region-button:hover {
+  transform: translateY(-2px);
+}
+
+/* --- Card khách sạn --- */
+.hotel-card {
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.hotel-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.hotel-image {
+  height: 220px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.discount-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #ff6b6b, #ff4757);
+}
+
+.hotel-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #222;
+  margin-top: 8px;
+}
+
+.hotel-address {
+  color: #666;
+  font-size: 14px;
+}
+
+.hotel-rating {
+  color: #f5c518;
+}
+
+.hotel-prices {
+  display: flex;
+  flex-direction: column;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: #888;
+  font-size: 14px;
+}
+
+.discounted-price {
+  color: #ff5a5f;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.view-details-button {
+  background: linear-gradient(90deg, #007bff, #00bfff);
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  padding: 10px 18px;
+  transition: all 0.3s ease;
+}
+
+.view-details-button:hover {
+  background: linear-gradient(90deg, #0062cc, #0099cc);
+  transform: translateY(-2px);
+}
+

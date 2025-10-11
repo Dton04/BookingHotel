@@ -170,42 +170,53 @@ function HistoryBookings() {
 
   // Xử lý chỉnh sửa đặt phòng
   const handleEditBooking = async () => {
-    try {
-      setLoading(true);
-      setEditError(null);
+  try {
+    setLoading(true);
+    setEditError(null);
 
-      const checkinDate = new Date(editBooking.checkin);
-      const checkoutDate = new Date(editBooking.checkout);
-      if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime()) || checkinDate >= checkoutDate) {
-        setEditError("Ngày nhận phòng và trả phòng không hợp lệ.");
-        return;
-      }
-      if (!editBooking.adults || editBooking.adults < 1) {
-        setEditError("Số người lớn phải lớn hơn 0.");
-        return;
-      }
-      if (editBooking.children < 0) {
-        setEditError("Số trẻ em không được âm.");
-        return;
-      }
+    // Convert dates to proper timezone
+    const checkinDate = new Date(editBooking.checkin);
+    const checkoutDate = new Date(editBooking.checkout);
 
-      await axios.put(`/api/bookings/${selectedBookingId}/update`, {
-        checkin: editBooking.checkin,
-        checkout: editBooking.checkout,
-        adults: Number(editBooking.adults),
-        children: Number(editBooking.children),
-      });
-      await fetchBookings();
-      handleCloseEditModal();
-    } catch (err) {
-      setEditError(
-        err.response?.data?.message ||
-        "Lỗi khi chỉnh sửa đặt phòng. Vui lòng thử lại."
-      );
-    } finally {
-      setLoading(false);
+    // Set hours for check-in and check-out
+    checkinDate.setHours(0, 0, 0, 0);
+    checkoutDate.setHours(23, 59, 59, 999);
+
+    // Adjust for timezone offset
+    const adjustedCheckin = new Date(checkinDate.getTime() - checkinDate.getTimezoneOffset() * 60000).toISOString();
+    const adjustedCheckout = new Date(checkoutDate.getTime() - checkoutDate.getTimezoneOffset() * 60000).toISOString();
+
+    if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime()) || checkinDate >= checkoutDate) {
+      setEditError("Ngày nhận phòng và trả phòng không hợp lệ.");
+      return;
     }
-  };
+    if (!editBooking.adults || editBooking.adults < 1) {
+      setEditError("Số người lớn phải lớn hơn 0.");
+      return;
+    }
+    if (editBooking.children < 0) {
+      setEditError("Số trẻ em không được âm.");
+      return;
+    }
+
+    await axios.put(`/api/bookings/${selectedBookingId}/update`, {
+      checkin: adjustedCheckin,
+      checkout: adjustedCheckout,
+      adults: Number(editBooking.adults),
+      children: Number(editBooking.children),
+    });
+
+    await fetchBookings();
+    handleCloseEditModal();
+  } catch (err) {
+    setEditError(
+      err.response?.data?.message ||
+      "Lỗi khi chỉnh sửa đặt phòng. Vui lòng thử lại."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Xem lý do hủy
   const handleViewCancelReason = async (bookingId) => {
@@ -322,8 +333,14 @@ function HistoryBookings() {
                   <td>{booking.hotelId?.name || booking.roomid?.hotelId?.name || "Không xác định"}</td>
 
                     <td>{booking.roomid?.name || "Không xác định"}</td>
-                    <td>{new Date(booking.checkin).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</td>
-                    <td>{new Date(booking.checkout).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</td>
+                  <td>
+      {new Date(new Date(booking.checkin).getTime() + new Date(booking.checkin).getTimezoneOffset() * 60000)
+        .toLocaleDateString("vi-VN")}
+    </td>
+                  <td>
+      {new Date(new Date(booking.checkout).getTime() + new Date(booking.checkout).getTimezoneOffset() * 60000)
+        .toLocaleDateString("vi-VN")}
+    </td>
                     <td>{booking.adults}</td>
                     <td>{booking.children}</td>
                     <td>{booking.roomType || "Không xác định"}</td>

@@ -31,6 +31,7 @@ router.post('/', protect, admin, async (req, res) => {
     isStackable,
     membershipLevel,
     minSpending,
+    image
   } = req.body;
 
   try {
@@ -112,6 +113,7 @@ router.post('/', protect, admin, async (req, res) => {
       isStackable: !!isStackable,
       membershipLevel: type === 'member' ? membershipLevel : null,
       minSpending: type === 'accumulated' ? minSpending : null,
+      image: image || null,
     });
 
     console.log('Dữ liệu khuyến mãi trước khi lưu:', discount);
@@ -153,6 +155,7 @@ router.put('/:id', protect, admin, async (req, res) => {
     isStackable,
     membershipLevel,
     minSpending,
+    image
   } = req.body;
 
   try {
@@ -178,8 +181,8 @@ router.put('/:id', protect, admin, async (req, res) => {
     }
 
     if (applicableHotels && applicableHotels.length > 0) {
-      const rooms = await Room.find({ _id: { $in: applicableHotels } });
-      if (rooms.length !== applicableHotels.length) {
+      const hotels = await Hotel.find({ _id: { $in: applicableHotels } });
+      if (hotels.length !== applicableHotels.length) {
         return res.status(400).json({ message: 'Một hoặc nhiều phòng không tồn tại' });
       }
     }
@@ -240,6 +243,7 @@ router.put('/:id', protect, admin, async (req, res) => {
     discount.isStackable = isStackable !== undefined ? isStackable : discount.isStackable;
     discount.membershipLevel = membershipLevel !== undefined && discount.type === 'member' ? membershipLevel : discount.membershipLevel;
     discount.minSpending = minSpending !== undefined && discount.type === 'accumulated' ? minSpending : discount.minSpending;
+    discount.image = image !== undefined ? image : discount.image;
 
     const updatedDiscount = await discount.save();
     res.status(200).json({ message: 'Cập nhật khuyến mãi thành công', discount: updatedDiscount });
@@ -683,6 +687,82 @@ router.get('/:id/hotels', async (req, res) => {
   } catch (error) {
     console.error('Error fetching hotels for discount:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/discounts/festival
+ * @desc    Lấy danh sách các khuyến mãi lễ hội đang hoạt động
+ * @access  Công khai
+ */
+router.get('/festival', async (req, res) => {
+  try {
+    const now = new Date();
+    const discounts = await Discount.find({
+      type: 'festival',
+      isDeleted: false,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+    }).populate('applicableHotels', 'name region imageurls address rating');
+
+    res.status(200).json(discounts);
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi khi lấy danh sách festival', error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/discounts/:id/festival-hotels
+ * @desc    Lấy chi tiết 1 lễ hội + danh sách khách sạn áp dụng
+ * @access  Công khai
+ */
+router.get('/:id/festival-hotels', async (req, res) => {
+  try {
+    const discount = await Discount.findById(req.params.id)
+      .populate({
+        path: 'applicableHotels',
+        populate: { path: 'region', select: 'name' },
+        select: 'name region imageurls address rating rooms',
+      });
+
+    if (!discount) {
+      return res.status(404).json({ message: 'Không tìm thấy khuyến mãi lễ hội' });
+    }
+
+    if (discount.type !== 'festival') {
+      return res.status(400).json({ message: 'Khuyến mãi này không phải là loại lễ hội' });
+    }
+    const hotelsWithDiscountedRooms = await Promise.all(
+      discount.applicableHotels.map(async (hotel) => {
+        const populatedHotel = await hotel.populate('rooms', 'name rentperday imageurls');
+        const h = populatedHotel.toObject();
+
+        h.rooms = h.rooms.map((room) => ({
+          ...room,
+          discountedPrice:
+            discount.discountType === 'percentage'
+              ? Math.round(room.rentperday * (1 - discount.discountValue / 100))
+              : Math.max(room.rentperday - discount.discountValue, 0),
+        }));
+
+        return h;
+      })
+    );
+    res.status(200).json({
+      festival: {
+        _id: discount._id,
+        name: discount.name,
+        description: discount.description,
+        discountType: discount.discountType,
+        discountValue: discount.discountValue,
+        startDate: discount.startDate,
+        endDate: discount.endDate,
+      },
+      hotels: hotelsWithDiscountedRooms,
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy dữ liệu lễ hội:', error);
+    res.status(500).json({ message: 'Lỗi khi lấy dữ liệu lễ hội', error: error.message });
   }
 });
 

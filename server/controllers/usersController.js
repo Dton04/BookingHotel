@@ -117,7 +117,7 @@ exports.login = async (req, res) => {
 
 
 // Xử lý callback từ Google OAuth
-// Google OAuth callback – Gửi OTP trước khi cho login
+
 // Google OAuth callback – Gửi OTP trước khi cho login
 exports.googleCallback = async (req, res) => {
   try {
@@ -199,6 +199,8 @@ exports.verifyOTP = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
+        isAdmin: user.isAdmin,
         token,
       },
     });

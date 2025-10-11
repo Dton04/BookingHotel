@@ -56,44 +56,46 @@ exports.createReview = async (req, res) => {
 
 // GET /api/reviews - Lấy danh sách review
 exports.getReviews = async (req, res) => {
-  const { hotelId, roomId, email, status, page = 1, limit = 10 } = req.query;
   try {
-    const query = {};
-    if (hotelId) query.hotelId = hotelId; // ✅ fix: dùng hotelId
-    if (roomId) query.roomId = roomId;
-    if (email) query.email = email.toLowerCase();
+    const { hotelId, email, status, page = 1, limit = 10 } = req.query;
+    const filter = {};
 
-    if (status === "active") {
-      query.isDeleted = false;
-      query.isVisible = true;
-    } else if (status === "hidden") {
-      query.isDeleted = false;
-      query.isVisible = false;
-    } else if (status === "deleted") {
-      query.isDeleted = true;
-    } else {
-      query.isDeleted = false;
-      query.isVisible = true;
+    if (hotelId) filter.hotelId = hotelId;
+    if (email) filter.email = { $regex: email, $options: "i" }; // ✅ lọc email gần đúng (không phân biệt hoa/thường)
+
+    if (status && status !== 'all') {
+      if (status === 'active') {
+        filter.isDeleted = false;
+        filter.isVisible = true;
+      } else if (status === 'hidden') {
+        filter.isDeleted = false;
+        filter.isVisible = false;
+      } else if (status === 'deleted') {
+        filter.isDeleted = true;
+      }
     }
 
-    const totalReviews = await Review.countDocuments(query);
-    const reviews = await Review.find(query)
-      .populate("hotelId", "name")
-      .populate("roomId", "name type")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+    const skip = (page - 1) * limit;
+    const total = await Review.countDocuments(filter);
 
-    res.json({
+    const reviews = await Review.find(filter)
+      .populate("hotelId", "name")
+      .populate("roomId", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    res.status(200).json({
       reviews,
-      totalReviews,
-      totalPages: Math.ceil(totalReviews / limit),
-      currentPage: page
+      totalPages: Math.ceil(total / limit),
+      total,
     });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi khi lấy danh sách đánh giá", error: error.message });
+    console.error("Lỗi khi lấy danh sách đánh giá:", error);
+    res.status(500).json({ message: "Lỗi server khi lấy danh sách đánh giá" });
   }
 };
+
 
 // GET /api/reviews/average
 exports.getAverageRating = async (req, res) => {
@@ -117,7 +119,7 @@ exports.getReviewsByEmail = async (req, res) => {
       isDeleted: false,
       isVisible: true
     })
-      .populate("hotelId", "name") // ✅ fix: dùng hotelId
+      .populate("hotelId", "name") 
       .populate("roomId", "name type");
 
     res.json(reviews);

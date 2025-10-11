@@ -35,7 +35,7 @@ const Footer = () => {
         {/* Company Section */}
         <FooterSection title="COMPANY">
           <ul>
-            <li><Link to="/about">About Us</Link></li>
+            <li><Link to="/">About Us</Link></li>
             <li><Link to="/contact">Contact Us</Link></li>
             <li><Link to="/privacy">Privacy Policy</Link></li>
             <li><Link to="/terms">Terms & Condition</Link></li>

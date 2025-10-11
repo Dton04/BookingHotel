@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
@@ -12,13 +13,13 @@ import SuggestionCard from "../components/SuggestionCard";
 import AlertMessage from "../components/AlertMessage";
 import { Carousel } from "react-bootstrap";
 
-// Định nghĩa danh sách dịch vụ có sẵn
-const availableServices = [
-  { id: "breakfast", name: "Bữa sáng", price: 100000 },
-  { id: "airport_shuttle", name: "Đưa đón sân bay", price: 500000 },
-  { id: "spa", name: "Dịch vụ spa", price: 300000 },
-  { id: "room_service", name: "Dịch vụ phòng", price: 200000 },
-];
+// // Định nghĩa danh sách dịch vụ có sẵn
+// const availableServices = [
+//   { id: "breakfast", name: "Bữa sáng", price: 100000 },
+//   { id: "airport_shuttle", name: "Đưa đón sân bay", price: 500000 },
+//   { id: "spa", name: "Dịch vụ spa", price: 300000 },
+//   { id: "room_service", name: "Dịch vụ phòng", price: 200000 },
+// ];
 
 // Định nghĩa schema xác thực
 const bookingSchema = yup.object().shape({
@@ -88,7 +89,11 @@ function Bookingscreen() {
   const [discountResult, setDiscountResult] = useState(null);
   const [totalAmount, setTotalAmount] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]); // State để lưu dịch vụ được chọn
+  const [availableServices, setAvailableServices] = useState([]);
   const [roomsNeeded, setRoomsNeeded] = useState(1);
+  const location = useLocation();
+  const festival = location.state?.festival || JSON.parse(localStorage.getItem("festival")) || null;
+
 
   // Hàm xử lý chọn dịch vụ
   const handleServiceChange = (serviceId) => {
@@ -102,34 +107,10 @@ function Bookingscreen() {
   // Hàm tính tổng chi phí dịch vụ
   const calculateServiceCost = () => {
     return selectedServices.reduce((total, serviceId) => {
-      const service = availableServices.find((s) => s.id === serviceId);
+      const service = availableServices.find((s) => s._id === serviceId);
       return total + (service ? service.price : 0);
     }, 0);
   };
-
-  // Hàm lấy dữ liệu phòng
-  const fetchRoomData = useCallback(async () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    try {
-      setLoading(true);
-      const { data } = await axios.post("/api/rooms/getroombyid", { roomid });
-      setRoom(data);
-      setValue("roomType", data.type || "");
-      if (data.availabilityStatus !== "available") {
-        await fetchSuggestions(data._id, data.type);
-      }
-      // Tính tổng tiền ban đầu (chưa bao gồm dịch vụ)
-      const checkin = new Date(data.checkin || new Date());
-      const checkout = new Date(data.checkout || new Date());
-      const days = Math.ceil((checkout - checkin) / (1000 * 60 * 60 * 24));
-      setTotalAmount(data.rentperday * days);
-    } catch (error) {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [roomid, setValue]);
-
   // Hàm lấy gợi ý phòng
   const fetchSuggestions = useCallback(async (roomId, roomType) => {
     try {
@@ -144,6 +125,47 @@ function Bookingscreen() {
       setLoadingSuggestions(false);
     }
   }, []);
+
+  // Hàm lấy dữ liệu phòng
+  const fetchRoomData = useCallback(async () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    try {
+      setLoading(true);
+      const { data } = await axios.post("/api/rooms/getroombyid", { roomid });
+
+      // Nếu có festival, áp dụng giảm giá tự động
+      let adjustedRoom = { ...data };
+      if (festival && festival.discountType && festival.discountValue) {
+        adjustedRoom.originalRentperday = adjustedRoom.rentperday;
+
+        if (festival.discountType === "percentage") {
+          adjustedRoom.rentperday = Math.round(
+            adjustedRoom.rentperday * (1 - festival.discountValue / 100)
+          );
+          adjustedRoom.discountApplied = `${festival.discountValue}%`;
+        } else if (festival.discountType === "fixed") {
+          adjustedRoom.rentperday = Math.max(0, adjustedRoom.rentperday - festival.discountValue);
+          adjustedRoom.discountApplied = `${festival.discountValue.toLocaleString()} VND`;
+        }
+      }
+
+      setRoom(adjustedRoom);
+      setValue("roomType", adjustedRoom.type || "");
+      if (adjustedRoom.availabilityStatus !== "available") {
+        await fetchSuggestions(adjustedRoom._id, adjustedRoom.type);
+      }
+      // Tính tổng tiền ban đầu (chưa bao gồm dịch vụ)
+      const checkin = new Date(adjustedRoom.checkin || new Date());
+      const checkout = new Date(adjustedRoom.checkout || new Date());
+      const days = Math.ceil((checkout - checkin) / (1000 * 60 * 60 * 24));
+      setTotalAmount(adjustedRoom.rentperday * days);
+    } catch (error) {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [roomid, setValue, festival, fetchSuggestions]);
+
 
   const accumulatePoints = useCallback(async (bookingId) => {
     try {
@@ -219,6 +241,21 @@ function Bookingscreen() {
     fetchRoomData();
   }, [fetchRoomData]);
 
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        if (!room?.hotelId) return;
+        const response = await axios.get(`/api/services/hotel/${room.hotelId}`);
+        setAvailableServices(response.data || []);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách dịch vụ:", error);
+      }
+    };
+
+    fetchServices();
+  }, [room]);
+
+
   // Tách riêng effect xử lý user info và location state
   useEffect(() => {
     // Lấy thông tin từ user đã đăng nhập
@@ -255,7 +292,9 @@ function Bookingscreen() {
     if (!date) return "";
     const d = new Date(date);
     if (isNaN(d)) return "";
-    return d.toISOString().split("T")[0];
+    // Chuyển đổi về múi giờ Việt Nam (UTC+7)
+    const vietnamTime = new Date(d.getTime() + (7 * 60 * 60 * 1000));
+    return vietnamTime.toISOString().split("T")[0];
   };
 
   useEffect(() => {
@@ -314,22 +353,42 @@ function Bookingscreen() {
       setRoomsNeeded(roomsBooked);
 
 
-      // ✅ Tính số ngày ở
-      const days = Math.ceil(
-        (new Date(data.checkout) - new Date(data.checkin)) /
-        (1000 * 60 * 60 * 24)
-      );
+      // Tính số ngày ở 
+      const checkinDate = new Date(data.checkin);
+      checkinDate.setHours(14, 0, 0, 0); 
+      const checkoutDate = new Date(data.checkout);
+      checkoutDate.setHours(12, 0, 0, 0); 
+      // Tính số ngày ở (không tính phần thời gian)
+      const days = Math.floor((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24)) || 1;
 
-      // Tính tổng tiền
-      const baseAmount = room.rentperday * days * roomsNeeded;
+      // Nếu ngày không hợp lệ
+      if (days <= 0) {
+        setBookingStatus({
+          type: "error",
+          message: "Ngày trả phòng phải sau ngày nhận phòng.",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // ✅ Tính giá sau festival (nếu có)
+      let dailyRate = room.rentperday;
+      
+
+      // ✅ Tính tiền phòng cơ bản
+      const baseAmount = dailyRate * days * roomsNeeded;
+
+      // ✅ Tính chi phí dịch vụ
       const servicesCost = calculateServiceCost();
-      const discountAmount =
-        discountResult?.appliedDiscounts?.reduce(
-          (sum, d) => sum + d.discount,
-          0
-        ) || 0;
 
-      const totalAmount = baseAmount + servicesCost - discountAmount;
+      // ✅ Tính tổng giảm giá từ voucher (nếu có)
+      const voucherDiscount =
+        discountResult?.appliedDiscounts?.reduce((sum, d) => sum + d.discount, 0) || 0;
+
+      // ✅ Tổng tiền cuối cùng
+      const totalAmount = Math.max(0, baseAmount + servicesCost - voucherDiscount);
+
+
 
       setPaymentStatus(null);
       setBankInfo(null);
@@ -375,7 +434,15 @@ function Bookingscreen() {
 
         const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
         const orderInfo = `Thanh toán đặt phòng ${room.name}`;
-        const amount = (discountResult?.totalAmount || room.rentperday || 50000) + calculateServiceCost();
+        const amount =
+  totalAmount ||
+  Math.max(
+    0,
+    (discountResult?.totalAmount || room.rentperday * days * roomsNeeded) +
+      calculateServiceCost() -
+      (discountResult?.appliedDiscounts?.reduce((sum, d) => sum + d.discount, 0) || 0)
+  );
+
 
         const momoResponse = await axios.post("/api/momo/create-payment", {
           amount: amount.toString(),
@@ -402,7 +469,15 @@ function Bookingscreen() {
 
         const orderId = `BOOKING-${roomid}-${new Date().getTime()}`;
         const orderInfo = `Thanh toán đặt phòng ${room.name}`;
-        const amount = (discountResult?.totalAmount || room.rentperday || 50000) + calculateServiceCost();
+        const amount =
+  totalAmount ||
+  Math.max(
+    0,
+    (discountResult?.totalAmount || room.rentperday * days * roomsNeeded) +
+      calculateServiceCost() -
+      (discountResult?.appliedDiscounts?.reduce((sum, d) => sum + d.discount, 0) || 0)
+  );
+
 
         const vnpayResponse = await axios.post("/api/vnpay/create-payment", {
           amount: amount.toString(),
@@ -448,14 +523,14 @@ function Bookingscreen() {
               });
               setTimeout(() => {
                 navigate(
-                  `/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingResponse.data.booking._id}`
+                  `/reviews`
                 );
               }, 5000);
             } else {
 
               setTimeout(() => {
                 navigate(
-                  `/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingResponse.data.booking._id}`
+                  `/reviews`
                 );
               }, 5000);
             }
@@ -502,7 +577,7 @@ function Bookingscreen() {
       }
 
       setTimeout(() => {
-        navigate(`/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingId}`);
+        navigate(`/reviews`);
       }, 3000);
     } catch (error) {
       console.error("Lỗi khi giả lập thanh toán:", error);
@@ -531,7 +606,7 @@ function Bookingscreen() {
             message: `Thanh toán đã được xác nhận! Bạn đã nhận được ${pointsResult.pointsEarned} điểm. Đang chuyển hướng đến trang đánh giá...`,
           });
           setTimeout(() => {
-            navigate(`/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingId}`);
+            navigate(`/reviews`);
           }, 3000);
         } else {
           setBookingStatus({
@@ -539,7 +614,7 @@ function Bookingscreen() {
             message: `Thanh toán đã được xác nhận, nhưng không thể tích điểm: ${pointsResult.message}. Đang chuyển hướng đến trang đánh giá...`,
           });
           setTimeout(() => {
-            navigate(`/testimonial?roomId=${roomid}&showReviewForm=true&bookingId=${bookingId}`);
+            navigate(`/reviews`);
           }, 3000);
         }
       } else {
@@ -761,7 +836,7 @@ function Bookingscreen() {
                   <div className="row">
                     <div className="col-md-6">
                       <div className="form-group">
-                        <label className="form-label">Nhận phòng</label>
+                        <label className="form-label">Nhận phòng (từ 14:00)</label>
                         <input
                           type="date"
                           id="checkin"
@@ -769,19 +844,30 @@ function Bookingscreen() {
                           {...register("checkin")}
                           placeholder="Ngày nhận phòng"
                           min={new Date().toISOString().split("T")[0]}
+                          onChange={(e) => {
+                            const date = new Date(e.target.value);
+                            date.setHours(14, 0, 0, 0);
+                            setValue("checkin", date);
+                          }}
                         />
                         {errors.checkin && <div className="invalid-feedback">{errors.checkin.message}</div>}
                       </div>
                     </div>
                     <div className="col-md-6">
                       <div className="form-group">
-                        <label className="form-label">Trả phòng</label>
+                        <label className="form-label">Trả phòng (trước 12:00)</label>
                         <input
                           type="date"
                           id="checkout"
                           className={`form-control ${errors.checkout ? "is-invalid" : ""}`}
                           {...register("checkout")}
                           placeholder="Ngày trả phòng"
+                          min={getValues("checkin")}
+                          onChange={(e) => {
+                            const date = new Date(e.target.value);
+                            date.setHours(12, 0, 0, 0);
+                            setValue("checkout", date);
+                          }}
                         />
                         {errors.checkout && <div className="invalid-feedback">{errors.checkout.message}</div>}
                       </div>
@@ -843,7 +929,7 @@ function Bookingscreen() {
                         <option value="" disabled>
                           Chọn số phòng
                         </option>
-                        {[...Array(room.quantity).keys()].map((num) => (
+                        {[...Array(room.quantity).keys() || 0].map((num) => (
                           <option key={num + 1} value={num + 1}>
                             {num + 1} phòng
                           </option>
@@ -898,7 +984,7 @@ function Bookingscreen() {
                         </p>
                         <p>
                           <strong>Giảm giá:</strong>{" "}
-                          {discountResult.appliedDiscounts.reduce((sum, d) => sum + d.discount, 0).toLocaleString()} VND
+                          {(discountResult?.appliedDiscounts || []).reduce((sum, d) => sum + d.discount, 0).toLocaleString()} VND
                         </p>
                         <p>
                           <strong>Chi phí dịch vụ:</strong>{" "}
@@ -913,21 +999,26 @@ function Bookingscreen() {
                   <div className="form-group">
                     <label>Dịch vụ bổ sung</label>
                     <div className="services-list">
-                      {availableServices.map((service) => (
-                        <div key={service.id} className="form-check">
-                          <input
-                            type="checkbox"
-                            className="form-check-input"
-                            id={service.id}
-                            value={service.id}
-                            checked={selectedServices.includes(service.id)}
-                            onChange={() => handleServiceChange(service.id)}
-                          />
-                          <label className="form-check-label" htmlFor={service.id}>
-                            {service.name} ({service.price.toLocaleString()} VND)
-                          </label>
-                        </div>
-                      ))}
+                      {availableServices.length > 0 ? (
+                        availableServices.map((service) => (
+                          <div key={service._id} className="form-check">
+                            <input
+                              type="checkbox"
+                              className="form-check-input"
+                              id={service._id}
+                              value={service._id}
+                              checked={selectedServices.includes(service._id)}
+                              onChange={() => handleServiceChange(service._id)}
+                            />
+                            <label className="form-check-label" htmlFor={service._id}>
+                              {service.name} ({service.price?.toLocaleString() || 0} VND)
+                            </label>
+                          </div>
+                        ))
+                      ) : (
+                        <p>Không có dịch vụ khả dụng</p>
+                      )}
+
                     </div>
                   </div>
                   <div className="form-group">
@@ -973,7 +1064,7 @@ function Bookingscreen() {
                           src={room.imageurls[0]}
                           alt={room.name}
                           className="img-fluid rounded"
-                          style={{ maxHeight: "200px", objectFit: "cover", width: "100%" }}
+                          style={{ maxHeight: "250px", objectFit: "cover", width: "100%" }}
                         />
                       </div>
                       <div className="col-md-8">
@@ -983,8 +1074,23 @@ function Bookingscreen() {
                         </p>
                         <p className="mb-1">
                           Giá thuê mỗi ngày:{" "}
-                          <strong>{room.rentperday.toLocaleString()} VND</strong>
+                          {room.originalRentperday ? (
+                            <>
+                              <span className="text-muted text-decoration-line-through">
+                                {room.originalRentperday.toLocaleString()} VND
+                              </span>{" "}
+                              <strong className="text-danger">
+                                {room.rentperday.toLocaleString()} VND
+                              </strong>{" "}
+                              <span className="text-success ms-2">
+                                (Đã giảm {room.discountApplied})
+                              </span>
+                            </>
+                          ) : (
+                            <strong>{room.rentperday.toLocaleString()} VND</strong>
+                          )}
                         </p>
+
                         <p className="mb-1">
                           Số phòng cần đặt: <strong>{roomsNeeded}</strong>
                         </p>
@@ -1005,11 +1111,11 @@ function Bookingscreen() {
                   </div>
                 )}
 
-
               </div>
             </div>
           </div>
         )}
+        
 
         {room && room.availabilityStatus !== "available" && (
           <div className="suggestions-container">

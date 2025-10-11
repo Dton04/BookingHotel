@@ -105,12 +105,6 @@ function Navbar() {
                       </Link>
                     </li>
 
-                    <li>
-                      <Link className="dropdown-item" to="/discounts" onClick={closeNav}>
-                        <i className="fas fa-star me-2"></i>Uu dai
-                      </Link>
-                    </li>
-
                     <li><Link className="dropdown-item" to="/rewards" onClick={closeNav}><i className="fa fa-gift me-2"></i>Ưu đãi</Link></li>
                     <li><Link className="dropdown-item" to="/membership" onClick={closeNav}><i className="fas fa-star me-2"></i>Thành viên</Link></li>
                     <li><Link className="dropdown-item" to="/favorites" onClick={closeNav}><i className="fas fa-heart me-2"></i>Yêu thích</Link></li>
@@ -155,12 +149,7 @@ function Navbar() {
             </li>
 
 
-            <li className={`nav-item ${location.pathname === '/about' ? 'active' : ''}`}>
-              <Link className="nav-link" to="/about" onClick={closeNav}>
-                <i className="fas fa-info-circle me-2"></i>
-                Về chúng tôi
-              </Link>
-            </li>
+      
             <li className={`nav-item ${location.pathname === '/discount' ? 'active' : ''}`}>
               <Link className="nav-link" to="/discounts" onClick={closeNav}>
                 <i className="fas fa-solid fa-gifts"></i>

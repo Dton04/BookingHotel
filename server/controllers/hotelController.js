@@ -4,6 +4,8 @@ const Hotel = require('../models/hotel');
 const Room = require('../models/room');
 const Region = require('../models/region');
 const Booking = require('../models/booking');
+const Discount = require('../models/discount');
+
 const fs = require('fs');
 const path = require('path');
 
@@ -33,6 +35,7 @@ exports.getAllHotels = async (req, res) => {
 // GET /api/hotels/:id - Lấy chi tiết khách sạn
 exports.getHotelById = async (req, res) => {
   const { id } = req.params;
+  const includeEmpty = req.query.includeEmpty === "true";
 
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -44,9 +47,12 @@ exports.getHotelById = async (req, res) => {
     }
 
     const hotel = await Hotel.findById(id)
-      .populate('region', 'name')
-      .populate('rooms', '_id name maxcount beds baths rentperday type description imageurls availabilityStatus currentbookings');
-    
+      .populate("region", "name")
+      .populate({
+        path: "rooms",
+        select: "_id name maxcount beds baths rentperday type description imageurls availabilityStatus currentbookings quantity",
+      });
+
     if (!hotel) {
       return res.status(404).json({ message: 'Không tìm thấy khách sạn' });
     }
@@ -362,3 +368,73 @@ exports.getHotelWithRooms = async (req, res) => {
     res.status(500).json({ message: 'Lỗi khi lấy thông tin khách sạn và phòng', error: error.message });
   }
 };
+
+// Lấy khách sạn có áp dụng festival discount
+// GET /api/hotels/festival/:id - Lấy danh sách khách sạn có áp dụng festival
+exports.getHotelsByFestival = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const discount = await Discount.findById(id)
+      .populate({
+        path: 'applicableHotels',
+        populate: { path: 'rooms', select: 'rentperday imageurls' },
+      });
+
+    if (!discount || discount.type !== 'festival') {
+      return res.status(404).json({ message: 'Không tìm thấy ưu đãi lễ hội' });
+    }
+
+    const hotels = discount.applicableHotels.map((hotel) => {
+      const h = hotel.toObject();
+      h.rooms = h.rooms?.map((r) => ({
+        ...r,
+        discountedPrice:
+          discount.discountType === 'percentage'
+            ? r.rentperday * (1 - discount.discountValue / 100)
+            : Math.max(r.rentperday - discount.discountValue, 0),
+      }));
+      return h;
+    });
+
+    // ✅ Trả về cả festival và hotels (đúng với FE)
+    res.status(200).json({
+      festival: {
+        _id: discount._id,
+        name: discount.name,
+        description: discount.description,
+        image: discount.image,
+        discountType: discount.discountType,
+        discountValue: discount.discountValue,
+      },
+      hotels,
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy khách sạn theo festival:', error);
+    res.status(500).json({
+      message: 'Lỗi khi lấy khách sạn theo festival',
+      error: error.message,
+    });
+  }
+};
+//Lay phong trong theo ngay
+exports.getAvailableRoomsByHotelId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { checkin, checkout, adults, children } = req.query;
+
+    const hotel = await Hotel.findById(id).populate('rooms');
+    if (!hotel) return res.status(404).json({ message: "Không tìm thấy khách sạn" });
+
+    // Giả lập filter phòng trống
+    const availableRooms = hotel.rooms.filter(room => room.quantity > 0);
+
+    res.status(200).json({
+      ...hotel.toObject(),
+      rooms: availableRooms
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+

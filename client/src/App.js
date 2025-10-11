@@ -9,7 +9,7 @@ import Bookingscreen from "./screens/Bookingscreen";
 import OurTeam from "./components/Pages/OurTeam";
 
 import Contact from "./components/Contact";
-import About from "./screens/About";
+
 import Footer from "./components/Footer";
 import Registerscreen from "./screens/Auth/Registerscreen";
 import LoginScreen from "./screens/Auth/Loginscreen";
@@ -34,7 +34,7 @@ import HotelRoomManagement from "./components/HotelRoomManagement";
 import Rewards from "./components/Rewards";
 import VNPaySuccess from "./components/VNPaySuccess";
 import ServiceManagement from "./components/ServiceManagement";
-
+import VerifyOTP from "./screens/Auth/VerifyOTP";
 
 import PointsPage from './components/PointsPage';
 import ReviewManagement from './components/ReviewManagement';
@@ -50,8 +50,9 @@ import AdminRegions from "./components/AdminRegions";
 import Review from "./screens/Review";
 
 import DiscountsPage from "./screens/DiscountsPage"
+import FestivalHotels from "./screens/FestivalHotels";
+import DealsPage from "./screens/DealsPage";
 
-import VerifyOTP from "./screens/Auth/VerifyOTP";
 
 // Component bảo vệ route cho admin
 const AdminRoute = ({ children }) => {
@@ -80,7 +81,7 @@ function App() {
         <Routes>
           <Route path="/home" element={<Homescreen />} />
           <Route path="/rooms" element={<Rooms />} />
-          <Route path="/about" element={<About />} />
+
           <Route path="/room-results" element={<RoomResults />} />
           <Route path="/book-room/:roomId" element={<Bookingscreen />} />
           <Route path="/book/:roomid" element={<Bookingscreen />} />
@@ -112,9 +113,12 @@ function App() {
           <Route path="/booking-success" element={<VNPaySuccess />} />
           <Route path="/admin/rewards" element={<AdminRewards />} />
           <Route path="/hotel/:id" element={<HotelDetail />} />
-
+          <Route path="/festival/:id" element={<FestivalHotels />} />
           <Route path="/discounts" element={<DiscountsPage />} />
           <Route path="/verify-otp" element={<VerifyOTP />} />  
+          <Route path="/deals" element={<DealsPage />} />
+
+          
            <Route
             path="/reviews"
             element={

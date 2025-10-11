@@ -14,7 +14,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // POST /api/regions - Tạo region mới
-router.post('/', protect, admin, regionsController.createRegion);
+router.post('/', protect, admin, upload.single("image"), regionsController.createRegion);
 
 // GET /api/regions - Lấy danh sách regions
 router.get('/', regionsController.getRegions);

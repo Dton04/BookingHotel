@@ -74,13 +74,15 @@ function BookingForm() {
     const checkinDate = formData.checkin ? new Date(formData.checkin) : '';
     const checkoutDate = formData.checkout ? new Date(formData.checkout) : '';
 
-    // Đặt giờ theo múi giờ địa phương
+    // Đặt giờ chuẩn cho checkin/checkout
     if (checkinDate) {
-      checkinDate.setHours(0, 0, 0, 0);
+      checkinDate.setHours(14, 0, 0, 0); // Check-in từ 14:00
     }
     if (checkoutDate) {
-      checkoutDate.setHours(23, 59, 59, 999);
+      checkoutDate.setHours(12, 0, 0, 0); // Check-out trước 12:00
     }
+
+   
 
     const submitData = {
       destination: formData.destination,
@@ -142,9 +144,11 @@ function BookingForm() {
             selectsStart
             startDate={formData.checkin}
             endDate={formData.checkout}
+            minDate={new Date()}
             placeholderText="Ngày nhận phòng"
             className="search-input with-icon"
             dateFormat="dd/MM/yyyy"
+            showTimeSelect={false}
           />
         </div>
 
@@ -161,6 +165,7 @@ function BookingForm() {
             placeholderText="Ngày trả phòng"
             className="search-input with-icon"
             dateFormat="dd/MM/yyyy"
+            showTimeSelect={false}
           />
         </div>
 

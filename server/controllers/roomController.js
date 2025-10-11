@@ -13,8 +13,17 @@ exports.getAllRooms = async (req, res) => {
       return res.status(503).json({ message: "Kết nối cơ sở dữ liệu chưa sẵn sàng" });
     }
 
+    // sau khi lấy rooms, cập nhật trạng thái tự động
     const rooms = await Room.find({});
-    res.send(rooms);
+
+    const updatedRooms = rooms.map(room => {
+      const r = room.toObject();
+      r.availabilityStatus = room.quantity > 0 ? "available" : "unavailable";
+      return r;
+    });
+
+    res.send(updatedRooms);
+
   } catch (error) {
     console.error("Lỗi khi lấy danh sách phòng:", error.message, error.stack);
     res.status(500).json({ message: "Lỗi khi lấy danh sách phòng", error: error.message });
@@ -35,6 +44,12 @@ exports.getRoomById = async (req, res) => {
     }
 
     const room = await Room.findById(roomid);
+    if (room) {
+      const r = room.toObject();
+      r.availabilityStatus = room.quantity > 0 ? "available" : "unavailable";
+      res.send(r);
+    }
+
 
     if (room) {
       res.send(room);
@@ -91,7 +106,7 @@ exports.createRoom = async (req, res) => {
 
 
 // BE4.20 PATCH /api/rooms/:id Cập nhật phòng
-exports.updateRoom= async (req, res) => {
+exports.updateRoom = async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
 

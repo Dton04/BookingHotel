@@ -6,6 +6,7 @@ import { Modal, Button, Form, Table } from 'react-bootstrap';
 import moment from 'moment';
 import '../css/AdminDiscounts.css';
 
+
 const AdminDiscounts = () => {
   const [discounts, setDiscounts] = useState([]);
   const [hotels, setHotels] = useState([]);
@@ -76,7 +77,10 @@ const AdminDiscounts = () => {
         type: discount.type || 'voucher', // Đảm bảo type được đặt chính xác
         discountType: discount.discountType || 'percentage',
         discountValue: discount.discountValue || 0,
-        applicableHotels: discount.applicableHotels.map((id) => id.toString()), // Chuyển ObjectId thành chuỗi
+        applicableHotels: discount.applicableHotels.map((h) =>
+          typeof h === 'object' && h._id ? h._id.toString() : h.toString()
+        ),
+
         startDate: discount.startDate ? moment(discount.startDate).format('YYYY-MM-DD') : '',
         endDate: discount.endDate ? moment(discount.endDate).format('YYYY-MM-DD') : '',
         minBookingAmount: discount.minBookingAmount || 0,
@@ -214,7 +218,8 @@ const AdminDiscounts = () => {
     const names = hotelIds.map((id) => {
       const idStr = typeof id === 'object' && id._id ? id._id.toString() : id.toString();
       const hotel = hotels.find((h) => h._id?.toString() === idStr);
-      return hotel ? hotel.name : '(ID không tìm thấy)';
+      return hotel ? hotel.name : id?.name || '(ID không tìm thấy)';
+
     });
     return names.length > 0 ? names.join(', ') : 'Không có khách sạn hợp lệ';
   };

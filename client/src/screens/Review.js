@@ -31,7 +31,7 @@ const Review = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Lấy danh sách đặt phòng đã thanh toán và xác nhận
         const bookingsResponse = await axios.get(`/api/bookings`, {
           params: {
@@ -39,11 +39,11 @@ const Review = () => {
             status: "confirmed"
           }
         });
-        
+
         const confirmedAndPaidBookings = bookingsResponse.data.filter(
           (b) => b.paymentStatus === "paid" && b.status === "confirmed"
         );
-        
+
         setBookings(bookingsResponse.data);
         setPaidBookings(confirmedAndPaidBookings);
 
@@ -74,14 +74,23 @@ const Review = () => {
 
     try {
       setSubmitting(true);
-      await axios.post("/api/reviews", {
-        hotelId: selectedHotel,
-        rating,
-        comment: comment.trim(),
-      });
+      await axios.post(
+        "/api/reviews",
+        {
+          hotelId: selectedHotel,
+          rating,
+          comment: comment.trim(),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
 
       message.success("Đánh giá thành công!");
-      
+
       // Reset form
       setRating(0);
       setComment("");
@@ -116,8 +125,8 @@ const Review = () => {
       ) : (
         <>
           {/* Form viết đánh giá */}
-          <Card 
-            title={<h2 style={{ margin: 0 }}>Viết đánh giá khách sạn</h2>} 
+          <Card
+            title={<h2 style={{ margin: 0 }}>Viết đánh giá khách sạn</h2>}
             style={{ marginBottom: 24 }}
           >
             {paidBookings.length > 0 ? (
@@ -134,8 +143,8 @@ const Review = () => {
                     {paidBookings.map((b) => {
                       const reviewExists = reviews.some(r => r.hotelId?._id === b.hotelId?._id);
                       return (
-                        <Option 
-                          key={b._id} 
+                        <Option
+                          key={b._id}
                           value={b.hotelId?._id}
                           disabled={reviewExists}
                         >
@@ -149,8 +158,8 @@ const Review = () => {
 
                 <div style={{ marginBottom: 16 }}>
                   <p style={{ marginBottom: 8, fontWeight: 500 }}>Đánh giá của bạn:</p>
-                  <Rate 
-                    value={rating} 
+                  <Rate
+                    value={rating}
                     onChange={setRating}
                     disabled={submitting}
                   />
@@ -190,7 +199,7 @@ const Review = () => {
           </Card>
 
           {/* Danh sách đánh giá */}
-          <Card 
+          <Card
             title={<h2 style={{ margin: 0 }}>Đánh giá của bạn</h2>}
             style={{ marginBottom: 24 }}
           >
